@@ -16,23 +16,14 @@ Grove/
 │
 ├── frontend/                         # React app
 │   ├── src/
-│   │   ├── pages/                    # replaces templates/*.html
-│   │   │   ├── Home.jsx              # was main.html
-│   │   │   ├── Lobby.jsx             # was lobby.html
-│   │   │   ├── Room.jsx              # was room.html
-│   │   │   ├── Tasks.jsx             # was tasks.html
-│   │   │   ├── Friends.jsx           # was friends.html
-│   │   │   ├── Calendar.jsx          # was calendar.html
-│   │   │   ├── Streaks.jsx           # was streaks.html
-│   │   │   ├── Profile.jsx           # was profile.html
-│   │   │   └── Settings.jsx          # was settings.html
+│   │   ├── pages/                    # one component per screen (Home, Lobby, Room, Tasks, Friends, Calendar, Streaks, Profile, Settings)
 │   │   ├── components/               # shared UI pieces
 │   │   ├── context/                  # app-wide state (auth)
 │   │   ├── api/                      # calls to Flask API
 │   │   ├── App.jsx                   # sets up routing
 │   │   └── main.jsx                  # boots the app
 │   ├── public/
-│   │   └── img/                      # was static/img
+│   │   └── img/
 │   ├── index.html                    # React's HTML shell
 │   ├── package.json                  # JS dependencies
 │   ├── vite.config.js                # dev server + proxy
