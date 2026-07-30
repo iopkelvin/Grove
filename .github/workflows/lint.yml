@@ -4,7 +4,7 @@ name: Color Lint
 
 on:
   pull_request:
-    branches: [main]
+    branches: [main, development]
 
 jobs:
   stylelint:
