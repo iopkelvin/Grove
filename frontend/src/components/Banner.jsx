@@ -1,8 +1,8 @@
-export default function ProfileBanner() {
+export default function Banner() {
   return (
-    <label className="profile-banner">
+    <label className="banner">
       <input type="file" accept="image/*" hidden />
-      <span>Click to upload banner</span>
+      <span className="banner-edit-icon">✎</span>
     </label>
   );
 }
