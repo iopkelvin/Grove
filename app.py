@@ -92,6 +92,9 @@ def get_streaks(user_id):
 def get_calendar(user_id):
     pass
 
+@app.route("/")
+def index():
+    return {"status": "Grove API is running"}
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
