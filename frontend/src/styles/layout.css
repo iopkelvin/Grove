@@ -26,33 +26,9 @@
   align-items: start;
 }
 
-/* left column: streak + tree, centered */
-.streak-column {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
 /* stacks components vertically inside a grid column */
 .grid-column {
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-/* ── Shared card style ── */
-/* used by any rounded background box: friends, calendar, tasks, up next, etc */
-.card {
-  background-color: var(--color-card-background);
-  border-radius: 16px;
-  padding: 24px;
-  color: var(--color-text-primary);
-}
-
-/* ── Streak / tree ── */
-/* large number showing the user's current streak count */
-.streak-number {
-  font-size: 64px;
-  color: var(--color-text-primary);
 }

@@ -1,0 +1,30 @@
+/* ── Menu icon (hamburger) ── */
+/* fixed to top-right corner of every page */
+.menu-icon {
+  position: fixed;
+  top: 40px;
+  right: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 28px;
+  height: 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.menu-icon span {
+  display: block;
+  height: 3px;
+  width: 100%;
+  background-color: var(--color-text-primary);
+  border-radius: 1px;
+  transition: opacity 0.2s ease;
+}
+
+.menu-icon:hover span {
+  opacity: 0.6;
+}

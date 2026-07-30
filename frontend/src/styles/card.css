@@ -1,0 +1,8 @@
+/* ── Shared card style ── */
+/* used by any rounded background box: friends, calendar, tasks, up next, etc */
+.card {
+  background-color: var(--color-card-background);
+  border-radius: 16px;
+  padding: 24px;
+  color: var(--color-text-primary);
+}
