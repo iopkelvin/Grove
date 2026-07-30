@@ -6,13 +6,20 @@
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
+from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 
 # App setup
 app = Flask(__name__)
 CORS(app) # allow requests from the React dev server
 
-# Config / DB init
+# Config / DB init -- added by Kyle
+app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False 
+db.init_app(app) 
 
+with app.app_context(): 
+    db.create_all()  # builds all tables in grove.db on startup 
 
 # Auth routes
 @app.route("/api/signup", methods=["POST"])
