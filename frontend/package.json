@@ -1,1 +1,6 @@
+// Kelvin
 // JS dependencies
+
+"scripts": {
+  "lint:colors": "stylelint 'src/**/*.css' --config stylelint.config.js"
+}

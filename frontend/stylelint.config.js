@@ -1,3 +1,4 @@
+// Kelvin
 // patterns for raw values we want to block
 const hexColorPattern = /^#/;
 const rgbColorPattern = /^rgb/;
