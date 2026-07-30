@@ -19,6 +19,7 @@
   /* ── Accents ── */
   --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */
   --color-streak-accent: #d9622b;      /* highlighted calendar day, streak fire */
+  --color-overlay-background: rgba(0, 0, 0, 0.25);  /* dimming overlay behind modals/menus */
 
   /* ── Font family ── */
   --font-family-base: 'Newsreader', 'Georgia', serif;

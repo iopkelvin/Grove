@@ -2,6 +2,7 @@ import { useUser } from "../context/UserContext";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
+import { UserPlus, Mail, Bell } from "lucide-react";
 
 function Profile() {
   const { user, loading } = useUser();
@@ -34,15 +35,15 @@ function Profile() {
         </div>
         <div className="profile-actions">
           <button className="profile-action">
-            <span>+</span>
+            <UserPlus size={32} />
             <p>Add Friend</p>
           </button>
           <button className="profile-action">
-            <span>✉</span>
+            <Mail size={32} />
             <p>Send Message</p>
           </button>
           <button className="profile-action">
-            <span>👆</span>
+            <Bell size={32} />
             <p>Ping</p>
           </button>
         </div>
