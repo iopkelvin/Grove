@@ -1,0 +1,58 @@
+/* ── Page layout ── */
+/* wraps every page — sets background, font, and padding consistently */
+.page {
+  background-color: var(--color-page-background);
+  font-family: var(--font-family-base);
+  min-height: 100vh;
+  padding: 48px;
+  box-sizing: border-box;
+}
+
+/* main heading at the top of a page, e.g. "Afternoon, Kelvin" */
+.page-title {
+  color: var(--color-title-text);
+  font-size: var(--font-size-title);
+  font-weight: var(--font-weight-title);
+  margin-bottom: 48px;
+  text-align: center;
+}
+
+/* ── Grid layout ── */
+/* main 3-column layout */
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* left column: streak + tree, centered */
+.streak-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* stacks components vertically inside a grid column */
+.grid-column {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Shared card style ── */
+/* used by any rounded background box: friends, calendar, tasks, up next, etc */
+.card {
+  background-color: var(--color-card-background);
+  border-radius: 16px;
+  padding: 24px;
+  color: var(--color-text-primary);
+}
+
+/* ── Streak / tree ── */
+/* large number showing the user's current streak count */
+.streak-number {
+  font-size: 64px;
+  color: var(--color-text-primary);
+}

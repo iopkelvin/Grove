@@ -1,0 +1,26 @@
+:root {
+  /* ── Page ── */
+  --color-page-background: #F4F3EE;   /* main page background */
+
+  /* ── Cards ── */
+  --color-card-background: #A3B7A5;   /* friends/calendar/tasks/up-next boxes */
+  --color-card-border: #1a1a1a;       /* border on focused/highlighted cards */
+
+  /* ── Buttons ── */
+  --color-button-background: #5E7A61; /* primary buttons */
+
+  /* ── Text ── */
+  --color-title-text: #1a1a1a;        /* page headings */
+  --color-text-primary: #1a1a1a;      /* body text, main content */
+  --color-text-secondary: #4a4a4a;    /* less prominent text */
+
+  /* ── Accents ── */
+  --color-badge-background: #c9cfc0;  /* small tag labels (e.g. "Home", "College") */
+  --color-streak-accent: #d9622b;     /* highlighted calendar day, streak fire */
+
+  /* ── Font ── */
+  --font-family-base: 'Newsreader', 'Georgia', serif; 
+  --font-size-title: 48px;
+  --font-size-body: 18px;
+  --font-weight-title: 400;
+}
