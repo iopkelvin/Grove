@@ -11,18 +11,18 @@ function Home() {
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
   return (
-    <div className="home-page">
-      <h1>{greeting}, Kelvin</h1>
+    <div className="page">
+      <h1 className="page-title">{greeting}, Kelvin</h1>
 
-      <div className="home-grid">
+      <div className="grid">
         <StreakTree />
 
-        <div className="home-middle">
+        <div className="grid-column">
           <FriendsCard />
           <CalendarWidget />
         </div>
 
-        <div className="home-right">
+        <div className="grid-column">
           <UpNextCard />
           <TaskList />
         </div>

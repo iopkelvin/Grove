@@ -1,3 +1,3 @@
 export default function UpNextCard() {
-  return <div>Up Next Card</div>;
+  return <div className="card">Up Next Card</div>;
 }

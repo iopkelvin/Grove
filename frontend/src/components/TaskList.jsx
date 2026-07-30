@@ -1,3 +1,3 @@
 export default function TaskList() {
-  return <div>Task List</div>;
+  return <div className="card">Task List</div>;
 }

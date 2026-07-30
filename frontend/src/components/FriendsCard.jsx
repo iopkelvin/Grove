@@ -1,3 +1,3 @@
 export default function FriendsCard() {
-  return <div>Friends Card</div>;
+  return <div className="card">3 Friends Online</div>;
 }

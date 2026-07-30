@@ -1,3 +1,3 @@
 export default function CalendarWidget() {
-  return <div>Calendar Widget</div>;
+  return <div className="card">Calendar Widget</div>;
 }
