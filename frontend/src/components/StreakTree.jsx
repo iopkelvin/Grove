@@ -1,9 +1,8 @@
-// StreakTree.jsx
-export default function StreakTree() {
+export default function StreakTree({ streak = 0 }) {
   return (
-    <div>
+    <div className="streak-column">
       <p>Your Streak:</p>
-      <span className="streak-number">5</span>
+      <span className="streak-number">{streak}</span>
     </div>
   );
 }

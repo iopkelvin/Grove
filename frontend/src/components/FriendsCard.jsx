@@ -1,3 +1,3 @@
-export default function FriendsCard() {
-  return <div className="card">3 Friends Online</div>;
+export default function FriendsCard({ friendsOnline = 0 }) {
+  return <div className="card">{friendsOnline} Friends Online</div>;
 }
