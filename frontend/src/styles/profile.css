@@ -51,7 +51,7 @@
   justify-content: center;
   width: 200px;
   height: 200px;
-  background-color: #ccc;
+  background-color: var(--color-picture-placeholder);
   border-radius: 50%;
   flex-shrink: 0;
   cursor: pointer;
