@@ -1,0 +1,33 @@
+:root {
+  /* ── Page ── */
+  --color-page-background: #F4F3EE;
+
+  /* ── Cards ── */
+  --color-card-background: #D6DDD7;         /* standard cards: friends, calendar, tasks, up next */
+  --color-card-accent-background: #A3B7A5;  /* accent cards: banner, titles, highlighted sections */
+  --color-card-border: #1a1a1a;
+  --color-picture-placeholder: #cccccc;     /* placeholder background for unfilled profile photo */
+
+  /* ── Buttons ── */
+  --color-button-background: #5E7A61;
+
+  /* ── Text ── */
+  --color-title-text: #1a1a1a;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+
+  /* ── Accents ── */
+  --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */
+  --color-streak-accent: #d9622b;      /* highlighted calendar day, streak fire */
+  --color-overlay-background: rgba(0, 0, 0, 0.25);  /* dimming overlay behind modals/menus */
+
+  /* ── Font family ── */
+  --font-family-base: 'Newsreader', 'Georgia', serif;
+
+  /* ── Font sizes ── */
+  --font-size-title: 48px;
+  --font-size-subtitle: 24px;
+  --font-size-body: 18px;
+  --font-size-small: 15px;
+  --font-weight-title: 400;
+}
