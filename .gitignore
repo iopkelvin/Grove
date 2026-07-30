@@ -16,3 +16,4 @@ frontend/dist/
 # OS
 .DS_Storeinstance/
 .DS_Store
+instance/
