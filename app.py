@@ -1,14 +1,14 @@
 # Kelvin
 
 # app.py
-# Entry point for the Flask backend. 
+# Entry point for the Flask backend.
 # Serves the app as a pure JSON API for the React frontend to consume.
 
 from datetime import date, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
-from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
+from api.config.database import db, resolve_database_url  # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
@@ -20,6 +20,7 @@ app = Flask(__name__)
 CORS(app) # allow requests from the React dev server
 
 # Config / DB init -- added by Kyle
+SQLALCHEMY_DATABASE_URI = resolve_database_url()
 app.config["SQLALCHEMY_DATABASE_URI"] = SQLALCHEMY_DATABASE_URI
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
@@ -90,7 +91,7 @@ def sync_user():
 
     existing = User.query.filter_by(supabase_id=supabase_id).first()
     if existing:
-        return jsonify(existing.to_dict()), 200
+        return jsonify(existing.to_dict(include_email=True)), 200
 
     username = generate_unique_username(data.get("username"))
 
@@ -104,7 +105,7 @@ def sync_user():
     )
     db.session.add(new_user)
     db.session.commit()
-    return jsonify(new_user.to_dict()), 201
+    return jsonify(new_user.to_dict(include_email=True)), 201
 
 
 # User routes
@@ -115,7 +116,7 @@ def get_user(supabase_id):
     user = User.query.filter_by(supabase_id=supabase_id).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify(user.to_dict()), 200
+    return jsonify(user.to_dict(include_email=True)), 200
 
 
 # Public profile lookup by username (the /user/<username> page). Unlike
@@ -128,7 +129,6 @@ def get_user_by_username(username):
     if not user:
         return jsonify({"error": "User not found"}), 404
     data = user.to_dict()
-    data.pop("email", None)
 
     # Lets the frontend disable "Add Friend" up front instead of letting the
     # user click it and hit a "friendship already exists" error.
@@ -182,7 +182,7 @@ def update_user(supabase_id):
         user.banner_url = (data.get("banner_url") or "").strip() or None
 
     db.session.commit()
-    return jsonify(user.to_dict()), 200
+    return jsonify(user.to_dict(include_email=True)), 200
 
 
 # Looked up by username — the public, searchable handle (unlike supabase_id,
@@ -283,7 +283,7 @@ def update_task(task_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task or task.user_id != user.id:
         return jsonify({"error": "Task not found"}), 404
 
@@ -300,9 +300,7 @@ def update_task(task_id):
         task.tags = get_or_create_tags(user, data.get("tags") or [])
 
     if "done" in data:
-        newly_completed = bool(data["done"]) and not task.completed
-        task.completed = bool(data["done"])
-        if newly_completed:
+        if task.mark_completed(bool(data["done"])):
             bump_streak_for_completion(user)
 
     db.session.commit()
@@ -315,7 +313,7 @@ def delete_task(task_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    task = Task.query.get(task_id)
+    task = db.session.get(Task, task_id)
     if not task or task.user_id != user.id:
         return jsonify({"error": "Task not found"}), 404
 
@@ -335,7 +333,7 @@ def send_friend_request():
     if not requester:
         return jsonify({"error": "User not found"}), 404
 
-    target = User.query.get(data.get("target_user_id"))
+    target = db.session.get(User, data.get("target_user_id"))
     if not target:
         return jsonify({"error": "Target user not found"}), 404
 
@@ -372,32 +370,15 @@ def get_friends():
         direction = request.args.get("direction", "incoming")
         if direction == "sent":
             rows = Friendship.query.filter_by(user_id=me.id, status="pending").all()
-            pairs = [(row, row.friend) for row in rows]
         else:
             rows = Friendship.query.filter_by(friend_id=me.id, status="pending").all()
-            pairs = [(row, row.user) for row in rows]
     else:
         rows = Friendship.query.filter(
             db.or_(Friendship.user_id == me.id, Friendship.friend_id == me.id),
             Friendship.status == status,
         ).all()
-        pairs = [(row, row.friend if row.user_id == me.id else row.user) for row in rows]
 
-    return jsonify([
-        {
-            "friendship_id": row.id,
-            "status": row.status,
-            "created_at": row.created_at.isoformat() if row.created_at else None,
-            "user": {
-                "id": other.id,
-                "username": other.username,
-                "display_name": other.display_name,
-                "avatar_url": other.avatar_url,
-                "is_online": other.is_online,
-            },
-        }
-        for row, other in pairs
-    ]), 200
+    return jsonify([row.to_row(me.id) for row in rows]), 200
 
 
 # Only the recipient (friend_id) can accept or decline.
@@ -408,7 +389,7 @@ def respond_to_friend_request(friendship_id):
     if not me:
         return jsonify({"error": "User not found"}), 404
 
-    friendship = Friendship.query.get(friendship_id)
+    friendship = db.session.get(Friendship, friendship_id)
     if not friendship:
         return jsonify({"error": "Friendship not found"}), 404
 
@@ -431,7 +412,7 @@ def remove_friend(friendship_id):
     if not me:
         return jsonify({"error": "User not found"}), 404
 
-    friendship = Friendship.query.get(friendship_id)
+    friendship = db.session.get(Friendship, friendship_id)
     if not friendship:
         return jsonify({"error": "Friendship not found"}), 404
 
