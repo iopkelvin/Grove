@@ -4,6 +4,7 @@
 # Entry point for the Flask backend. 
 # Serves the app as a pure JSON API for the React frontend to consume.
 
+from datetime import date, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -39,6 +40,27 @@ if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
 
 def find_user_by_supabase_id(supabase_id):
     return User.query.filter_by(supabase_id=supabase_id).first()
+
+
+def bump_streak_for_completion(user):
+    """Completing a task bumps the streak at most once per calendar day
+    (see api/models/streak.py). Same day as last activity -> no change,
+    yesterday -> streak continues (+1), anything older -> streak restarts
+    at 1. Creates the Streak row on first use rather than at signup, so
+    existing users don't need a backfill."""
+    streak = user.streak
+    if streak is None:
+        streak = Streak(user_id=user.id, current_count=0, last_activity_date=None)
+        db.session.add(streak)
+
+    today = date.today()
+    if streak.last_activity_date == today:
+        return
+    if streak.last_activity_date == today - timedelta(days=1):
+        streak.current_count += 1
+    else:
+        streak.current_count = 1
+    streak.last_activity_date = today
 
 
 def generate_unique_username(base):

@@ -1,25 +1,18 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. For now it owns its task list in local state seeded with mock
-// data, because the Flask /api/tasks endpoints are still stubs (they `pass`).
-// When they're implemented, swap INITIAL_TASKS + the three handlers for fetch
-// calls — the rest of the UI won't change. If/when a task needs to be tied to
-// the signed-in user, identity comes from useUser().session.user.
+// The Tasks page. Backed by the real /api/tasks endpoints now — identity
+// comes from useUser().session.user, matching the plan already noted here
+// before the backend existed.
 
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 import { useUser } from "../context/UserContext";
 import { createTask, deleteTask, getTasks, updateTask } from "../api/tasks";
-
-// Stand-in for the backend. Shape mirrors the Task model: id, title, done, tags.
-const INITIAL_TASKS = [
-  { id: 1, title: "Finish CS 160 hi-fi prototype", done: false, tags: ["Today", "School"] },
-  { id: 2, title: "Model Janss House roof in Rhino", done: false, tags: ["School"] },
-  { id: 3, title: "Reply to Kelvin about app.py", done: true, tags: ["Today"] },
-];
 
 export default function Tasks() {
   const [newTitle, setNewTitle] = useState("");
