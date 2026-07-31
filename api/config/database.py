@@ -23,7 +23,7 @@ db = SQLAlchemy()
 # develop against that same shared database. If it's unset, fall back to a
 # local SQLite file — zero setup, but not shared and not persistent in
 # ephemeral hosting environments.
-_database_url = os.environ.get("DATABASE_URL", "sqlite:///grove.db")
+_database_url = (os.environ.get("DATABASE_URL") or "").strip() or "sqlite:///grove.db"
 
 # Some providers (Supabase included) hand out "postgres://" URLs, but
 # SQLAlchemy 1.4+ only recognizes the "postgresql://" scheme.
