@@ -7,10 +7,12 @@
 // calls — the rest of the UI won't change. If/when a task needs to be tied to
 // the signed-in user, identity comes from useUser().session.user.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
+import { useUser } from "../context/UserContext";
+import { createTask, deleteTask, getTasks, updateTask } from "../api/tasks";
 
 // Stand-in for the backend. Shape mirrors the Task model: id, title, done, tags.
 const INITIAL_TASKS = [
