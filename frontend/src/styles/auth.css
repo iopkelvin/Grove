@@ -45,7 +45,7 @@
   padding: 12px;
   margin-top: 8px;
   background-color: var(--color-button-background);
-  color: white;
+  color: var(--color-button-text);
   border: none;
   border-radius: 8px;
   font-family: var(--font-family-base);
@@ -59,7 +59,7 @@
 }
 
 .auth-error {
-  color: #b00020;
+  color: var(--color-error-text);
   font-size: var(--font-size-small);
   text-align: center;
 }
