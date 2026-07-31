@@ -1,9 +1,19 @@
-# Add dependancies as needed
+# Runtime dependencies. Development and CI extras live in requirements-dev.txt.
+# Pinned exactly so a deploy installs the versions CI tested, rather than
+# whatever was newest that morning.
 
 Flask==3.0.3
 flask-cors==4.0.1
-python-dotenv==1.0.1
 Flask-SQLAlchemy==3.1.1
 Flask-Migrate==4.0.7
-psycopg2-binary>=2.9.9
+SQLAlchemy==2.0.36
+python-dotenv==1.0.1
+
+# Verifies the Supabase access tokens the frontend sends — see api/utils/auth.py.
+PyJWT==2.10.1
+
+# Postgres driver (Supabase). Unused when running against the SQLite fallback.
+psycopg2-binary==2.9.10
+
+# Production WSGI server.
 gunicorn==22.0.0
