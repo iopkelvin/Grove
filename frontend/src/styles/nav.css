@@ -101,3 +101,12 @@
   background-color: var(--color-card-background);
   font-weight: var(--font-weight-title);
 }
+
+.menu-logout {
+  margin-top: 16px;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}

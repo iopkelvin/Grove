@@ -2,35 +2,25 @@ import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
-function Signup() {
+function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  async function handleSignup(e) {
+  async function handleLogin(e) {
     e.preventDefault();
     setError("");
 
-    const { data, error: signupError } = await supabase.auth.signUp({
+    const { error: loginError } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
 
-    if (signupError) {
-      setError(signupError.message);
+    if (loginError) {
+      setError(loginError.message);
       return;
     }
-
-    await fetch(`${import.meta.env.VITE_API_URL}/api/users/sync`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        supabase_id: data.user.id,
-        email: data.user.email,
-        username: data.user.email.split("@")[0],
-      }),
-    });
 
     navigate("/");
   }
@@ -38,8 +28,8 @@ function Signup() {
   return (
     <div className="page auth-page">
       <div className="auth-card card">
-        <h1 className="page-title">Sign Up</h1>
-        <form onSubmit={handleSignup} className="auth-form">
+        <h1 className="page-title">Log In</h1>
+        <form onSubmit={handleLogin} className="auth-form">
           <input
             type="email"
             placeholder="Email"
@@ -55,14 +45,14 @@ function Signup() {
             required
           />
           {error && <p className="auth-error">{error}</p>}
-          <button type="submit">Sign Up</button>
+          <button type="submit">Log In</button>
         </form>
         <p className="auth-switch">
-          Already have an account? <Link to="/login">Log in</Link>
+          Don't have an account? <Link to="/signup">Sign up</Link>
         </p>
       </div>
     </div>
   );
 }
 
-export default Signup;
+export default Login;

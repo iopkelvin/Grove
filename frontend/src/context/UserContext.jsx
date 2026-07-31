@@ -1,38 +1,31 @@
 import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 const UserContext = createContext(null);
 
 export function UserProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchCurrentUser();
+    supabase.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      setSession(newSession);
+    });
+
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  async function fetchCurrentUser() {
-    // TODO: replace with real API call once backend auth exists:
-    // const res = await fetch("/api/users/me");
-    // const data = await res.json();
-
-    // Simulated network delay + response shape
-    const data = await new Promise((resolve) =>
-      setTimeout(() => {
-        resolve({
-          id: "temp-user-1",
-          name: "Kelvin",
-          streak: 5,
-          friendsOnline: 3,
-        });
-      }, 300)
-    );
-
-    setUser(data);
-    setLoading(false);
+  async function logout() {
+    await supabase.auth.signOut();
   }
 
   return (
-    <UserContext.Provider value={{ user, loading }}>
+    <UserContext.Provider value={{ session, loading, logout }}>
       {children}
     </UserContext.Provider>
   );
