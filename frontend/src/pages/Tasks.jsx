@@ -11,8 +11,6 @@ import { useUser } from "../context/UserContext";
 import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
-import { useUser } from "../context/UserContext";
-import { createTask, deleteTask, getTasks, updateTask } from "../api/tasks";
 
 export default function Tasks() {
   const [newTitle, setNewTitle] = useState("");
