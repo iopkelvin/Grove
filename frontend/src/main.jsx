@@ -11,6 +11,7 @@ import './styles/card.css'
 import './styles/nav.css'
 import './styles/components.css'
 import './styles/profile.css'
+import './styles/auth.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

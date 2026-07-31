@@ -10,11 +10,13 @@
 
   /* ── Buttons ── */
   --color-button-background: #5E7A61;
+  --color-button-text: #ffffff;
 
   /* ── Text ── */
   --color-title-text: #1a1a1a;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #4a4a4a;
+  --color-error-text: #b00020;
 
   /* ── Accents ── */
   --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */

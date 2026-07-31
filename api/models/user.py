@@ -8,9 +8,6 @@ current streak (via Streak), online status, and friends (via Friendship).
 """
 
 from datetime import datetime, timezone
-
-from werkzeug.security import generate_password_hash, check_password_hash
-
 from api.config.database import db
 
 
@@ -46,12 +43,6 @@ class User(db.Model):
     )
     # user.tags (their tag set) comes from a backref on Tag.
     # Friendships and room memberships are reached via their own models.
-
-    def set_password(self, raw_password):
-        self.password_hash = generate_password_hash(raw_password)
-
-    def check_password(self, raw_password):
-        return check_password_hash(self.password_hash, raw_password)
 
     def to_dict(self):
         """JSON-safe view. Never includes password_hash."""

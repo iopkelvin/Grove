@@ -8,6 +8,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
+from api.models.user import User  # Kelvin — needed for the sync route
 
 # App setup
 app = Flask(__name__)
@@ -22,17 +23,28 @@ with app.app_context():
     db.create_all()  # builds all tables in grove.db on startup 
 
 # Auth routes
-@app.route("/api/signup", methods=["POST"])
-def signup():
-    pass
+# Note: Supabase Auth handles actual login/signup/session.
+# This route just creates our own `users` row after Supabase signs someone up.
+@app.route("/api/users/sync", methods=["POST"])
+def sync_user():
+    data = request.json
+    supabase_id = data.get("supabase_id")
+    email = data.get("email")
+    username = data.get("username")
 
-@app.route("/api/login", methods=["POST"])
-def login():
-    pass
+    existing = User.query.filter_by(supabase_id=supabase_id).first()
+    if existing:
+        return jsonify(existing.to_dict()), 200
 
-@app.route("/api/logout", methods=["POST"])
-def logout():
-    pass
+    new_user = User(
+        supabase_id=supabase_id,
+        email=email,
+        username=username,
+        display_name=username,
+    )
+    db.session.add(new_user)
+    db.session.commit()
+    return jsonify(new_user.to_dict()), 201
 
 
 # User routes
