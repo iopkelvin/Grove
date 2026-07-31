@@ -1,46 +1,71 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. For now it owns its task list in local state seeded with mock
-// data, because the Flask /api/tasks endpoints are still stubs (they `pass`).
-// When they're implemented, swap INITIAL_TASKS + the three handlers for fetch
-// calls — the rest of the UI won't change. If/when a task needs to be tied to
-// the signed-in user, identity comes from useUser().session.user.
+// The Tasks page. Backed by the real /api/tasks endpoints now — identity
+// comes from useUser().session.user, matching the plan already noted here
+// before the backend existed.
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 
-// Stand-in for the backend. Shape mirrors the Task model: id, title, done, tags.
-const INITIAL_TASKS = [
-  { id: 1, title: "Finish CS 160 hi-fi prototype", done: false, tags: ["Today", "School"] },
-  { id: 2, title: "Model Janss House roof in Rhino", done: false, tags: ["School"] },
-  { id: 3, title: "Reply to Kelvin about app.py", done: true, tags: ["Today"] },
-];
-
 export default function Tasks() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const { session, loading, refreshProfile } = useUser();
+  const supabaseId = session?.user?.id;
+
+  const [tasks, setTasks] = useState([]);
   const [newTitle, setNewTitle] = useState("");
 
-  function addTask() {
+  const loadTasks = useCallback(async () => {
+    if (!supabaseId) return;
+    setTasks(await getTasks(supabaseId));
+  }, [supabaseId]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  async function addTask() {
     const title = newTitle.trim();
-    if (!title) return;
-    setTasks((prev) => [
-      ...prev,
-      { id: Date.now(), title, done: false, tags: [] },
-    ]);
-    setNewTitle("");
+    if (!title || !supabaseId) return;
+
+    const res = await createTask(supabaseId, { title, tags: [] });
+    if (res.ok) {
+      const task = await res.json();
+      setTasks((prev) => [task, ...prev]);
+      setNewTitle("");
+    }
   }
 
-  function toggleTask(id) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
-    );
+  async function toggleTask(id) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task || !supabaseId) return;
+
+    const nextDone = !task.done;
+    const res = await updateTask(supabaseId, id, { done: nextDone });
+    if (res.ok) {
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: nextDone } : t)));
+      // Completing a task can bump the streak — refresh so the tree/count
+      // shown elsewhere (Home, Profile) reflects it without a reload.
+      if (nextDone) {
+        refreshProfile(supabaseId);
+      }
+    }
   }
 
-  function deleteTask(id) {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  async function removeTask(id) {
+    if (!supabaseId) return;
+    const res = await deleteTask(supabaseId, id);
+    if (res.ok) {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    }
+  }
+
+  if (loading) {
+    return <div className="page">Loading...</div>;
   }
 
   return (
@@ -64,7 +89,7 @@ export default function Tasks() {
           </button>
         </div>
 
-        <TaskList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} />
+        <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
       </div>
     </div>
   );

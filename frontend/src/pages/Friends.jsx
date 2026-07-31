@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
@@ -10,10 +10,31 @@ import {
   removeFriend,
 } from "../api/friends";
 import MenuIcon from "../components/MenuIcon";
-import { UserPlus, Check, X } from "lucide-react";
+import StreakTree from "../components/StreakTree";
+import { UserPlus, Check, X, UserRound } from "lucide-react";
+
+const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const PAGE_SIZE = 10;
 
 function displayNameFor(user) {
   return user.display_name || capitalize(user.username);
+}
+
+// First/last name if we have them (friends list), otherwise fall back to
+// username (search results don't carry first/last name).
+function sortKeyFor(user) {
+  const name = `${user.first_name || user.username} ${user.last_name || ""}`;
+  return name.trim().toLowerCase();
+}
+
+function firstLetterOf(user) {
+  return sortKeyFor(user).charAt(0).toUpperCase();
+}
+
+function addFriendLabel(user, sentRequestIds) {
+  if (sentRequestIds.has(user.id) || user.friendship_status === "pending") return "Requested";
+  if (user.friendship_status === "accepted") return "Friends";
+  return "Add";
 }
 
 function Friends() {
@@ -28,6 +49,8 @@ function Friends() {
   const [searching, setSearching] = useState(false);
   const [sentRequestIds, setSentRequestIds] = useState(new Set());
   const [error, setError] = useState("");
+  const [activeLetter, setActiveLetter] = useState(null);
+  const [page, setPage] = useState(1);
 
   const loadFriends = useCallback(async () => {
     if (!supabaseId) return;
@@ -43,6 +66,33 @@ function Friends() {
     loadFriends();
     loadRequests();
   }, [loadFriends, loadRequests]);
+
+  const sortedFriends = useMemo(
+    () => [...friends].sort((a, b) => sortKeyFor(a.user).localeCompare(sortKeyFor(b.user))),
+    [friends]
+  );
+
+  const availableLetters = useMemo(
+    () => new Set(sortedFriends.map(({ user }) => firstLetterOf(user))),
+    [sortedFriends]
+  );
+
+  const filteredFriends = useMemo(
+    () =>
+      activeLetter
+        ? sortedFriends.filter(({ user }) => firstLetterOf(user) === activeLetter)
+        : sortedFriends,
+    [sortedFriends, activeLetter]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(filteredFriends.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedFriends = filteredFriends.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function handleLetterClick(letter) {
+    setActiveLetter((prev) => (prev === letter ? null : letter));
+    setPage(1);
+  }
 
   async function handleSearch(e) {
     e.preventDefault();
@@ -96,7 +146,7 @@ function Friends() {
         <form onSubmit={handleSearch} className="friends-search">
           <input
             type="text"
-            placeholder="Search by username"
+            placeholder="Search by username or name"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -116,10 +166,10 @@ function Friends() {
                   type="button"
                   className="friends-add-button"
                   onClick={() => handleSendRequest(user.id)}
-                  disabled={sentRequestIds.has(user.id)}
+                  disabled={sentRequestIds.has(user.id) || Boolean(user.friendship_status)}
                 >
                   <UserPlus size={16} />
-                  {sentRequestIds.has(user.id) ? "Requested" : "Add"}
+                  {addFriendLabel(user, sentRequestIds)}
                 </button>
               </div>
             ))}
@@ -144,17 +194,82 @@ function Friends() {
         </div>
 
         {tab === "friends" && (
-          <div className="friends-list">
-            {friends.length === 0 && <p>No friends yet — search above to add some.</p>}
-            {friends.map(({ friendship_id, user }) => (
-              <div key={friendship_id} className="card friends-row">
-                <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
-                <button type="button" onClick={() => handleRemove(friendship_id)}>
-                  Remove
+          <>
+            <div className="friends-panel">
+              <div className="friends-list">
+                {friends.length === 0 && <p>No friends yet — search above to add some.</p>}
+                {friends.length > 0 && pagedFriends.length === 0 && (
+                  <p>No friends starting with "{activeLetter}".</p>
+                )}
+                {pagedFriends.map(({ friendship_id, user }) => (
+                  <div key={friendship_id} className="card friends-row">
+                    <div
+                      className="friends-avatar"
+                      style={user.avatar_url ? { backgroundImage: `url(${user.avatar_url})` } : undefined}
+                    >
+                      {!user.avatar_url && <UserRound className="friends-avatar-placeholder-icon" />}
+                    </div>
+                    <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
+                    <StreakTree streak={user.current_streak ?? 0} userId={user.supabase_id} compact />
+                    <button type="button" onClick={() => handleRemove(friendship_id)}>
+                      Remove
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {friends.length > 0 && (
+                <div className="friends-alphabet">
+                  <button
+                    type="button"
+                    className={
+                      activeLetter === null
+                        ? "friends-letter friends-letter-all friends-letter-active"
+                        : "friends-letter friends-letter-all"
+                    }
+                    onClick={() => handleLetterClick(null)}
+                  >
+                    All
+                  </button>
+                  {ALPHABET.map((letter) => (
+                    <button
+                      key={letter}
+                      type="button"
+                      className={
+                        activeLetter === letter ? "friends-letter friends-letter-active" : "friends-letter"
+                      }
+                      disabled={!availableLetters.has(letter)}
+                      onClick={() => handleLetterClick(letter)}
+                    >
+                      {letter}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {totalPages > 1 && (
+              <div className="friends-pagination">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={safePage === 1}
+                >
+                  Prev
+                </button>
+                <span>
+                  Page {safePage} of {totalPages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={safePage === totalPages}
+                >
+                  Next
                 </button>
               </div>
-            ))}
-          </div>
+            )}
+          </>
         )}
 
         {tab === "requests" && (

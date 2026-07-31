@@ -76,7 +76,10 @@ class Task(db.Model):
             "id": self.id,
             "title": self.title,
             "description": self.description,
-            "completed": self.completed,
+            # frontend/src/pages/Tasks.jsx already expects "done" (built
+            # against mock data before the API existed) — matching that
+            # here means nothing on the frontend needs to change.
+            "done": self.completed,
             "user_id": self.user_id,
             "tags": [tag.name for tag in self.tags],
             "created_at": self.created_at.isoformat() if self.created_at else None,
