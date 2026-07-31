@@ -1,15 +1,25 @@
 /* frontend/src/styles/profile.css */
 
 /* ── Banner ── */
+/* aspect-ratio (not a fixed height) so the crop ratio against a cover
+   background is identical at every screen width — 4/1 matches LinkedIn's
+   own recommended banner dimensions (1584x396). max-height caps it once
+   the page's content width gets large enough that 4/1 would otherwise
+   render a very tall bar; phones stay comfortably under the cap and are
+   governed purely by the ratio. */
 .banner {
   display: block;
   position: relative;
   width: 100%;
-  height: 120px;
+  aspect-ratio: 4 / 1;
+  max-height: 120px;
   margin-top: 0;
   margin-bottom: 32px;
   border-radius: 12px;
   background-color: var(--color-card-accent-background);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   cursor: pointer;
 }
 
@@ -68,11 +78,16 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
+}
+
+.profile-streak-card .streak-column p {
+  margin: 0 0 4px;
+  font-size: var(--font-size-small);
 }
 
 .profile-streak-card .streak-number {
-  font-size: 40px;
+  font-size: 32px;
 }
 
 .profile-picture {
@@ -116,21 +131,30 @@
 
 .profile-info-card h3 {
   margin: 0 0 4px 0;
-  font-size: var(--font-size-subtitle);
+  font-size: 20px;
   font-weight: var(--font-weight-title);
 }
 
 .profile-info-card p {
   margin: 0;
-  font-size: var(--font-size-body);
+  font-size: 16px;
   color: var(--color-text-secondary);
   line-height: 1.5;
+  overflow-wrap: break-word;
 }
 
 .profile-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px 24px;
+}
+
+/* grid items default to a min-width that fits their content without
+   wrapping (e.g. an email with no spaces) — without this, one long
+   unbreakable value stretches the whole grid, and the whole page,
+   wider than the screen */
+.profile-info-grid > div {
+  min-width: 0;
 }
 
 .profile-info-bio p {
@@ -251,4 +275,47 @@
 .profile-action p {
   margin: 0;
   font-size: var(--font-size-body);
+}
+
+/* ── Small screens ── */
+@media (max-width: 640px) {
+  .profile-content {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .profile-picture-wrap {
+    width: 100%;
+    max-width: 160px;
+  }
+
+  .profile-picture {
+    width: 160px;
+    height: 160px;
+  }
+
+  .profile-streak-card {
+    flex: none;
+  }
+
+  .profile-info-card {
+    flex: none;
+    width: 100%;
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .profile-info-grid {
+    gap: 12px 16px;
+  }
+
+  .profile-info-grid,
+  .profile-edit-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-actions {
+    gap: 32px;
+    flex-wrap: wrap;
+  }
 }
