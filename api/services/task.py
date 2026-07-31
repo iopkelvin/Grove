@@ -274,10 +274,11 @@ def update(account: User, task_id: int, changes: dict) -> tuple[Task, bool]:
     if "tags" in changes:
         task.tags = get_or_create_tags(account, changes["tags"] or [])
 
-    if "done" in changes:
-        if task.mark_completed(bool(changes["done"])):
-            streak_service.record_completion(account)
-            bumped = True
+    # mark_completed returns True only on a false -> true edge, so ticking an
+    # already-finished task off again cannot bump the streak twice.
+    if "done" in changes and task.mark_completed(bool(changes["done"])):
+        streak_service.record_completion(account)
+        bumped = True
 
     db.session.commit()
     return task, bumped

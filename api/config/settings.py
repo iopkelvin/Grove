@@ -65,7 +65,11 @@ class Config:
     # in our case) performs on idle clients. Without it the first request
     # after an idle period fails with "server closed the connection
     # unexpectedly".
-    SQLALCHEMY_ENGINE_OPTIONS: dict = {"pool_pre_ping": True, "pool_recycle": 280}
+    # The RUF012 suppressions in this class are deliberate: these are
+    # overridable defaults on a settings object, not shared class state.
+    # ClassVar would say the opposite of what is meant — both subclasses and
+    # __init__ replace them wholesale.
+    SQLALCHEMY_ENGINE_OPTIONS: dict = {"pool_pre_ping": True, "pool_recycle": 280}  # noqa: RUF012
 
     # ── HTTP ────────────────────────────────────────────────────────────
     # Bodies larger than this are rejected before they are parsed. Every
@@ -87,7 +91,7 @@ class Config:
     LOG_JSON = False
 
     # ── CORS ────────────────────────────────────────────────────────────
-    CORS_ORIGINS: list[str] = list(DEFAULT_DEV_ORIGINS)
+    CORS_ORIGINS: list[str] = list(DEFAULT_DEV_ORIGINS)  # noqa: RUF012
 
     # Set by ProductionConfig when it detects the SQLite fallback.
     SQLITE_FALLBACK_IN_PRODUCTION = False
@@ -112,7 +116,7 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     ENV_NAME = "testing"
     TESTING = True
-    SQLALCHEMY_ENGINE_OPTIONS: dict = {}
+    SQLALCHEMY_ENGINE_OPTIONS: dict = {}  # noqa: RUF012
     LOG_LEVEL = "CRITICAL"
 
     def __init__(self) -> None:

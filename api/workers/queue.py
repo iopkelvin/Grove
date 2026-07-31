@@ -115,10 +115,8 @@ class BackgroundQueue:
         for _ in self._threads:
             # A sentinel per worker; put_nowait so a full queue cannot make
             # shutdown itself block.
-            try:
+            with contextlib.suppress(queue.Full):
                 self._queue.put_nowait(None)
-            except queue.Full:
-                pass
 
         deadline = time.monotonic() + timeout
         for thread in self._threads:
