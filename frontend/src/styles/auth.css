@@ -74,3 +74,35 @@
   color: var(--color-button-background);
   font-weight: 600;
 }
+/* ── Additions for the rebuilt auth pages ── */
+
+/* Labelled fields. The inputs were previously bare, relying on placeholder
+   text — which disappears as soon as you type, leaving a form of unlabelled
+   boxes, and is invisible to a screen reader as a label. */
+.auth-field {
+  display: grid;
+  gap: var(--space-xs);
+  text-align: left;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.auth-field input {
+  font-size: var(--font-size-body);
+}
+
+.auth-form button:disabled {
+  background-color: var(--color-button-disabled);
+  cursor: not-allowed;
+}
+
+/* Not an error: "check your email to confirm your account" is a success
+   path, and colouring it red made a normal signup look like a failure. */
+.auth-notice {
+  margin: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-badge-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+}

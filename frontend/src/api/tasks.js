@@ -1,28 +1,46 @@
-const API_URL = import.meta.env.VITE_API_URL;
+// Task endpoints.
+//
+// Identity is no longer a parameter. It travels in the Authorization header
+// that apiClient attaches, so none of these functions can be called on
+// somebody else's behalf by passing a different id.
 
-export async function getTasks(supabaseId) {
-  const params = new URLSearchParams({ supabase_id: supabaseId });
-  const res = await fetch(`${API_URL}/api/tasks?${params}`);
-  return res.ok ? res.json() : [];
-}
+import { api } from "../lib/apiClient";
 
-export async function createTask(supabaseId, { title, description, tags }) {
-  return fetch(`${API_URL}/api/tasks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, title, description, tags }),
+/**
+ * A page of the signed-in user's tasks.
+ * @returns {Promise<{items: object[], total: number, limit: number, offset: number}>}
+ */
+export function getTasks({ completed, tag, q, sort, order, limit, offset } = {}) {
+  return api.get("/api/tasks", {
+    params: { completed, tag, q, sort, order, limit, offset },
   });
 }
 
-export async function updateTask(supabaseId, taskId, updates) {
-  return fetch(`${API_URL}/api/tasks/${taskId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, ...updates }),
-  });
+export function createTask({ title, description, tags, due_date }) {
+  return api.post("/api/tasks", { title, description, tags, due_date });
 }
 
-export async function deleteTask(supabaseId, taskId) {
-  const params = new URLSearchParams({ supabase_id: supabaseId });
-  return fetch(`${API_URL}/api/tasks/${taskId}?${params}`, { method: "DELETE" });
+export function updateTask(taskId, updates) {
+  return api.patch(`/api/tasks/${taskId}`, updates);
+}
+
+export function deleteTask(taskId) {
+  return api.delete(`/api/tasks/${taskId}`);
+}
+
+export function clearCompletedTasks() {
+  return api.post("/api/tasks/clear-completed");
+}
+
+/** The few tasks the Home page's "Up Next" card shows. */
+export function getUpNext() {
+  return api.get("/api/tasks/up-next");
+}
+
+export function getTaskStats() {
+  return api.get("/api/tasks/stats");
+}
+
+export function getTags() {
+  return api.get("/api/tasks/tags");
 }

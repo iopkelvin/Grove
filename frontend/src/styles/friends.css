@@ -1,30 +1,30 @@
 /* ── Search ── */
+/* No submit button: the search debounces as you type (see pages/Friends.jsx),
+   so the icon is decoration and the inline spinner is the feedback. */
 .friends-search {
   display: flex;
+  align-items: center;
   gap: 12px;
+  padding: 0 14px;
   margin-bottom: 24px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card-background);
+  color: var(--color-text-secondary);
 }
 
 .friends-search input {
   flex: 1;
-  padding: 12px 14px;
-  border: 1px solid var(--color-card-border);
-  border-radius: 8px;
+  padding: 12px 0;
+  border: none;
+  background-color: transparent;
   font-family: var(--font-family-base);
   font-size: var(--font-size-body);
-  background-color: var(--color-page-background);
   color: var(--color-text-primary);
 }
 
-.friends-search button {
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  background-color: var(--color-button-background);
-  color: var(--color-button-text);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-body);
-  cursor: pointer;
+.friends-search input:focus {
+  outline: none;
 }
 
 /* ── Tabs ── */
@@ -57,6 +57,14 @@
   flex-direction: column;
   gap: 12px;
   margin-bottom: 24px;
+  list-style: none;
+  padding: 0;
+}
+
+/* Search hits, separated from the tabbed lists below them. */
+.friends-results {
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-card-border-subtle);
 }
 
 .friends-row {
@@ -124,4 +132,49 @@
 .friends-decline-button {
   background-color: var(--color-card-background);
   color: var(--color-text-primary);
+}
+
+/* Reflects the server's friendship_status, so it survives a reload — the
+   old UI tracked "already asked" in local state and forgot it on refresh. */
+.friends-status {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* Small dot next to a name. Presence is real now: it comes from
+   last_seen_at rather than a boolean nothing ever set. */
+.friends-online {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: var(--space-sm);
+  border-radius: 50%;
+  background-color: var(--color-online-indicator);
+  vertical-align: middle;
+}
+
+/* ── Home page card ── */
+.friends-card-count {
+  margin: 0;
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+.friends-card-count strong {
+  font-size: var(--font-size-subtitle);
+}
+
+.friends-card-empty {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.friends-card-pending {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--space-sm);
+  font-size: var(--font-size-small);
+  color: var(--color-streak-accent);
 }

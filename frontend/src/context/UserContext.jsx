@@ -1,104 +1,151 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+// Auth session + the signed-in user's profile.
+//
+// The previous version had three problems worth naming, because all three
+// showed up as "the app is subtly wrong and nobody knows why":
+//
+//   1. A failed profile fetch logged to the console and left `profile` at
+//      whatever it was before, so a signed-in user could sit forever on a
+//      page that had no idea who they were.
+//   2. `loading` went false as soon as the session resolved, before the
+//      profile arrived, so pages rendered one frame with a name of "there".
+//   3. Nothing distinguished "signed out" from "signed in but the profile
+//      request failed", so the auth gate could not tell them apart.
+//
+// This version tracks the profile's own state, and exposes a retry.
+
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+
+import { getMyProfile, updateMyProfile } from "../api/users";
+import { getFriendsSummary } from "../api/friends";
+import { ApiError } from "../lib/apiClient";
 import { supabase } from "../lib/supabaseClient";
-import { getFriends } from "../api/friends";
 
 const UserContext = createContext(null);
 
+const EMPTY_SUMMARY = { total: 0, online: 0, pending_incoming: 0 };
+
 export function UserProvider({ children }) {
   const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [sessionLoading, setSessionLoading] = useState(true);
+
   const [profile, setProfile] = useState(null);
-  const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [profileError, setProfileError] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(false);
 
-  const fetchProfile = useCallback(async (supabaseId) => {
-    if (!supabaseId) {
+  const [friendsSummary, setFriendsSummary] = useState(EMPTY_SUMMARY);
+
+  // Guards against a slow response for a previous user landing after a
+  // faster one for the current user and overwriting it.
+  const requestSequence = useRef(0);
+
+  const loadProfile = useCallback(async (activeSession) => {
+    if (!activeSession) {
       setProfile(null);
+      setProfileError(null);
+      setFriendsSummary(EMPTY_SUMMARY);
       return;
     }
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`);
-      setProfile(res.ok ? await res.json() : null);
-    } catch (err) {
-      console.error("Failed to load profile:", err);
-    }
-  }, []);
 
-  const refreshPendingRequestCount = useCallback(async (supabaseId) => {
-    if (!supabaseId) {
-      setPendingRequestCount(0);
-      return;
-    }
+    const sequence = ++requestSequence.current;
+    setProfileLoading(true);
+    setProfileError(null);
+
     try {
-      const requests = await getFriends(supabaseId, { status: "pending" });
-      setPendingRequestCount(requests.length);
-    } catch (err) {
-      console.error("Failed to load friend requests:", err);
+      const [me, summary] = await Promise.all([
+        getMyProfile(),
+        // A failed summary must not take the profile down with it; the
+        // Friends card degrades to zeroes.
+        getFriendsSummary().catch(() => EMPTY_SUMMARY),
+      ]);
+      if (sequence !== requestSequence.current) return;
+      setProfile(me);
+      setFriendsSummary(summary);
+    } catch (error) {
+      if (sequence !== requestSequence.current) return;
+      setProfile(null);
+      setProfileError(error);
+      // A user whose Supabase account exists but whose Grove row does not
+      // has a stale local session; clearing it sends them back to signup
+      // rather than leaving them stuck on a page that cannot load.
+      if (error instanceof ApiError && error.code === "account_not_synced") {
+        await supabase.auth.signOut();
+      }
+    } finally {
+      if (sequence === requestSequence.current) setProfileLoading(false);
     }
   }, []);
 
   useEffect(() => {
+    let active = true;
+
     supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
       setSession(data.session);
-      setLoading(false);
-      fetchProfile(data.session?.user?.id);
-      refreshPendingRequestCount(data.session?.user?.id);
+      setSessionLoading(false);
+      loadProfile(data.session);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      fetchProfile(newSession?.user?.id);
-      refreshPendingRequestCount(newSession?.user?.id);
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+      if (!active) return;
+      setSession(nextSession);
+      setSessionLoading(false);
+      loadProfile(nextSession);
     });
 
-    return () => listener.subscription.unsubscribe();
-  }, [fetchProfile, refreshPendingRequestCount]);
+    return () => {
+      active = false;
+      listener.subscription.unsubscribe();
+    };
+  }, [loadProfile]);
 
-  async function logout() {
-    await supabase.auth.signOut();
-  }
+  const refreshProfile = useCallback(() => loadProfile(session), [loadProfile, session]);
 
-  async function updateProfile(updates) {
-    const supabaseId = session?.user?.id;
-    if (!supabaseId) return { ok: false };
-
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates),
-    });
-
-    if (res.ok) {
-      setProfile(await res.json());
+  const refreshFriendsSummary = useCallback(async () => {
+    if (!session) return;
+    try {
+      setFriendsSummary(await getFriendsSummary());
+    } catch {
+      // A badge count is not worth surfacing an error for.
     }
-    return res;
-  }
+  }, [session]);
 
-  async function refreshProfile(supabaseId) {
-    await fetchProfile(supabaseId ?? session?.user?.id);
-  }
+  const updateProfile = useCallback(async (updates) => {
+    const updated = await updateMyProfile(updates);
+    setProfile(updated);
+    return updated;
+  }, []);
 
-  async function refreshPendingRequests() {
-    await refreshPendingRequestCount(session?.user?.id);
-  }
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
+    setProfile(null);
+    setFriendsSummary(EMPTY_SUMMARY);
+  }, []);
 
-  return (
-    <UserContext.Provider
-      value={{
-        session,
-        loading,
-        profile,
-        logout,
-        updateProfile,
-        refreshProfile,
-        pendingRequestCount,
-        refreshPendingRequests,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
-  );
+  const value = {
+    session,
+    // True until we know both who is signed in and, if anyone is, who they
+    // are. Pages can render one loading state instead of two.
+    loading: sessionLoading || profileLoading,
+    isAuthenticated: Boolean(session),
+    profile,
+    profileError,
+    friendsSummary,
+    pendingRequestCount: friendsSummary.pending_incoming,
+    logout,
+    updateProfile,
+    refreshProfile,
+    refreshFriendsSummary,
+  };
+
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 
 export function useUser() {
-  return useContext(UserContext);
+  const context = useContext(UserContext);
+  if (context === null) {
+    // Without this, a component rendered outside the provider fails much
+    // later with "cannot destructure property 'session' of null".
+    throw new Error("useUser must be used inside a <UserProvider>");
+  }
+  return context;
 }
