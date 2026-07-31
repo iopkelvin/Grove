@@ -207,6 +207,54 @@
   color: var(--color-button-text);
 }
 
+.today-events-title {
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-title);
+  color: var(--color-title-text);
+  margin: 0 0 14px;
+}
+
+.today-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-card {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  background-color: var(--color-card-background);
+  border-radius: 14px;
+  padding: 14px 18px;
+}
+
+.event-card-accent {
+  flex-shrink: 0;
+  width: 3px;
+  border-radius: 2px;
+}
+
+.event-card-event .event-card-accent {
+  background-color: var(--color-streak-accent);
+}
+
+.event-card-task .event-card-accent {
+  background-color: var(--color-button-background);
+}
+
+.event-card-title {
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.event-card-time {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  margin: 4px 0 0;
+}
+
 .calendar-grid-corner {
   position: sticky;
   top: 0;

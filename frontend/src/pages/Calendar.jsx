@@ -5,6 +5,7 @@ import CalendarNav from "../components/CalendarNav";
 import CalendarWeekGrid from "../components/CalendarWeekGrid";
 import CalendarMonthGrid from "../components/CalendarMonthGrid";
 import MiniCalendar from "../components/MiniCalendar";
+import TodayEvents from "../components/TodayEvents";
 
 function Calendar() {
   const [view, setView] = useState("week");
@@ -44,6 +45,7 @@ function Calendar() {
         </div>
         <div className="calendar-sidebar">
           <MiniCalendar />
+          <TodayEvents />
         </div>
       </div>
     </div>
