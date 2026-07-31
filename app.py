@@ -40,6 +40,21 @@ def find_user_by_supabase_id(supabase_id):
     return User.query.filter_by(supabase_id=supabase_id).first()
 
 
+def get_friendship_status(viewer, other_user):
+    """None if no relationship exists yet, otherwise the row's status
+    ("pending"/"accepted"/"declined"). Used so the frontend can disable
+    "Add Friend" up front instead of letting a click hit a 409."""
+    if not viewer or not other_user or viewer.id == other_user.id:
+        return None
+    friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(Friendship.user_id == viewer.id, Friendship.friend_id == other_user.id),
+            db.and_(Friendship.user_id == other_user.id, Friendship.friend_id == viewer.id),
+        )
+    ).first()
+    return friendship.status if friendship else None
+
+
 def bump_streak_for_completion(user):
     """Completing a task bumps the streak at most once per calendar day
     (see api/models/streak.py). Same day as last activity -> no change,
@@ -130,17 +145,9 @@ def get_user_by_username(username):
     data = user.to_dict()
     data.pop("email", None)
 
-    # Lets the frontend disable "Add Friend" up front instead of letting the
-    # user click it and hit a "friendship already exists" error.
     viewer = find_user_by_supabase_id(request.args.get("viewer_supabase_id"))
-    if viewer and viewer.id != user.id:
-        friendship = Friendship.query.filter(
-            db.or_(
-                db.and_(Friendship.user_id == viewer.id, Friendship.friend_id == user.id),
-                db.and_(Friendship.user_id == user.id, Friendship.friend_id == viewer.id),
-            )
-        ).first()
-        data["friendship_status"] = friendship.status if friendship else None
+    if viewer:
+        data["friendship_status"] = get_friendship_status(viewer, user)
 
     return jsonify(data), 200
 
@@ -185,19 +192,29 @@ def update_user(supabase_id):
     return jsonify(user.to_dict()), 200
 
 
-# Looked up by username — the public, searchable handle (unlike supabase_id,
-# which is an opaque UUID nobody would type in a search box).
+# Matches username, first name, or last name — the public, searchable
+# fields (unlike supabase_id, which is an opaque UUID nobody would type
+# in a search box, or email, which is never exposed to other users).
 @app.route("/api/users/search", methods=["GET"])
 def search_users():
     query = (request.args.get("q") or "").strip()
     if not query:
         return jsonify([]), 200
 
-    search = User.query.filter(User.username.ilike(f"%{query}%"))
+    like = f"%{query}%"
+    search = User.query.filter(
+        db.or_(
+            User.username.ilike(like),
+            User.first_name.ilike(like),
+            User.last_name.ilike(like),
+        )
+    )
 
     exclude_supabase_id = request.args.get("exclude_supabase_id")
+    viewer = None
     if exclude_supabase_id:
         search = search.filter(User.supabase_id != exclude_supabase_id)
+        viewer = find_user_by_supabase_id(exclude_supabase_id)
 
     results = search.limit(20).all()
     return jsonify([
@@ -206,6 +223,7 @@ def search_users():
             "username": u.username,
             "display_name": u.display_name,
             "avatar_url": u.avatar_url,
+            "friendship_status": get_friendship_status(viewer, u) if viewer else None,
         }
         for u in results
     ]), 200
@@ -390,10 +408,14 @@ def get_friends():
             "created_at": row.created_at.isoformat() if row.created_at else None,
             "user": {
                 "id": other.id,
+                "supabase_id": other.supabase_id,
                 "username": other.username,
+                "first_name": other.first_name,
+                "last_name": other.last_name,
                 "display_name": other.display_name,
                 "avatar_url": other.avatar_url,
                 "is_online": other.is_online,
+                "current_streak": other.streak.current_count if other.streak else 0,
             },
         }
         for row, other in pairs
