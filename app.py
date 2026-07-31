@@ -4,7 +4,6 @@
 # Entry point for the Flask backend. 
 # Serves the app as a pure JSON API for the React frontend to consume.
 
-import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -27,7 +26,10 @@ migrate = Migrate(app, db)
 # database (DATABASE_URL set, e.g. Supabase Postgres) is expected to be
 # managed with `flask db upgrade` instead, so schema changes are tracked
 # migrations rather than "delete the file and let create_all rebuild it".
-if not os.environ.get("DATABASE_URL"):
+# Checked against the resolved URI (not the raw env var) so a blank
+# DATABASE_URL — which database.py already treats as unset — doesn't
+# accidentally skip auto-create too.
+if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
     with app.app_context():
         db.create_all()
 
