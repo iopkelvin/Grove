@@ -5,6 +5,7 @@ import { uploadProfileImage } from "../lib/uploadImage";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
+import StreakTree from "../components/StreakTree";
 import { UserPlus, Mail, Bell, Pencil } from "lucide-react";
 
 function Profile() {
@@ -13,6 +14,7 @@ function Profile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(null);
 
@@ -48,6 +50,7 @@ function Profile() {
     setFirstName(profile?.first_name || "");
     setLastName(profile?.last_name || "");
     setDisplayName(profile?.display_name || "");
+    setBio(profile?.bio || "");
     setError("");
     setIsEditing(true);
   }
@@ -60,6 +63,7 @@ function Profile() {
       first_name: firstName,
       last_name: lastName,
       display_name: displayName,
+      bio,
     });
 
     if (!res.ok) {
@@ -80,37 +84,62 @@ function Profile() {
         />
         {uploadingImage && <p className="profile-upload-status">Uploading {uploadingImage}...</p>}
         <div className="profile-content">
-          <ProfilePicture
-            avatarUrl={profile?.avatar_url}
-            onChange={(e) => handleImageChange("avatar", e)}
-          />
+          <div className="profile-picture-wrap">
+            <ProfilePicture
+              avatarUrl={profile?.avatar_url}
+              onChange={(e) => handleImageChange("avatar", e)}
+            />
+            <div className="card profile-streak-card">
+              <StreakTree streak={streak} />
+            </div>
+          </div>
           <div className="card profile-info-card">
+            {!isEditing && (
+              <button
+                type="button"
+                className="profile-edit-icon-button"
+                onClick={startEditing}
+                aria-label="Edit profile"
+              >
+                <Pencil size={16} />
+              </button>
+            )}
             {isEditing ? (
               <form onSubmit={handleSave} className="profile-edit-form">
+                <div className="profile-edit-grid">
+                  <label>
+                    First Name
+                    <input
+                      type="text"
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Last Name
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      required
+                    />
+                  </label>
+                  <label>
+                    Display Name
+                    <input
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                    />
+                  </label>
+                </div>
                 <label>
-                  First Name
-                  <input
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  Last Name
-                  <input
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                  />
-                </label>
-                <label>
-                  Display Name
-                  <input
-                    type="text"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
+                  Bio
+                  <textarea
+                    rows={4}
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
                   />
                 </label>
                 {error && <p className="auth-error">{error}</p>}
@@ -123,30 +152,28 @@ function Profile() {
               </form>
             ) : (
               <>
-                <div>
-                  <h3>First Name:</h3>
-                  <p>{capitalize(profile?.first_name) || "—"}</p>
+                <div className="profile-info-grid">
+                  <div>
+                    <h3>First Name:</h3>
+                    <p>{capitalize(profile?.first_name) || "—"}</p>
+                  </div>
+                  <div>
+                    <h3>Last Name:</h3>
+                    <p>{capitalize(profile?.last_name) || "—"}</p>
+                  </div>
+                  <div>
+                    <h3>Display Name:</h3>
+                    <p>{profile?.display_name || "—"}</p>
+                  </div>
+                  <div>
+                    <h3>Email:</h3>
+                    <p>{email}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3>Last Name:</h3>
-                  <p>{capitalize(profile?.last_name) || "—"}</p>
+                <div className="profile-info-bio">
+                  <h3>Bio:</h3>
+                  <p>{profile?.bio || "—"}</p>
                 </div>
-                <div>
-                  <h3>Display Name:</h3>
-                  <p>{profile?.display_name || "—"}</p>
-                </div>
-                <div>
-                  <h3>Email:</h3>
-                  <p>{email}</p>
-                </div>
-                <div>
-                  <h3>Streak:</h3>
-                  <p>Current streak: {streak} day{streak === 1 ? "" : "s"}.</p>
-                </div>
-                <button type="button" className="profile-edit-toggle" onClick={startEditing}>
-                  <Pencil size={16} />
-                  Edit Profile
-                </button>
               </>
             )}
           </div>

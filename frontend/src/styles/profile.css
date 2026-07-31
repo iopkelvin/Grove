@@ -6,7 +6,7 @@
   position: relative;
   width: 100%;
   height: 120px;
-  margin-top: 24px;
+  margin-top: 0;
   margin-bottom: 32px;
   border-radius: 12px;
   background-color: var(--color-card-accent-background);
@@ -43,7 +43,7 @@
 .profile-content {
   display: flex;
   flex-direction: row;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   gap: 32px;
   width: 100%;
@@ -51,13 +51,37 @@
 }
 
 /* ── Profile picture ── */
+/* stretched to match the info card's height so the streak card below
+   the picture can grow to align its bottom edge with the info card */
+.profile-picture-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.profile-streak-card {
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.profile-streak-card .streak-number {
+  font-size: 40px;
+}
+
 .profile-picture {
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 200px;
-  height: 200px;
+  width: 240px;
+  height: 240px;
   background-color: var(--color-picture-placeholder);
   border-radius: 50%;
   flex-shrink: 0;
@@ -83,10 +107,10 @@
 /* ── Profile info card ── */
 /* capped width so it doesn't stretch to fill the whole row */
 .profile-info-card {
+  position: relative;
   flex: 0 1 500px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   gap: 24px;
 }
 
@@ -103,19 +127,29 @@
   line-height: 1.5;
 }
 
-.profile-edit-toggle {
+.profile-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px 24px;
+}
+
+.profile-info-bio p {
+  white-space: pre-wrap;
+}
+
+.profile-edit-icon-button {
+  position: absolute;
+  top: 0;
+  right: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  align-self: flex-start;
-  margin-top: 8px;
-  padding: 8px 16px;
-  background-color: var(--color-card-accent-background);
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  background-color: var(--color-page-background);
+  border: 2px solid var(--color-card-border);
+  border-radius: 50%;
   color: var(--color-text-primary);
-  border: none;
-  border-radius: 8px;
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-small);
   cursor: pointer;
 }
 
@@ -124,6 +158,23 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+}
+
+.profile-edit-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.profile-edit-form textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+  resize: vertical;
 }
 
 .profile-edit-form label {
