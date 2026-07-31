@@ -1,8 +1,8 @@
 import { Fragment } from "react";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const firstHour = 10;
-const lastHour = 16;
+const firstHour = 0;
+const lastHour = 23;
 
 function startOfWeek(date) {
   const result = new Date(date);
@@ -42,41 +42,43 @@ export default function CalendarGrid({ view, anchorDate }) {
 
   return (
     <div className="calendar-card">
-      <div
-        className={
-          view === "day"
-            ? "calendar-grid calendar-grid-day"
-            : "calendar-grid calendar-grid-week"
-        }
-      >
-        <div className="calendar-grid-corner"></div>
-        {days.map((day) => (
-          <div
-            key={day.toDateString()}
-            className={
-              isWeekend(day)
-                ? "calendar-day-header calendar-day-header-weekend"
-                : "calendar-day-header"
-            }
-          >
-            {dayNames[day.getDay()]} {day.getDate()}
-          </div>
-        ))}
-        {hours.map((hour) => (
-          <Fragment key={hour}>
-            <div className="calendar-hour-label">{formatHour(hour)}</div>
-            {days.map((day, index) => (
-              <div
-                key={day.toDateString()}
-                className={
-                  index === 0
-                    ? "calendar-hour-cell calendar-hour-cell-first"
-                    : "calendar-hour-cell"
-                }
-              ></div>
-            ))}
-          </Fragment>
-        ))}
+      <div className="calendar-scroll">
+        <div
+          className={
+            view === "day"
+              ? "calendar-grid calendar-grid-day"
+              : "calendar-grid calendar-grid-week"
+          }
+        >
+          <div className="calendar-grid-corner"></div>
+          {days.map((day) => (
+            <div
+              key={day.toDateString()}
+              className={
+                isWeekend(day)
+                  ? "calendar-day-header calendar-day-header-weekend"
+                  : "calendar-day-header"
+              }
+            >
+              {dayNames[day.getDay()]} {day.getDate()}
+            </div>
+          ))}
+          {hours.map((hour) => (
+            <Fragment key={hour}>
+              <div className="calendar-hour-label">{formatHour(hour)}</div>
+              {days.map((day, index) => (
+                <div
+                  key={day.toDateString()}
+                  className={
+                    index === 0
+                      ? "calendar-hour-cell calendar-hour-cell-first"
+                      : "calendar-hour-cell"
+                  }
+                ></div>
+              ))}
+            </Fragment>
+          ))}
+        </div>
       </div>
     </div>
   );

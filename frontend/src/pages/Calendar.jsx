@@ -16,7 +16,7 @@ function Calendar() {
   }
 
   return (
-    <div className="page">
+    <div className="page calendar-page">
       <MenuIcon />
       <h1 className="page-title">Calendar</h1>
       <div className="calendar-layout">
