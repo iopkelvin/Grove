@@ -29,8 +29,17 @@ function isWeekend(date) {
   return date.getDay() === 0 || date.getDay() === 6;
 }
 
+function isSameDay(first, second) {
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
+}
+
 export default function CalendarWeekGrid({ anchorDate }) {
   const days = buildDays(anchorDate);
+  const now = new Date();
   const hours = Array.from(
     { length: lastHour - firstHour + 1 },
     (item, index) => firstHour + index
@@ -50,7 +59,15 @@ export default function CalendarWeekGrid({ anchorDate }) {
                   : "calendar-day-header"
               }
             >
-              {dayNames[day.getDay()]} {day.getDate()}
+              <span
+                className={
+                  isSameDay(day, now)
+                    ? "calendar-day-label calendar-day-label-today"
+                    : "calendar-day-label"
+                }
+              >
+                {dayNames[day.getDay()]} {day.getDate()}
+              </span>
             </div>
           ))}
           {hours.map((hour) => (
@@ -64,7 +81,14 @@ export default function CalendarWeekGrid({ anchorDate }) {
                       ? "calendar-hour-cell calendar-hour-cell-first"
                       : "calendar-hour-cell"
                   }
-                ></div>
+                >
+                  {isSameDay(day, now) && hour === now.getHours() && (
+                    <span
+                      className="calendar-now-line"
+                      style={{ top: `${(now.getMinutes() / 60) * 100}%` }}
+                    ></span>
+                  )}
+                </div>
               ))}
             </Fragment>
           ))}

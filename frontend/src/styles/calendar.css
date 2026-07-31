@@ -301,9 +301,31 @@
   padding-right: 16px;
 }
 
+.calendar-day-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 14px;
+  border-radius: 999px;
+}
+
+.calendar-day-label-today {
+  background-color: var(--color-streak-accent);
+  color: var(--color-button-text);
+}
+
 .calendar-hour-cell {
+  position: relative;
   height: 73px;
   border-left: 1px solid var(--color-card-border);
+}
+
+.calendar-now-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--color-streak-accent);
 }
 
 .calendar-hour-cell-first {
