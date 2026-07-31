@@ -19,3 +19,6 @@ frontend/.vite/
 .DS_Store
 instance/
 frontend/.vite/
+
+# added .env.local, i had to use that for supabase key and url, idk how you bypassed that Kelvin
+frontend/.env.local

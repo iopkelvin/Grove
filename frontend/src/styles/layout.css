@@ -25,12 +25,14 @@
 }
 
 /* ── Grid layout ── */
-/* main 3-column layout */
+/* main 3-column layout — first column is wider for the streak tree, and
+   no align-items here means the default (stretch): the tree's column
+   fills the full row height to match the other two stacked columns.
+   Those opt back out to their natural top-aligned height below. */
 .grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 2fr 1fr 1fr;
   gap: 24px;
-  align-items: start;
 }
 
 /* stacks components vertically inside a grid column */
@@ -38,6 +40,7 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+  align-self: start;
 }
 
 /* ── Small screens ── */
@@ -49,7 +52,7 @@
   }
 
   .page-title {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .grid {
