@@ -15,12 +15,15 @@ function Home() {
     return <div className="page">Loading...</div>;
   }
 
-  const displayName = session?.user?.email?.split("@")[0] || "there";
+  const rawFirstName = session?.user?.user_metadata?.first_name;
+  const firstName = rawFirstName
+    ? rawFirstName[0].toUpperCase() + rawFirstName.slice(1)
+    : "there";
 
   return (
     <div className="page">
       <MenuIcon />
-      <h1 className="page-title">{greeting}, {displayName}</h1>
+      <h1 className="page-title">{greeting}, {firstName}</h1>
 
       <div className="grid">
         <StreakTree streak={0} />
