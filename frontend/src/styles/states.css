@@ -1,0 +1,100 @@
+/* Loading, empty and error states.
+ *
+ * One visual language for all three, so "we are fetching", "there is
+ * nothing" and "that failed" are never mistaken for one another. Before
+ * this, all three rendered as either the string "Loading..." or nothing at
+ * all. */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xl) var(--space-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+}
+
+/* Inline variant: sits in a row next to other content rather than taking
+   over a whole panel. */
+.state-inline {
+  flex-direction: row;
+  padding: var(--space-sm) 0;
+  font-size: var(--font-size-small);
+}
+
+.state-title {
+  margin: 0;
+  font-size: var(--font-size-subtitle);
+  color: var(--color-title-text);
+}
+
+.state-hint {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.state-meta {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.state-error .state-title {
+  color: var(--color-error-text);
+}
+
+.state-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.state-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.state-retry:hover {
+  background-color: var(--color-button-background-hover);
+}
+
+.state-spinner {
+  animation: state-spin 900ms linear infinite;
+}
+
+@keyframes state-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Development-only detail in the top-level error boundary. */
+.state-debug {
+  max-width: 100%;
+  overflow-x: auto;
+  padding: var(--space-md);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-badge-background);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  text-align: left;
+  white-space: pre-wrap;
+}

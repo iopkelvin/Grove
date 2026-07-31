@@ -1,24 +1,33 @@
-// Kelvin
-// Entry point of the React app. Mounts the app into the HTML page
-// and wraps it with any global providers (e.g. auth state).
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
-import { UserProvider } from './context/UserContext'
-import './styles/theme.css'
-import './styles/layout.css'
-import './styles/card.css'
-import './styles/nav.css'
-import './styles/components.css'
-import './styles/profile.css'
-import './styles/auth.css'
-import './styles/friends.css'
-import './styles/tasks.css'
+// Entry point. Mounts the app and wraps it in the global providers.
+//
+// ThemeProvider is outermost so the data-theme attribute is on <html> before
+// anything paints — otherwise a dark-mode user gets one white frame on every
+// load.
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+import React from "react";
+import ReactDOM from "react-dom/client";
+
+import App from "./App";
+import { ThemeProvider } from "./context/ThemeContext";
+import { UserProvider } from "./context/UserContext";
+
+import "./styles/theme.css";
+import "./styles/layout.css";
+import "./styles/card.css";
+import "./styles/nav.css";
+import "./styles/components.css";
+import "./styles/states.css";
+import "./styles/profile.css";
+import "./styles/auth.css";
+import "./styles/friends.css";
+import "./styles/tasks.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </ThemeProvider>
   </React.StrictMode>
-)
+);

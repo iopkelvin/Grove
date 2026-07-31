@@ -54,7 +54,16 @@ export default [
   },
 
   {
-    files: ["**/*.test.{js,jsx}", "src/test/**/*.{js,jsx}", "vitest.setup.js"],
+    // A provider and its hook belong in the same file — that is the standard
+    // React context pattern, and splitting them purely to satisfy the
+    // fast-refresh heuristic makes the code worse. Fast refresh still works;
+    // it just remounts the provider, which is correct for a context change.
+    files: ["src/context/**/*.jsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+
+  {
+    files: ["**/*.test.{js,jsx}", "src/test/**/*.{js,jsx}"],
     languageOptions: {
       globals: { ...globals.node },
     },

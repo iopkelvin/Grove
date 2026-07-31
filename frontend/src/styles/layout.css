@@ -1,55 +1,103 @@
 /* ── Page layout ── */
-/* wraps every page — sets background, font, and padding consistently */
+/* Wraps every page: background, font and padding, set once. */
 .page {
   background-color: var(--color-page-background);
+  color: var(--color-text-primary);
   font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
   min-height: 100vh;
-  padding: 48px;
-  box-sizing: border-box;
+  padding: var(--space-xl);
   overflow-x: hidden;
 }
 
-/* constrains content to a reasonable width, centers it on wide screens */
+/* Constrains content to a readable width and centres it on wide screens. */
 .page-content {
   max-width: 960px;
   margin: 0 auto;
 }
 
-/* main heading at the top of a page, e.g. "Afternoon, Kelvin" */
+/* Title row: heading on the left, page-level actions on the right. */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  margin-bottom: var(--space-xl);
+}
+
 .page-title {
   color: var(--color-title-text);
   font-size: var(--font-size-title);
   font-weight: var(--font-weight-title);
-  margin-bottom: 48px;
+  margin: 0;
+}
+
+/* Pages that render their own title outside .page-header keep the old
+   centred treatment. */
+.page > .page-content > .page-title,
+.page > .page-title {
   text-align: center;
+  margin-bottom: var(--space-xl);
+}
+
+.page-subtitle {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.page-actions {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* Fixed cluster in the top corner: the menu button and the theme toggle. */
+.page-controls {
+  position: fixed;
+  top: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 /* ── Grid layout ── */
-/* main 3-column layout */
 .grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px;
+  gap: var(--space-lg);
   align-items: start;
 }
 
-/* stacks components vertically inside a grid column */
 .grid-column {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: var(--space-lg);
 }
 
 /* ── Small screens ── */
-/* shared across every page that uses .page/.grid, so this one breakpoint
-   covers all of them instead of tuning each page individually */
+/* Shared by every page that uses .page/.grid, so this one breakpoint covers
+   all of them instead of each page tuning its own. */
 @media (max-width: 640px) {
   .page {
     padding: 20px;
   }
 
-  .page-title {
-    margin-bottom: 24px;
+  .page-header {
+    margin-bottom: var(--space-lg);
+  }
+
+  .page > .page-content > .page-title,
+  .page > .page-title {
+    margin-bottom: var(--space-lg);
+  }
+
+  .page-controls {
+    top: var(--space-md);
+    right: var(--space-md);
   }
 
   .grid {
