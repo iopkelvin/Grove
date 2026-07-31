@@ -29,10 +29,11 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=True)
 
     # Profile (shown on Profile + Friends pages)
-    first_name = db.Column(db.String(50), nullable=True)
-    last_name = db.Column(db.String(50), nullable=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
     display_name = db.Column(db.String(80), nullable=True)   # "Kyle Gibson"
     avatar_url = db.Column(db.String(500), nullable=True)
+    banner_url = db.Column(db.String(500), nullable=True)
     bio = db.Column(db.Text, nullable=True)
 
     # "Online now" indicator. Simple boolean for now; if you later want
@@ -60,6 +61,7 @@ class User(db.Model):
             "last_name": self.last_name,
             "display_name": self.display_name,
             "avatar_url": self.avatar_url,
+            "banner_url": self.banner_url,
             "bio": self.bio,
             "is_online": self.is_online,
             "current_streak": self.streak.current_count if self.streak else 0,

@@ -1,6 +1,7 @@
 /* ── Shared card style ── */
 /* used by any rounded background box: friends, calendar, tasks, up next, etc */
 .card {
+  box-sizing: border-box;
   background-color: var(--color-card-background);
   border-radius: 16px;
   padding: 24px;
@@ -10,6 +11,7 @@
 /* ── Accent card ── */
 /* used for banners, titled sections, or anything that should stand out slightly darker */
 .card-accent {
+  box-sizing: border-box;
   background-color: var(--color-card-accent-background);
   border-radius: 16px;
   padding: 24px;

@@ -6,6 +6,7 @@
   min-height: 100vh;
   padding: 48px;
   box-sizing: border-box;
+  overflow-x: hidden;
 }
 
 /* constrains content to a reasonable width, centers it on wide screens */
@@ -37,4 +38,21 @@
   display: flex;
   flex-direction: column;
   gap: 24px;
+}
+
+/* ── Small screens ── */
+/* shared across every page that uses .page/.grid, so this one breakpoint
+   covers all of them instead of tuning each page individually */
+@media (max-width: 640px) {
+  .page {
+    padding: 20px;
+  }
+
+  .page-title {
+    margin-bottom: 24px;
+  }
+
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }

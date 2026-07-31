@@ -9,12 +9,25 @@ db.init_app(app). Keeping them separate avoids circular imports between
 app.py and the model files.
 """
 
+import os
+from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 
-# The one db object for the whole app. Models import this and don't make their own. 
+load_dotenv()
+
+# The one db object for the whole app. Models import this and don't make their own.
 db = SQLAlchemy()
 
-# Where the database actually lives. SQLite for now = a single file (grove.db)
-# in the project root, zero setup. When the group is ready to host on Postgres
-# (Supabase or otherwise), only this string changes — nothing in the models.
-SQLALCHEMY_DATABASE_URI = "sqlite:///grove.db"
+# DATABASE_URL is set in production (Render) to point at Supabase's Postgres,
+# and can optionally be set locally (in a root .env, see .env.example) to
+# develop against that same shared database. If it's unset, fall back to a
+# local SQLite file — zero setup, but not shared and not persistent in
+# ephemeral hosting environments.
+_database_url = os.environ.get("DATABASE_URL", "sqlite:///grove.db")
+
+# Some providers (Supabase included) hand out "postgres://" URLs, but
+# SQLAlchemy 1.4+ only recognizes the "postgresql://" scheme.
+if _database_url.startswith("postgres://"):
+    _database_url = _database_url.replace("postgres://", "postgresql://", 1)
+
+SQLALCHEMY_DATABASE_URI = _database_url

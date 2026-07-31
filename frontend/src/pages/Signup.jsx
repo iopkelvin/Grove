@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { useUser } from "../context/UserContext";
 
 function Signup() {
   const [firstName, setFirstName] = useState("");
@@ -9,13 +10,14 @@ function Signup() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { refreshProfile } = useUser();
 
   async function handleSignup(e) {
     e.preventDefault();
     setError("");
 
-    const normalizedFirstName = firstName.toLowerCase();
-    const normalizedLastName = lastName.toLowerCase();
+    const normalizedFirstName = firstName.trim().toLowerCase();
+    const normalizedLastName = lastName.trim().toLowerCase();
 
     const { data, error: signupError } = await supabase.auth.signUp({
       email,
@@ -42,6 +44,7 @@ function Signup() {
           last_name: normalizedLastName,
         }),
       });
+      await refreshProfile(data.user.id);
     } catch (syncError) {
       console.error("Failed to sync user with backend:", syncError);
     }
