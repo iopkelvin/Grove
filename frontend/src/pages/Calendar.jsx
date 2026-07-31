@@ -6,6 +6,28 @@ import CalendarWeekGrid from "../components/CalendarWeekGrid";
 import CalendarMonthGrid from "../components/CalendarMonthGrid";
 import MiniCalendar from "../components/MiniCalendar";
 import TodayEvents from "../components/TodayEvents";
+import CalendarTodayButton from "../components/CalendarTodayButton";
+
+function startOfWeek(date) {
+  const result = new Date(date);
+  result.setDate(result.getDate() - result.getDay());
+  return result;
+}
+
+function isCurrentScope(view, anchorDate) {
+  const today = new Date();
+
+  if (view === "month") {
+    return (
+      anchorDate.getFullYear() === today.getFullYear() &&
+      anchorDate.getMonth() === today.getMonth()
+    );
+  }
+
+  return (
+    startOfWeek(anchorDate).toDateString() === startOfWeek(today).toDateString()
+  );
+}
 
 function Calendar() {
   const [view, setView] = useState("week");
@@ -32,10 +54,15 @@ function Calendar() {
         <div className="calendar-main">
           <div className="calendar-toolbar">
             <CalendarViewToggle view={view} onChange={setView} />
-            <CalendarNav
-              onPrevious={() => shiftAnchor(-1)}
-              onNext={() => shiftAnchor(1)}
-            />
+            <div className="calendar-toolbar-actions">
+              {!isCurrentScope(view, anchorDate) && (
+                <CalendarTodayButton onClick={() => setAnchorDate(new Date())} />
+              )}
+              <CalendarNav
+                onPrevious={() => shiftAnchor(-1)}
+                onNext={() => shiftAnchor(1)}
+              />
+            </div>
           </div>
           {view === "month" ? (
             <CalendarMonthGrid anchorDate={anchorDate} />

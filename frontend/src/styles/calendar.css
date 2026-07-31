@@ -58,6 +58,23 @@
   background-color: var(--color-page-background);
 }
 
+.calendar-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.calendar-today-button {
+  background-color: var(--color-card-background);
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+  padding: 11px 24px;
+}
+
 .calendar-nav {
   display: flex;
   align-items: center;
