@@ -73,7 +73,8 @@ def get_user(supabase_id):
     return jsonify(user.to_dict()), 200
 
 
-# Only first_name, last_name, and display_name are editable here.
+# Only first_name, last_name, display_name, bio, avatar_url, and banner_url
+# are editable here. Email and streak are intentionally never read from the body.
 @app.route("/api/users/<supabase_id>", methods=["PATCH"])
 def update_user(supabase_id):
     user = User.query.filter_by(supabase_id=supabase_id).first()
@@ -97,6 +98,16 @@ def update_user(supabase_id):
     if "display_name" in data:
         display_name = (data.get("display_name") or "").strip()
         user.display_name = display_name or None
+
+    if "bio" in data:
+        bio = (data.get("bio") or "").strip()
+        user.bio = bio or None
+
+    if "avatar_url" in data:
+        user.avatar_url = (data.get("avatar_url") or "").strip() or None
+
+    if "banner_url" in data:
+        user.banner_url = (data.get("banner_url") or "").strip() or None
 
     db.session.commit()
     return jsonify(user.to_dict()), 200
