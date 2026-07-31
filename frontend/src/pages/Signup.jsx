@@ -49,6 +49,11 @@ function Signup() {
       console.error("Failed to sync user with backend:", syncError);
     }
 
+    if (!data.session) {
+      setError("Check your email to confirm your account before logging in.");
+      return;
+    }
+
     navigate("/");
   }
 
