@@ -1,6 +1,7 @@
 import { useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { X, Home, User, Users, CheckSquare, Share2, Calendar, Sprout, Settings } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { X, Home, User, Users, CheckSquare, Share2, Calendar, Sprout, Settings, LogOut } from "lucide-react";
+import { useUser } from "../context/UserContext";
 
 const navItems = [
   { label: "Home", path: "/", icon: Home },
@@ -15,6 +16,8 @@ const navItems = [
 
 export default function MenuPanel({ isOpen, onClose }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { logout } = useUser();
 
   useEffect(() => {
     function handleEscape(e) {
@@ -25,6 +28,12 @@ export default function MenuPanel({ isOpen, onClose }) {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
+  async function handleLogout() {
+    await logout();
+    onClose();
+    navigate("/");
+  }
 
   return (
     <>
@@ -45,6 +54,11 @@ export default function MenuPanel({ isOpen, onClose }) {
             <span>{label}</span>
           </Link>
         ))}
+
+        <button className="menu-item menu-logout" onClick={handleLogout}>
+          <LogOut size={22} />
+          <span>Log Out</span>
+        </button>
       </nav>
     </>
   );
