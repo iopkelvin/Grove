@@ -96,6 +96,71 @@
   line-height: 1.5;
 }
 
+.profile-edit-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-start;
+  margin-top: 8px;
+  padding: 8px 16px;
+  background-color: var(--color-card-accent-background);
+  color: var(--color-text-primary);
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+/* ── Profile edit form ── */
+.profile-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.profile-edit-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.profile-edit-form input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+}
+
+.profile-edit-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.profile-edit-actions button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.profile-edit-actions button[type="submit"] {
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.profile-edit-actions button[type="button"] {
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+}
+
 /* ── Profile actions row ── */
 .profile-actions {
   display: flex;
