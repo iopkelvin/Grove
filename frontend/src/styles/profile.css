@@ -130,9 +130,10 @@
 }
 
 .profile-info-card h3 {
-  margin: 0 0 4px 0;
+  margin: 0;
   font-size: 20px;
   font-weight: var(--font-weight-title);
+  flex-shrink: 0;
 }
 
 .profile-info-card p {
@@ -140,21 +141,33 @@
   font-size: 16px;
   color: var(--color-text-secondary);
   line-height: 1.5;
-  overflow-wrap: break-word;
 }
 
+/* single column of rows (not a 2-column grid) so each value gets the
+   card's full width instead of half of it — that's what was forcing
+   things like an email to wrap in the first place */
 .profile-info-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-/* grid items default to a min-width that fits their content without
-   wrapping (e.g. an email with no spaces) — without this, one long
-   unbreakable value stretches the whole grid, and the whole page,
-   wider than the screen */
+/* label and value share one line instead of stacking, so a field takes
+   one line of vertical space instead of two even though it's 1 column */
 .profile-info-grid > div {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
   min-width: 0;
+}
+
+/* never wrap to a second line — truncate with an ellipsis instead */
+.profile-info-grid > div p {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .profile-info-bio p {
@@ -306,10 +319,9 @@
   }
 
   .profile-info-grid {
-    gap: 12px 16px;
+    gap: 10px;
   }
 
-  .profile-info-grid,
   .profile-edit-grid {
     grid-template-columns: 1fr;
   }
