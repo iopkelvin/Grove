@@ -1,0 +1,315 @@
+/* PAGE SHELL AND TITLE */
+/* page color, min-height, centering, flex header, and title size. */
+.tree-page {
+  min-height: 100vh;
+  color: var(--color-study-ink);
+}
+
+.tree-shell {
+  width: min(1180px, 100%);
+  margin: 0 auto;
+}
+
+.tree-header {
+  display: flex;
+  gap: 24px;
+  margin-bottom: 20px;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.tree-header h1 {
+  margin: 0;
+  color: var(--color-study-ink);
+  font-family: var(--font-family-base);
+  font-size: clamp(42px, 6vw, 66px);
+  font-weight: 400;
+}
+/* SCOREBOARD formatting to show points and such. */
+.tree-scoreboard {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.tree-scoreboard span,
+.tree-scoreboard strong {
+  display: inline-flex;
+  min-height: 42px;
+  padding: 9px 14px;
+  border: 1px solid var(--color-study-line);
+  border-radius: 12px;
+  background-color: var(--color-surface-white);
+  align-items: center;
+  gap: 7px;
+}
+
+.tree-scoreboard strong {
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-size: 18px;
+}
+/* ART STAGE AND BACKGORUND */
+.tree-art-stage {
+  position: relative;
+  min-height: min(74vh, 760px);
+  overflow: hidden;
+  border: 1px solid var(--color-study-line);
+  border-radius: 28px;
+  background-color: var(--color-tree-night);
+  box-shadow: 0 24px 64px rgba(20, 43, 75, 0.2);
+}
+
+.tree-stage-background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  object-fit: cover;
+  image-rendering: auto;
+}
+/* MAIN TREE AND WATERING STATE */
+.tree-main-art {
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  bottom: -8%;
+  width: min(68%, 720px);
+  height: auto;
+  transform: translateX(-50%);
+  image-rendering: auto;
+  transition: transform 350ms ease, filter 350ms ease;
+}
+
+.tree-main-art.is-watered {
+  transform: translateX(-50%) scale(1.025);
+  filter: drop-shadow(0 0 18px var(--color-tree-water));
+}
+/* SPARKLES AND ANIMATION FRAMES. */
+.tree-water-sparkles {
+  position: absolute;
+  z-index: 3;
+  top: 24%;
+  left: 50%;
+  color: var(--color-surface-white);
+  font-size: 42px;
+  transform: translateX(-50%);
+  animation: tree-sparkle 1.2s ease-in-out infinite alternate;
+}
+/* sparkle animation */
+@keyframes tree-sparkle {
+  from { opacity: 0.45; transform: translateX(-50%) translateY(8px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(-8px); }
+}
+/* progress/water cards */
+.tree-progress-card,
+.tree-water-card {
+  position: absolute;
+  z-index: 4;
+  width: min(300px, 29%);
+  padding: 22px;
+  border: 1px solid var(--color-study-overlay-soft);
+  border-radius: 20px;
+  background-color: var(--color-tree-card);
+  backdrop-filter: blur(11px);
+}
+
+.tree-progress-card {
+  top: 26px;
+  left: 26px;
+}
+
+.tree-water-card {
+  top: 26px;
+  right: 26px;
+}
+/* formatting for the progress */
+.tree-progress-card img {
+  width: 112px;
+  height: 112px;
+  margin: 2px 0 9px;
+  border-radius: 18px;
+  object-fit: cover;
+}
+
+.tree-progress-card h2,
+.tree-water-card h2 {
+  margin: 0 0 10px;
+  color: var(--color-study-ink);
+  font-family: var(--font-family-base);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.tree-progress-card small,
+.tree-water-card p {
+  color: var(--color-study-muted);
+  line-height: 1.42;
+}
+
+.tree-progress-track {
+  width: 100%;
+  height: 9px;
+  margin: 14px 0;
+  overflow: hidden;
+  border-radius: 999px;
+  background-color: var(--color-study-line);
+}
+
+.tree-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--color-button-background);
+  transition: width 300ms ease;
+}
+/* ccheckds water card task and controls. */
+.tree-water-card > svg {
+  margin-bottom: 10px;
+  color: var(--color-tree-water);
+}
+
+.tree-water-card p {
+  margin: 7px 0;
+}
+
+.tree-water-card > strong {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid var(--color-study-line);
+  border-radius: 11px;
+  background-color: var(--color-surface-white);
+  font-size: 15px;
+}
+
+.tree-water-card button,
+.tree-water-card a {
+  display: flex;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 11px;
+  padding: 9px 12px;
+  border: 0;
+  border-radius: 11px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  cursor: pointer;
+  font-family: var(--font-family-base);
+  font-size: 16px;
+  text-decoration: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.tree-water-card button:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.tree-water-card a {
+  border: 1px solid var(--color-study-line);
+  background-color: var(--color-surface-white);
+  color: var(--color-study-ink);
+}
+/* level badge for the tree */
+.tree-level-badge {
+  position: absolute;
+  z-index: 4;
+  bottom: 22px;
+  left: 50%;
+  display: inline-flex;
+  padding: 9px 14px;
+  border: 1px solid var(--color-study-overlay-soft);
+  border-radius: 999px;
+  background-color: var(--color-study-overlay);
+  color: var(--color-surface-white);
+  transform: translateX(-50%);
+  backdrop-filter: blur(8px);
+  align-items: center;
+  gap: 7px;
+}
+/* tablet media */
+@media (max-width: 900px) {
+  .tree-art-stage {
+    display: grid;
+    min-height: auto;
+    padding: 22px;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .tree-stage-background {
+    z-index: 0;
+  }
+
+  .tree-main-art {
+    position: relative;
+    grid-column: 1 / -1;
+    grid-row: 2;
+    left: auto;
+    bottom: auto;
+    width: min(72%, 560px);
+    margin: 70px auto 0;
+    transform: none;
+  }
+
+  .tree-main-art.is-watered {
+    transform: scale(1.025);
+  }
+
+  .tree-progress-card,
+  .tree-water-card {
+    position: relative;
+    top: auto;
+    right: auto;
+    left: auto;
+    width: 100%;
+  }
+
+  .tree-level-badge {
+    right: 22px;
+    bottom: 22px;
+    left: auto;
+    transform: none;
+  }
+}
+/* mobile media query probably wont eed */
+@media (max-width: 640px) {
+  .tree-page {
+    padding-top: 82px;
+  }
+
+  .tree-header,
+  .tree-scoreboard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .tree-scoreboard {
+    gap: 8px;
+  }
+
+  .tree-scoreboard span,
+  .tree-scoreboard strong {
+    justify-content: center;
+  }
+
+  .tree-art-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .tree-main-art {
+    grid-column: 1;
+    grid-row: 3;
+    width: 100%;
+    margin-top: 16px;
+  }
+
+  .tree-level-badge {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    grid-row: 4;
+    justify-self: center;
+  }
+}
