@@ -1,0 +1,71 @@
+[project]
+name = "grove-api"
+version = "1.0.0"
+description = "Grove — backend API for the Grove productivity app (CS160)"
+requires-python = ">=3.11"
+
+# Not published to PyPI; runtime deps live in requirements.txt so Render and
+# the Dockerfile can install them without a build backend. This section exists
+# so ruff/pytest/coverage all read their settings from one file.
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+extend-exclude = ["migrations/versions", "frontend"]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # import sorting
+    "B",    # bugbear (mutable defaults, shadowed builtins, ...)
+    "C4",   # comprehension simplifications
+    "UP",   # pyupgrade
+    "SIM",  # simplifications
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "B008",  # function call in default arg — Flask/SQLAlchemy idiom
+    "E501",  # line length is enforced by the formatter, not the linter
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Re-exports: the whole point of these files is the unused import.
+"api/models/__init__.py" = ["F401"]
+"api/services/__init__.py" = ["F401"]
+# Tests lean on fixtures that shadow names and on long, readable assertions.
+"tests/*" = ["B011"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["api"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = [
+    "-q",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "edge: stress / edge-case tests required by the milestone plan",
+]
+filterwarnings = [
+    "error::DeprecationWarning:api.*",
+]
+
+[tool.coverage.run]
+source = ["api"]
+branch = true
+omit = ["api/workers/__init__.py"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+]

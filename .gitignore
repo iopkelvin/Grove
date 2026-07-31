@@ -1,21 +1,37 @@
-# Ignored files
 # Python
 __pycache__/
+*.py[cod]
 venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# Secrets — .env.example files are the only env files that belong in git
+.env
 *.env
 !.env.example
+!frontend/.env.example
 
 # Node / React
 node_modules/
 frontend/node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/coverage/
+npm-debug.log*
 
-# Database
+# Local database files
+instance/
+*.db
+*.sqlite3
 *.rdb
 
-# OS
-.DS_Storeinstance/
+# OS / editor
 .DS_Store
-instance/
-frontend/.vite/
+Thumbs.db
+.idea/
+.vscode/
