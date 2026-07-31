@@ -1,0 +1,148 @@
+/* frontend/src/styles/tasks.css */
+
+/* Narrower than the 960px page-content default — a task list reads better
+   as a single focused column. */
+.task-page-content {
+  max-width: 640px;
+}
+
+/* ── Add-task row ── */
+.task-add {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+/* Mirrors .auth-form input so form controls feel the same app-wide. */
+.task-add-input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.task-add-input:focus {
+  outline: none;
+  border-color: var(--color-button-background);
+  box-shadow: 0 0 0 3px rgba(94, 122, 97, 0.2);
+}
+
+.task-add-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.task-add-button:hover {
+  opacity: 0.9;
+}
+
+/* ── Task list ── */
+/* Reuses the shared .card box; this just lays the rows out vertically. */
+.task-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-empty {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-body);
+}
+
+/* ── Task row ── */
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 8px;
+  border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+}
+
+.task-item:last-child {
+  border-bottom: none;
+}
+
+.task-checkbox {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-primary);
+}
+
+.task-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.task-title {
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+/* Completed: muted + struck through, checkbox picks up the green accent. */
+.task-item-done .task-title {
+  color: var(--color-text-secondary);
+  text-decoration: line-through;
+}
+
+.task-item-done .task-checkbox {
+  color: var(--color-button-background);
+}
+
+/* ── Tag badges ── */
+.task-tags {
+  display: flex;
+  gap: 6px;
+}
+
+.task-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background-color: var(--color-badge-background);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+/* ── Delete ── */
+/* Kept out of the way until you hover the row. */
+.task-delete {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.task-item:hover .task-delete {
+  opacity: 1;
+}
+
+.task-delete:hover {
+  color: var(--color-error-text);
+}

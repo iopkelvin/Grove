@@ -5,6 +5,7 @@ import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import AuthGate from "./components/RequireAuth";
+import Tasks from "./pages/Tasks"; 
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/tasks" element={<Tasks />} /> 
 
       </Routes>
     </BrowserRouter>
