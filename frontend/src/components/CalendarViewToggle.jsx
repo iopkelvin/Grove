@@ -1,5 +1,5 @@
 const views = [
-  { id: "day", label: "Day View" },
+  { id: "month", label: "Month View" },
   { id: "week", label: "Week View" },
 ];
 

@@ -10,11 +10,7 @@ function startOfWeek(date) {
   return result;
 }
 
-function buildDays(view, anchorDate) {
-  if (view === "day") {
-    return [new Date(anchorDate)];
-  }
-
+function buildDays(anchorDate) {
   const start = startOfWeek(anchorDate);
   return Array.from({ length: 7 }, (item, index) => {
     const day = new Date(start);
@@ -33,8 +29,8 @@ function isWeekend(date) {
   return date.getDay() === 0 || date.getDay() === 6;
 }
 
-export default function CalendarGrid({ view, anchorDate }) {
-  const days = buildDays(view, anchorDate);
+export default function CalendarWeekGrid({ anchorDate }) {
+  const days = buildDays(anchorDate);
   const hours = Array.from(
     { length: lastHour - firstHour + 1 },
     (item, index) => firstHour + index
@@ -43,13 +39,7 @@ export default function CalendarGrid({ view, anchorDate }) {
   return (
     <div className="calendar-card">
       <div className="calendar-scroll">
-        <div
-          className={
-            view === "day"
-              ? "calendar-grid calendar-grid-day"
-              : "calendar-grid calendar-grid-week"
-          }
-        >
+        <div className="calendar-grid calendar-grid-week">
           <div className="calendar-grid-corner"></div>
           {days.map((day) => (
             <div
