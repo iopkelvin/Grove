@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
+import { uploadProfileImage } from "../lib/uploadImage";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
@@ -13,6 +14,7 @@ function Profile() {
   const [lastName, setLastName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
+  const [uploadingImage, setUploadingImage] = useState(null);
 
   if (loading) {
     return <div className="page">Loading...</div>;
@@ -20,6 +22,27 @@ function Profile() {
 
   const email = session?.user?.email || "";
   const streak = profile?.current_streak ?? 0;
+
+  async function handleImageChange(kind, e) {
+    const file = e.target.files[0];
+    e.target.value = "";
+    if (!file) return;
+
+    setUploadingImage(kind);
+    setError("");
+    try {
+      const url = await uploadProfileImage(file, kind, session.user.id);
+      const res = await updateProfile({ [`${kind}_url`]: url });
+      if (!res.ok) {
+        setError("Failed to save the new image. Please try again.");
+      }
+    } catch (err) {
+      console.error(`Failed to upload ${kind}:`, err);
+      setError("Failed to upload image. Please try again.");
+    } finally {
+      setUploadingImage(null);
+    }
+  }
 
   function startEditing() {
     setFirstName(profile?.first_name || "");
@@ -51,9 +74,16 @@ function Profile() {
     <div className="page">
       <MenuIcon />
       <div className="page-content">
-        <Banner />
+        <Banner
+          bannerUrl={profile?.banner_url}
+          onChange={(e) => handleImageChange("banner", e)}
+        />
+        {uploadingImage && <p className="profile-upload-status">Uploading {uploadingImage}...</p>}
         <div className="profile-content">
-          <ProfilePicture avatarUrl={profile?.avatar_url} />
+          <ProfilePicture
+            avatarUrl={profile?.avatar_url}
+            onChange={(e) => handleImageChange("avatar", e)}
+          />
           <div className="card profile-info-card">
             {isEditing ? (
               <form onSubmit={handleSave} className="profile-edit-form">

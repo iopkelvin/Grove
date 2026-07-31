@@ -17,6 +17,13 @@
   opacity: 0.9;
 }
 
+.profile-upload-status {
+  margin: -24px 0 24px;
+  text-align: center;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
 .banner-edit-icon {
   position: absolute;
   top: 12px;
