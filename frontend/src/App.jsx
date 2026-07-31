@@ -7,6 +7,9 @@ import Login from "./pages/Login";
 import Friends from "./pages/Friends";
 import AuthGate from "./components/RequireAuth";
 import Tasks from "./pages/Tasks"; 
+import Room from "./pages/Room";
+import Streaks from "./pages/Streaks";
+
 
 function App() {
   return (
@@ -20,7 +23,9 @@ function App() {
         <Route path="/friends" element={<Friends />} />
         <Route path="/user/:username" element={<Profile />} />
         <Route path="/tasks" element={<Tasks />} />
-
+        <Route path="/rooms" element={<Lobby />} />
+        <Route path="/rooms/:roomId" element={<Room />} />
+        <Route path="/streaks" element={<Streaks />} />
       </Routes>
     </BrowserRouter>
   );

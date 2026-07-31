@@ -11,6 +11,9 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
+from api.models.room import Room, RoomMembership
+from api.models.streak import Streak
+from api.models.task import Tag, Task
 
 # App setup
 app = Flask(__name__)
