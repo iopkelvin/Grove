@@ -14,6 +14,7 @@ from api.models.friend import Friendship
 from api.models.room import Room, RoomMembership
 from api.models.streak import Streak
 from api.models.task import Tag, Task
+from datetime import date, timedelta
 
 # App setup
 app = Flask(__name__)
