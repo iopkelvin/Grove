@@ -4,6 +4,7 @@ import CalendarViewToggle from "../components/CalendarViewToggle";
 import CalendarNav from "../components/CalendarNav";
 import CalendarWeekGrid from "../components/CalendarWeekGrid";
 import CalendarMonthGrid from "../components/CalendarMonthGrid";
+import MiniCalendar from "../components/MiniCalendar";
 
 function Calendar() {
   const [view, setView] = useState("week");
@@ -41,7 +42,9 @@ function Calendar() {
             <CalendarWeekGrid anchorDate={anchorDate} />
           )}
         </div>
-        <div className="calendar-sidebar"></div>
+        <div className="calendar-sidebar">
+          <MiniCalendar />
+        </div>
       </div>
     </div>
   );
