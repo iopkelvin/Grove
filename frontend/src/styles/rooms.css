@@ -1,0 +1,206 @@
+/* Lobby, Rooms and a single Room. */
+
+.room-population {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-body);
+  color: var(--color-text-secondary);
+}
+
+/* ── The grove: artistic representation of who is present ── */
+.grove {
+  position: relative;
+  height: 260px;
+  margin-bottom: var(--space-lg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background-color: var(--color-card-accent-background);
+}
+
+.grove-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  text-align: center;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+/* Themes tint the same scene rather than replacing it, so a new theme is
+   one rule rather than a new component. */
+.grove-theme-library {
+  background-color: var(--color-badge-background);
+}
+
+.grove-theme-cafe {
+  background-color: var(--color-card-background);
+}
+
+.grove-theme-night {
+  background-color: var(--color-card-border);
+}
+
+.grove-theme-garden {
+  background-color: var(--color-card-accent-background);
+}
+
+.grove-member {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform-origin: bottom center;
+}
+
+.grove-member-tree {
+  width: 72px;
+  height: auto;
+}
+
+.grove-member-name {
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-primary);
+}
+
+/* ── Roster ── */
+.room-roster-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.room-roster-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--color-card-border-subtle);
+}
+
+.room-roster-list li:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.room-roster-list a {
+  color: var(--color-text-primary);
+}
+
+.room-roster-streak {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+/* ── Room list ── */
+.room-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.room-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md);
+  text-decoration: none;
+  color: var(--color-text-primary);
+  transition: box-shadow 150ms ease;
+}
+
+.room-card:hover {
+  box-shadow: var(--shadow-raised);
+}
+
+.room-card-name {
+  margin: 0;
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-title);
+}
+
+.room-card-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.room-card-badge {
+  align-self: flex-start;
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-badge-background);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+/* ── Create-room form ── */
+.room-form {
+  display: grid;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+
+.room-form label {
+  display: grid;
+  gap: var(--space-xs);
+  font-size: var(--font-size-small);
+}
+
+.room-form input,
+.room-form select {
+  padding: 10px 12px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+}
+
+.room-form .primary-button {
+  justify-self: start;
+}
+
+/* ── Destructive actions ── */
+/* Visually separated from everything else, because closing a room removes
+   it for every person in it. */
+.room-danger {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  border: 1px solid var(--color-error-text);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+}
+
+.room-danger button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-badge-background);
+  color: var(--color-error-text);
+  font-family: var(--font-family-base);
+  cursor: pointer;
+}
+
+.room-danger-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}

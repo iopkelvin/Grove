@@ -1,0 +1,96 @@
+/* Settings page. */
+
+.settings-section {
+  margin-bottom: var(--space-lg);
+}
+
+.settings-hint {
+  margin: 0 0 var(--space-md);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.settings-choices {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.settings-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 16px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.settings-choice-active {
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  border-color: var(--color-button-background);
+}
+
+.settings-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-md);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.settings-toggle input {
+  margin-top: 4px;
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-button-background);
+}
+
+.settings-toggle .settings-hint {
+  margin: var(--space-xs) 0 0;
+}
+
+.settings-saved {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: var(--space-md) 0 0;
+  font-size: var(--font-size-small);
+  color: var(--color-success-text);
+}
+
+.settings-facts {
+  display: grid;
+  gap: var(--space-md);
+  margin: 0 0 var(--space-lg);
+}
+
+.settings-facts dt {
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.settings-facts dd {
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-primary);
+}
+
+.settings-logout {
+  padding: 10px 18px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.settings-logout:hover {
+  background-color: var(--color-badge-background);
+}

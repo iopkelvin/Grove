@@ -21,6 +21,9 @@ import "./styles/profile.css";
 import "./styles/auth.css";
 import "./styles/friends.css";
 import "./styles/tasks.css";
+import "./styles/streaks.css";
+import "./styles/rooms.css";
+import "./styles/settings.css";
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
