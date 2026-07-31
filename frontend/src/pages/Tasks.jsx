@@ -20,11 +20,11 @@ const INITIAL_TASKS = [
 ];
 
 export default function Tasks() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
   const [newTitle, setNewTitle] = useState("");
 
   // added caching/sessions/errors
   const { session } = useUser();
+  const [loading, setLoading] = useState(true);
   // DOCUMENTATION: https://react.dev/reference/react/useState
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
