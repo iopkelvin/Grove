@@ -1,7 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useParams } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
 import { uploadProfileImage } from "../lib/uploadImage";
+import { getUserByUsername } from "../api/users";
+import { sendFriendRequest } from "../api/friends";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
@@ -9,7 +12,13 @@ import StreakTree from "../components/StreakTree";
 import { UserPlus, Mail, Bell, Pencil } from "lucide-react";
 
 function Profile() {
-  const { session, loading, profile, updateProfile } = useUser();
+  const { username } = useParams();
+  const { session, loading, profile: myProfile, updateProfile } = useUser();
+
+  const [viewedProfile, setViewedProfile] = useState(null);
+  const [viewedProfileLoading, setViewedProfileLoading] = useState(Boolean(username));
+  const [requestSent, setRequestSent] = useState(false);
+
   const [isEditing, setIsEditing] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -18,11 +27,39 @@ function Profile() {
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(null);
 
-  if (loading) {
+  const isOwnProfile =
+    !username || (myProfile && username.toLowerCase() === myProfile.username.toLowerCase());
+
+  const loadViewedProfile = useCallback(async () => {
+    if (!username) return;
+    setViewedProfileLoading(true);
+    setViewedProfile(await getUserByUsername(username, session?.user?.id));
+    setViewedProfileLoading(false);
+  }, [username, session?.user?.id]);
+
+  useEffect(() => {
+    if (username) {
+      loadViewedProfile();
+    }
+  }, [username, loadViewedProfile]);
+
+  if (loading || (username && viewedProfileLoading)) {
     return <div className="page">Loading...</div>;
   }
 
-  const email = session?.user?.email || "";
+  if (username && !isOwnProfile && !viewedProfile) {
+    return (
+      <div className="page">
+        <MenuIcon />
+        <div className="page-content">
+          <h1 className="page-title">User not found</h1>
+        </div>
+      </div>
+    );
+  }
+
+  const profile = isOwnProfile ? myProfile : viewedProfile;
+  const email = isOwnProfile ? session?.user?.email || "" : null;
   const streak = profile?.current_streak ?? 0;
 
   async function handleImageChange(kind, e) {
@@ -47,10 +84,10 @@ function Profile() {
   }
 
   function startEditing() {
-    setFirstName(profile?.first_name || "");
-    setLastName(profile?.last_name || "");
-    setDisplayName(profile?.display_name || "");
-    setBio(profile?.bio || "");
+    setFirstName(myProfile?.first_name || "");
+    setLastName(myProfile?.last_name || "");
+    setDisplayName(myProfile?.display_name || "");
+    setBio(myProfile?.bio || "");
     setError("");
     setIsEditing(true);
   }
@@ -74,27 +111,47 @@ function Profile() {
     setIsEditing(false);
   }
 
+  async function handleAddFriend() {
+    setError("");
+    const res = await sendFriendRequest(session.user.id, viewedProfile.id);
+    if (res.ok) {
+      setRequestSent(true);
+    } else {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Failed to send friend request.");
+    }
+  }
+
+  const friendshipStatus = viewedProfile?.friendship_status;
+  const addFriendDisabled = requestSent || Boolean(friendshipStatus);
+  const addFriendLabel =
+    requestSent || friendshipStatus === "pending"
+      ? "Requested"
+      : friendshipStatus === "accepted"
+      ? "Friends"
+      : "Add Friend";
+
   return (
     <div className="page">
       <MenuIcon />
       <div className="page-content">
         <Banner
           bannerUrl={profile?.banner_url}
-          onChange={(e) => handleImageChange("banner", e)}
+          onChange={isOwnProfile ? (e) => handleImageChange("banner", e) : undefined}
         />
         {uploadingImage && <p className="profile-upload-status">Uploading {uploadingImage}...</p>}
         <div className="profile-content">
           <div className="profile-picture-wrap">
             <ProfilePicture
               avatarUrl={profile?.avatar_url}
-              onChange={(e) => handleImageChange("avatar", e)}
+              onChange={isOwnProfile ? (e) => handleImageChange("avatar", e) : undefined}
             />
             <div className="card profile-streak-card">
               <StreakTree streak={streak} />
             </div>
           </div>
           <div className="card profile-info-card">
-            {!isEditing && (
+            {isOwnProfile && !isEditing && (
               <button
                 type="button"
                 className="profile-edit-icon-button"
@@ -165,33 +222,38 @@ function Profile() {
                     <h3>Display Name:</h3>
                     <p>{profile?.display_name || "—"}</p>
                   </div>
-                  <div>
-                    <h3>Email:</h3>
-                    <p>{email}</p>
-                  </div>
+                  {isOwnProfile && (
+                    <div>
+                      <h3>Email:</h3>
+                      <p>{email}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="profile-info-bio">
                   <h3>Bio:</h3>
                   <p>{profile?.bio || "—"}</p>
                 </div>
+                {error && <p className="auth-error">{error}</p>}
               </>
             )}
           </div>
         </div>
-        <div className="profile-actions">
-          <button className="profile-action">
-            <UserPlus size={32} />
-            <p>Add Friend</p>
-          </button>
-          <button className="profile-action">
-            <Mail size={32} />
-            <p>Send Message</p>
-          </button>
-          <button className="profile-action">
-            <Bell size={32} />
-            <p>Ping</p>
-          </button>
-        </div>
+        {!isOwnProfile && (
+          <div className="profile-actions">
+            <button className="profile-action" onClick={handleAddFriend} disabled={addFriendDisabled}>
+              <UserPlus size={32} />
+              <p>{addFriendLabel}</p>
+            </button>
+            <button className="profile-action">
+              <Mail size={32} />
+              <p>Send Message</p>
+            </button>
+            <button className="profile-action">
+              <Bell size={32} />
+              <p>Ping</p>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

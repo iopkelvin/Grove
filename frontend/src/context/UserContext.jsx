@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { getFriends } from "../api/friends";
 
 const UserContext = createContext(null);
 
@@ -7,6 +8,7 @@ export function UserProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
   const fetchProfile = useCallback(async (supabaseId) => {
     if (!supabaseId) {
@@ -21,20 +23,35 @@ export function UserProvider({ children }) {
     }
   }, []);
 
+  const refreshPendingRequestCount = useCallback(async (supabaseId) => {
+    if (!supabaseId) {
+      setPendingRequestCount(0);
+      return;
+    }
+    try {
+      const requests = await getFriends(supabaseId, { status: "pending" });
+      setPendingRequestCount(requests.length);
+    } catch (err) {
+      console.error("Failed to load friend requests:", err);
+    }
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session);
       setLoading(false);
       fetchProfile(data.session?.user?.id);
+      refreshPendingRequestCount(data.session?.user?.id);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
       fetchProfile(newSession?.user?.id);
+      refreshPendingRequestCount(newSession?.user?.id);
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [fetchProfile]);
+  }, [fetchProfile, refreshPendingRequestCount]);
 
   async function logout() {
     await supabase.auth.signOut();
@@ -60,8 +77,23 @@ export function UserProvider({ children }) {
     await fetchProfile(supabaseId ?? session?.user?.id);
   }
 
+  async function refreshPendingRequests() {
+    await refreshPendingRequestCount(session?.user?.id);
+  }
+
   return (
-    <UserContext.Provider value={{ session, loading, profile, logout, updateProfile, refreshProfile }}>
+    <UserContext.Provider
+      value={{
+        session,
+        loading,
+        profile,
+        logout,
+        updateProfile,
+        refreshProfile,
+        pendingRequestCount,
+        refreshPendingRequests,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );
