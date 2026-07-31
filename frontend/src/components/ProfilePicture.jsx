@@ -1,7 +1,10 @@
-export default function ProfilePicture() {
+export default function ProfilePicture({ avatarUrl, onChange }) {
   return (
-    <label className="profile-picture">
-      <input type="file" accept="image/*" hidden />
+    <label
+      className="profile-picture"
+      style={avatarUrl ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+    >
+      <input type="file" accept="image/*" hidden onChange={onChange} />
       <span className="profile-picture-edit-icon">✎</span>
     </label>
   );
