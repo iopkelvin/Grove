@@ -31,6 +31,9 @@ def sync_user():
     supabase_id = data.get("supabase_id")
     email = data.get("email")
     username = data.get("username")
+    first_name = data.get("first_name").lower() if data.get("first_name") else None
+    last_name = data.get("last_name").lower() if data.get("last_name") else None
+    display_name = f"{first_name} {last_name}".strip() if first_name or last_name else username
 
     existing = User.query.filter_by(supabase_id=supabase_id).first()
     if existing:
@@ -40,7 +43,9 @@ def sync_user():
         supabase_id=supabase_id,
         email=email,
         username=username,
-        display_name=username,
+        first_name=first_name,
+        last_name=last_name,
+        display_name=display_name,
     )
     db.session.add(new_user)
     db.session.commit()
