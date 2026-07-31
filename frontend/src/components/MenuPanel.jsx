@@ -3,21 +3,24 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { X, Home, User, Users, CheckSquare, Share2, Calendar, Sprout, Settings, LogOut } from "lucide-react";
 import { useUser } from "../context/UserContext";
 
-const navItems = [
-  { label: "Home", path: "/", icon: Home },
-  { label: "Profile", path: "/profile", icon: User },
-  { label: "Friends", path: "/friends", icon: Users },
-  { label: "Tasks", path: "/tasks", icon: CheckSquare },
-  { label: "Rooms", path: "/rooms", icon: Share2 },
-  { label: "Calendar", path: "/calendar", icon: Calendar },
-  { label: "Streaks", path: "/streaks", icon: Sprout },
-  { label: "Settings", path: "/settings", icon: Settings },
-];
-
 export default function MenuPanel({ isOpen, onClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useUser();
+  const { logout, pendingRequestCount, profile } = useUser();
+
+  // Profile has no dedicated URL of its own — it's always your own
+  // /user/{username}, same as anyone else's. Falls back to /profile
+  // (still a valid route) if the profile hasn't loaded yet.
+  const navItems = [
+    { label: "Home", path: "/", icon: Home },
+    { label: "Profile", path: profile?.username ? `/user/${profile.username}` : "/profile", icon: User },
+    { label: "Friends", path: "/friends", icon: Users },
+    { label: "Tasks", path: "/tasks", icon: CheckSquare },
+    { label: "Rooms", path: "/rooms", icon: Share2 },
+    { label: "Calendar", path: "/calendar", icon: Calendar },
+    { label: "Streaks", path: "/streaks", icon: Sprout },
+    { label: "Settings", path: "/settings", icon: Settings },
+  ];
 
   useEffect(() => {
     function handleEscape(e) {
@@ -52,6 +55,9 @@ export default function MenuPanel({ isOpen, onClose }) {
           >
             <Icon size={22} />
             <span>{label}</span>
+            {label === "Friends" && pendingRequestCount > 0 && (
+              <span className="menu-item-badge">{pendingRequestCount}</span>
+            )}
           </Link>
         ))}
 

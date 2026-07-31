@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
+import Friends from "./pages/Friends";
 import AuthGate from "./components/RequireAuth";
 
 function App() {
@@ -15,7 +16,8 @@ function App() {
         <Route path="/signup" element={<Signup />} />
         <Route path="/login" element={<Login />} />
         <Route path="/home" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
+        <Route path="/friends" element={<Friends />} />
+        <Route path="/user/:username" element={<Profile />} />
 
       </Routes>
     </BrowserRouter>

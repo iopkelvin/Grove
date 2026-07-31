@@ -44,9 +44,10 @@
   width: 32px;
   height: 32px;
   background-color: var(--color-page-background);
+  border: 2px solid var(--color-button-background);
   border-radius: 50%;
   font-size: var(--font-size-small);
-  color: var(--color-text-primary);
+  color: var(--color-button-background);
 }
 
 /* ── Profile content row ── */
@@ -113,10 +114,10 @@
   width: 32px;
   height: 32px;
   background-color: var(--color-page-background);
-  border: 2px solid var(--color-card-border);
+  border: 2px solid var(--color-button-background);
   border-radius: 50%;
   font-size: var(--font-size-small);
-  color: var(--color-text-primary);
+  color: var(--color-button-background);
 }
 
 /* ── Profile info card ── */
@@ -184,9 +185,9 @@
   width: 36px;
   height: 36px;
   background-color: var(--color-page-background);
-  border: 2px solid var(--color-card-border);
+  border: 2px solid var(--color-button-background);
   border-radius: 50%;
-  color: var(--color-text-primary);
+  color: var(--color-button-background);
   cursor: pointer;
 }
 
@@ -274,6 +275,11 @@
   font-family: var(--font-family-base);
   color: var(--color-text-primary);
   cursor: pointer;
+}
+
+.profile-action:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .profile-action span {
