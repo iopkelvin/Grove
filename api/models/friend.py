@@ -3,16 +3,16 @@
 """
 Grove — Friendship model.
 
-Instant friendship for now 
-no request/accept flow — we can implement later if we want 
+Request/accept flow: user_id is the requester, friend_id is the recipient,
+and status starts "pending" until the recipient accepts or declines it.
 One row links two users. Because both columns point at the users table,
 SQLAlchemy needs each relationship to name its foreign_keys explicitly —
 that's the one non-obvious bit.
 
-Querying "my friends": a friendship may be stored in either direction, so
-check both columns — WHERE user_id = me OR friend_id = me. (If you'd rather
-avoid that, write two rows per friendship on creation; pick one approach and
-keep it consistent in the service.)
+Querying "my accepted friends": a friendship may be stored in either
+direction, so check both columns — WHERE user_id = me OR friend_id = me.
+Querying "my incoming requests" only checks friend_id = me, since only the
+recipient can act on a pending request.
 """
 
 from datetime import datetime, timezone
@@ -32,6 +32,9 @@ class Friendship(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     friend_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
+    # "pending" | "accepted" | "declined"
+    status = db.Column(db.String(20), nullable=False, default="pending")
+
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
     user = db.relationship("User", foreign_keys=[user_id])
@@ -47,6 +50,7 @@ class Friendship(db.Model):
             "id": self.id,
             "user_id": self.user_id,
             "friend_id": self.friend_id,
+            "status": self.status,
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 

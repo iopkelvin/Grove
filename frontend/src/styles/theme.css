@@ -1,3 +1,20 @@
+/* No CSS reset existed anywhere in this project — every element defaulted
+   to box-sizing: content-box, so padding/border get added on top of a
+   percentage width instead of being included in it. That's the recurring
+   root cause of elements silently overflowing their container on narrow
+   screens. Fixing it once, globally, instead of patching each component. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 :root {
   /* ── Page ── */
   --color-page-background: #F4F3EE;
@@ -32,4 +49,14 @@
   --font-size-body: 18px;
   --font-size-small: 15px;
   --font-weight-title: 400;
+}
+
+/* smaller type on narrow screens — every element built from these
+   tokens shrinks automatically, no per-page changes needed */
+@media (max-width: 640px) {
+  :root {
+    --font-size-title: 32px;
+    --font-size-subtitle: 20px;
+    --font-size-body: 16px;
+  }
 }

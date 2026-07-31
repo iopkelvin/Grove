@@ -18,3 +18,4 @@ frontend/.vite/
 .DS_Storeinstance/
 .DS_Store
 instance/
+frontend/.vite/
