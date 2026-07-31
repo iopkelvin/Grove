@@ -5,7 +5,7 @@
 // comes from useUser().session.user, matching the plan already noted here
 // before the backend existed.
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
@@ -13,60 +13,98 @@ import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 
 export default function Tasks() {
-  const { session, loading, refreshProfile } = useUser();
-  const supabaseId = session?.user?.id;
-
-  const [tasks, setTasks] = useState([]);
   const [newTitle, setNewTitle] = useState("");
 
-  const loadTasks = useCallback(async () => {
-    if (!supabaseId) return;
-    setTasks(await getTasks(supabaseId));
-  }, [supabaseId]);
+  // added caching/sessions/errors
+  const { session } = useUser();
+  const [loading, setLoading] = useState(true);
+  // DOCUMENTATION: https://react.dev/reference/react/useState
+  const [tasks, setTasks] = useState([]);
+  const [error, setError] = useState("");
 
+  // ADDED CRUD AND API CALLS
+  // check session and user ID
+  // loads supabase data
+  // https://react.dev/reference/react/useEffect
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    const supabaseId = session?.user?.id;
+    if (!supabaseId) return;
 
+    setLoading(true);
+    getTasks(supabaseId)
+      .then((data) => setTasks(data.map((task) => ({ ...task, done: task.completed }))))
+      .catch(() => setError("Tasks could not be loaded. Check that the Flask API is running."))
+      .finally(() => setLoading(false));
+  }, [session?.user?.id]);
+
+
+// added CRUD AND API CALL, along with error check, everything else is the same.
+// CRUD: CREATE TASK using session and caches, instead of set task
+// added error check
+// changed Date.now() to an async API call.
   async function addTask() {
     const title = newTitle.trim();
-    if (!title || !supabaseId) return;
 
-    const res = await createTask(supabaseId, { title, tags: [] });
-    if (res.ok) {
-      const task = await res.json();
-      setTasks((prev) => [task, ...prev]);
+    // check session id, add if true
+    const supabaseId = session?.user?.id;
+    if (!title|| !supabaseId) return;
+
+
+    try {
+      const task = await createTask(supabaseId, title, ["Today"]);
+      setTasks((current) => [{ ...task, done: task.completed }, ...current]);
       setNewTitle("");
+      setError("");
+    } catch {
+      setError("The task could not be created.");
     }
+    // setTasks((prev) => [
+    //   ...prev,
+    //   { id: Date.now(), title, done: false, tags: [] },
+    // ]);
+    // setNewTitle("");
   }
 
+// changed toggle task to call api and update database.
   async function toggleTask(id) {
-    const task = tasks.find((t) => t.id === id);
-    if (!task || !supabaseId) return;
+    // add task to current session
+    const supabaseId = session?.user?.id;
+    const currentTask = tasks.find((task) => task.id === id);
+    if (!supabaseId || !currentTask) return;
 
-    const nextDone = !task.done;
-    const res = await updateTask(supabaseId, id, { done: nextDone });
-    if (res.ok) {
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: nextDone } : t)));
-      // Completing a task can bump the streak — refresh so the tree/count
-      // shown elsewhere (Home, Profile) reflects it without a reload.
-      if (nextDone) {
-        refreshProfile(supabaseId);
-      }
+    // CRUD - Update tasks, adding update functionality to the tasks
+    // added catching and error debugging. 
+    try {
+      const updated = await updateTask(supabaseId, id, { completed: !currentTask.done });
+      setTasks((current) =>
+        current.map((t) => t.id === id ? { ...updated, done: updated.completed } : t)
+      );
+      setError("");
+    } catch {
+      setError("The task could not be updated.");
     }
+
+    // commented out previous update functionality.
+    // setTasks((prev) =>
+    //   prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+    // );
   }
 
   async function removeTask(id) {
+    const supabaseId = session?.user?.id;
     if (!supabaseId) return;
-    const res = await deleteTask(supabaseId, id);
-    if (res.ok) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteTask(supabaseId, id);
+      setTasks((current) => current.filter((task) => task.id !== id));
+      setError("");
+    } catch {
+      setError("Task can't be updated.");
     }
   }
-
-  if (loading) {
-    return <div className="page">Loading...</div>;
-  }
+  // added CRUD and API functionality to the delte task function.
+  // function deleteTask(id) {
+  //   setTasks((prev) => prev.filter((t) => t.id !== id));
+  // }
 
   return (
     <div className="page">
@@ -89,7 +127,14 @@ export default function Tasks() {
           </button>
         </div>
 
-        <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+        {/* added error check for the api call.*/}
+        {error && <p className="task-api-error">{error}</p>}
+        {loading ? (
+          <div className="card task-list"><p className="task-empty">Loading tasks…</p></div>
+        ) : (
+          // same as before
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+        )}
       </div>
     </div>
   );

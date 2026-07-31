@@ -12,8 +12,10 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
-from api.models.task import Task, Tag
+from api.models.room import Room, RoomMembership
 from api.models.streak import Streak
+from api.models.task import Tag, Task
+from datetime import date, timedelta
 
 # App setup
 app = Flask(__name__)
@@ -230,42 +232,112 @@ def search_users():
 
 
 # Room routes
+# allows user to get and create rooms. Will add a delete function for functionality later on.
+# get_rooms() applies a query retrieving the list of rooms to the supabase.
+# create_room() finds the hosts, checks errors and then 
+# get_room()  retrieves the room clicked on.
 @app.route("/api/rooms", methods=["GET"])
 def get_rooms():
-    pass
+    """Return rooms visible to the signed-in user.
+
+    The lobby also has clearly-commented frontend placeholder rooms so a fresh
+    database still has something useful to display during design work.
+    """
+    supabase_id = request.args.get("supabase_id")
+    user = find_user_by_supabase_id(supabase_id) if supabase_id else None
+
+    query = Room.query
+    if user:
+        query = query.outerjoin(RoomMembership).filter(
+            db.or_(
+                Room.is_global.is_(True),
+                Room.host_id == user.id,
+                RoomMembership.user_id == user.id,
+            )
+        ).distinct()
+
+    rooms = query.order_by(Room.is_global.desc(), Room.created_at.desc()).all()
+    return jsonify([room.to_dict() for room in rooms]), 200
+
 
 @app.route("/api/rooms", methods=["POST"])
 def create_room():
-    pass
+    data = request.json or {}
+    host = find_user_by_supabase_id(data.get("host_supabase_id"))
+    if not host:
+        return jsonify({"error": "User not found"}), 404
 
-@app.route("/api/rooms/<room_id>", methods=["GET"])
-def get_room(room_id):
-    pass
+    name = (data.get("name") or "").strip()
+    if not name:
+        return jsonify({"error": "Room name is required"}), 400
 
+    allowed_settings = {"campsite", "mars", "library"}
+    setting = data.get("setting", "campsite")
+    if setting not in allowed_settings:
+        return jsonify({"error": "Unknown room setting"}), 400
 
-# Task routes
-def get_or_create_tags(user, tag_names):
-    tags = []
-    for name in tag_names:
-        name = name.strip()
-        if not name:
+    try:
+        focus_minutes = int(data.get("focus_minutes", 50))
+    except (TypeError, ValueError):
+        return jsonify({"error": "focus_minutes must be a number"}), 400
+    focus_minutes = max(5, min(focus_minutes, 180))
+
+    room = Room(
+        name=name,
+        host_id=host.id,
+        setting=setting,
+        music_enabled=bool(data.get("music_enabled", True)),
+        chat_enabled=bool(data.get("chat_enabled", True)),
+        focus_minutes=focus_minutes,
+    )
+    db.session.add(room)
+    db.session.flush()
+
+    member_ids = {host.id}
+    for raw_id in data.get("invite_user_ids", []):
+        try:
+            member_ids.add(int(raw_id))
+        except (TypeError, ValueError):
             continue
-        tag = Tag.query.filter_by(user_id=user.id, name=name).first()
-        if not tag:
-            tag = Tag(user_id=user.id, name=name)
-            db.session.add(tag)
-        tags.append(tag)
-    return tags
+
+    valid_users = User.query.filter(User.id.in_(member_ids)).all()
+    for member in valid_users:
+        db.session.add(RoomMembership(user_id=member.id, room_id=room.id))
+
+    db.session.commit()
+    return jsonify(room.to_dict()), 201
 
 
+@app.route("/api/rooms/<int:room_id>", methods=["GET"])
+def get_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+    return jsonify(room.to_dict()), 200
+
+
+
+# Task routes 
+# get tasks just sends out hte get request ot the database to retrieve the list of rooms, also checks for errors and save errors.
+# create task creates a task and adds it to the database.
+# record_daily_streak allows the user to have their streak saved in the database.
+# update_task just creates a patch request to the databse.
+# delete task deletes the requested task
+# documentation: https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html
+# documentation: https://docs.sqlalchemy.org/en/20/orm/session.html
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = find_user_by_supabase_id(request.args.get("supabase_id"))
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    tasks = Task.query.filter_by(user_id=user.id).order_by(Task.created_at.desc()).all()
-    return jsonify([t.to_dict() for t in tasks]), 200
+    query = Task.query.filter_by(user_id=user.id)
+    completed = request.args.get("completed")
+    if completed in ("true", "false"):
+        query = query.filter_by(completed=completed == "true")
+
+    tasks = query.order_by(Task.completed.asc(), Task.created_at.desc()).all()
+    return jsonify([task.to_dict() for task in tasks]), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
@@ -277,51 +349,76 @@ def create_task():
 
     title = (data.get("title") or "").strip()
     if not title:
-        return jsonify({"error": "title is required"}), 400
+        return jsonify({"error": "Task title is required"}), 400
 
     task = Task(
         title=title,
         description=(data.get("description") or "").strip() or None,
         user_id=user.id,
-        tags=get_or_create_tags(user, data.get("tags") or []),
     )
+
+    tag_names = []
+    for tag_name in data.get("tags", []):
+        cleaned = str(tag_name).strip()[:40]
+        if cleaned and cleaned.lower() not in {t.lower() for t in tag_names}:
+            tag_names.append(cleaned)
+
+    for name in tag_names:
+        tag = Tag.query.filter(
+            Tag.user_id == user.id,
+            db.func.lower(Tag.name) == name.lower(),
+        ).first()
+        if not tag:
+            tag = Tag(user_id=user.id, name=name)
+        task.tags.append(tag)
+
     db.session.add(task)
     db.session.commit()
     return jsonify(task.to_dict()), 201
 
 
-# Only the task's owner can update it. Flipping "done" False -> True is
-# what bumps the streak; flipping it back off does NOT undo the bump —
-# same-day credit stays earned, matching how habit trackers usually treat
-# an accidental uncheck.
+def record_daily_streak(user):
+    """Record one active day. Multiple tasks on the same day still count once."""
+    today = date.today()
+    streak = user.streak
+    if not streak:
+        streak = Streak(user_id=user.id, current_count=0)
+        db.session.add(streak)
+
+    if streak.last_activity_date == today:
+        return
+    if streak.last_activity_date == today - timedelta(days=1):
+        streak.current_count += 1
+    else:
+        streak.current_count = 1
+    streak.last_activity_date = today
+
+
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
+    task = db.session.get(Task, task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
+
     data = request.json or {}
     user = find_user_by_supabase_id(data.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    task = Task.query.get(task_id)
-    if not task or task.user_id != user.id:
+    if not user or task.user_id != user.id:
         return jsonify({"error": "Task not found"}), 404
 
     if "title" in data:
         title = (data.get("title") or "").strip()
         if not title:
-            return jsonify({"error": "title cannot be empty"}), 400
+            return jsonify({"error": "Task title cannot be empty"}), 400
         task.title = title
 
     if "description" in data:
         task.description = (data.get("description") or "").strip() or None
 
-    if "tags" in data:
-        task.tags = get_or_create_tags(user, data.get("tags") or [])
-
-    if "done" in data:
-        newly_completed = bool(data["done"]) and not task.completed
-        task.completed = bool(data["done"])
-        if newly_completed:
-            bump_streak_for_completion(user)
+    was_completed = task.completed
+    if "completed" in data:
+        task.completed = bool(data.get("completed"))
+        if task.completed and not was_completed:
+            record_daily_streak(user)
 
     db.session.commit()
     return jsonify(task.to_dict()), 200
@@ -329,17 +426,18 @@ def update_task(task_id):
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    task = db.session.get(Task, task_id)
+    if not task:
+        return jsonify({"error": "Task not found"}), 404
 
-    task = Task.query.get(task_id)
-    if not task or task.user_id != user.id:
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user or task.user_id != user.id:
         return jsonify({"error": "Task not found"}), 404
 
     db.session.delete(task)
     db.session.commit()
     return "", 204
+# end of task routes
 
 
 # Friend routes
@@ -466,17 +564,54 @@ def remove_friend(friendship_id):
 
 
 # Streaks / Calendar routes
+# gets_streaks retrieves the streaks from the supabase database.
+# gret_streaks also updates and implements the streaks in the app.
+TREE_THRESHOLDS = [0, 3, 7, 12, 18, 25, 33] # thresholds before tree is upgraded
+
+
 @app.route("/api/streaks/<user_id>", methods=["GET"])
 def get_streaks(user_id):
-    pass
+    # The route accepts the Supabase UUID used by the frontend. Supporting the
+    # internal numeric id too makes the endpoint convenient for local testing.
+    user = find_user_by_supabase_id(user_id)
+    if not user and str(user_id).isdigit():
+        user = db.session.get(User, int(user_id))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    points = Task.query.filter_by(user_id=user.id, completed=True).count()
+    level = 1
+    for index, threshold in enumerate(TREE_THRESHOLDS, start=1):
+        if points >= threshold:
+            level = index
+
+    max_level = len(TREE_THRESHOLDS)
+    next_threshold = TREE_THRESHOLDS[level] if level < max_level else points
+    points_remaining = max(0, next_threshold - points)
+
+    return jsonify({
+        "points": points,
+        "current_streak": user.streak.current_count if user.streak else 0,
+        "last_activity_date": (
+            user.streak.last_activity_date.isoformat()
+            if user.streak and user.streak.last_activity_date
+            else None
+        ),
+        "tree_level": level,
+        "max_tree_level": max_level,
+        "next_level_points": next_threshold,
+        "points_remaining": points_remaining,
+    }), 200
+
 
 @app.route("/api/calendar/<user_id>", methods=["GET"])
 def get_calendar(user_id):
-    pass
+    return jsonify([]), 200
 
 @app.route("/")
 def index():
     return {"status": "Grove API is running"}
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)
