@@ -10,7 +10,7 @@ from flask import Blueprint, jsonify
 from api.models import DEFAULT_ROOM_THEME, MAX_ROOM_CAPACITY, ROOM_THEMES
 from api.services import room as room_service
 from api.utils.auth import current_user, require_user
-from api.utils.validation import json_body, pagination_args, validate
+from api.utils.validation import MISSING, json_body, pagination_args, validate
 
 rooms_bp = Blueprint("rooms", __name__, url_prefix="/api/rooms")
 
@@ -59,9 +59,14 @@ def create_room():
 
     fields = validate(body)
     name = fields.string("name", required=True, min_length=2, max_length=120)
-    theme = fields.one_of("theme", ROOM_THEMES) or DEFAULT_ROOM_THEME
+    theme = fields.one_of("theme", ROOM_THEMES)
     capacity = fields.integer("capacity", default=None, minimum=1, maximum=MAX_ROOM_CAPACITY)
     fields.raise_if_invalid()
+
+    # MISSING is a sentinel object and therefore truthy, so `theme or DEFAULT`
+    # would keep the sentinel. Compare against it explicitly.
+    if theme is MISSING or theme is None:
+        theme = DEFAULT_ROOM_THEME
 
     room = room_service.create_room(
         current_user(), name=name, theme=theme, capacity=capacity

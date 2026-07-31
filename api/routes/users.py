@@ -11,10 +11,17 @@ from api.utils.auth import (
     require_identity,
     require_user,
 )
-from api.utils.errors import Forbidden
+from api.utils.errors import Forbidden, ValidationError
 from api.utils.validation import MISSING, json_body, query_int, validate
 
 users_bp = Blueprint("users", __name__, url_prefix="/api/users")
+
+# Identity keys a trusted-client-mode caller may still send in the body.
+# They are consumed by the auth layer, so the profile parser has to tolerate
+# rather than reject them.
+_IGNORED_BODY_KEYS = frozenset(
+    {"supabase_id", "requester_supabase_id", "viewer_supabase_id"}
+)
 
 
 @users_bp.post("/sync")
@@ -143,6 +150,15 @@ def _parse_profile_changes(body: dict) -> dict:
     because the UI capitalises them on the way out, and storing both
     "Kelvin" and "kelvin" makes search inconsistent.
     """
+    # Unknown keys are an error rather than silently dropped. A client that
+    # PATCHes {"username": "..."} or {"current_streak": 999} deserves to be
+    # told the field is not writable, not to get a 200 and no change.
+    unknown = set(body) - set(user_service.EDITABLE_PROFILE_FIELDS) - _IGNORED_BODY_KEYS
+    if unknown:
+        raise ValidationError(
+            {field: "This field cannot be edited here." for field in sorted(unknown)}
+        )
+
     fields = validate(body)
 
     parsed = {

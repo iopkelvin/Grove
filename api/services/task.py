@@ -275,10 +275,14 @@ def update(account: User, task_id: int, changes: dict) -> tuple[Task, bool]:
         task.tags = get_or_create_tags(account, changes["tags"] or [])
 
     # mark_completed returns True only on a false -> true edge, so ticking an
-    # already-finished task off again cannot bump the streak twice.
+    # already-finished task off again does not re-enter this branch. Whether
+    # the streak *moved* is a separate question: unchecking and re-checking a
+    # task on a day that already counted is a fresh edge but must not report
+    # a bump, or the UI celebrates a number that did not change.
     if "done" in changes and task.mark_completed(bool(changes["done"])):
-        streak_service.record_completion(account)
-        bumped = True
+        before = account.streak.current_count if account.streak else 0
+        streak = streak_service.record_completion(account)
+        bumped = streak.current_count != before
 
     db.session.commit()
     return task, bumped

@@ -66,6 +66,10 @@ omit = ["api/workers/__init__.py"]
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
+# A floor, not a target. Set just below where the suite actually sits so a
+# change that guts coverage fails CI, without turning every small refactor
+# into a coverage-chasing exercise.
+fail_under = 80
 exclude_lines = [
     "pragma: no cover",
     "if TYPE_CHECKING:",

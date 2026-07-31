@@ -85,6 +85,11 @@ def list_rooms(account: User, *, limit: int = 50, offset: int = 0) -> list[Room]
     Deliberately not "every room in the database" — a room somebody made
     for their study group is not a public listing.
     """
+    # The global room is created lazily. Without this, a user who opens the
+    # Rooms page before anyone has opened the Lobby sees no shared room at
+    # all, which reads as a bug rather than as "nobody has been here yet".
+    ensure_global_room()
+
     member_room_ids = (
         db.session.query(RoomMembership.room_id)
         .filter(RoomMembership.user_id == account.id)
