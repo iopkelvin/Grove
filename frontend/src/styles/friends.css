@@ -1,0 +1,127 @@
+/* ── Search ── */
+.friends-search {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.friends-search input {
+  flex: 1;
+  padding: 12px 14px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+}
+
+.friends-search button {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+/* ── Tabs ── */
+.friends-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.friends-tab {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.friends-tab-active {
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-title);
+}
+
+/* ── List ── */
+.friends-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.friends-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+}
+
+.friends-row a {
+  color: var(--color-text-primary);
+  text-decoration: none;
+}
+
+.friends-row a:hover {
+  text-decoration: underline;
+}
+
+.friends-row button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-card-accent-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.friends-add-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.friends-add-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.friends-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.friends-accept-button,
+.friends-decline-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.friends-accept-button {
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.friends-decline-button {
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+}
