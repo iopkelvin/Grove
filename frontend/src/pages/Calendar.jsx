@@ -2,6 +2,7 @@ import { useState } from "react";
 import MenuIcon from "../components/MenuIcon";
 import CalendarViewToggle from "../components/CalendarViewToggle";
 import CalendarNav from "../components/CalendarNav";
+import CalendarGrid from "../components/CalendarGrid";
 
 function Calendar() {
   const [view, setView] = useState("week");
@@ -27,6 +28,7 @@ function Calendar() {
               onNext={() => shiftAnchor(1)}
             />
           </div>
+          <CalendarGrid view={view} anchorDate={anchorDate} />
         </div>
         <div className="calendar-sidebar"></div>
       </div>

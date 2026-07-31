@@ -63,3 +63,48 @@
   color: var(--color-text-primary);
   padding: 0;
 }
+
+.calendar-card {
+  background-color: var(--color-card-background);
+  border-radius: 24px;
+  padding: 28px 32px 32px;
+}
+
+.calendar-grid {
+  display: grid;
+}
+
+.calendar-grid-week {
+  grid-template-columns: 88px repeat(7, 1fr);
+}
+
+.calendar-grid-day {
+  grid-template-columns: 88px 1fr;
+}
+
+.calendar-day-header {
+  text-align: center;
+  font-size: var(--font-size-subtitle);
+  color: var(--color-text-primary);
+  padding-bottom: 28px;
+}
+
+.calendar-day-header-weekend {
+  color: var(--color-streak-accent);
+}
+
+.calendar-hour-label {
+  height: 73px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  padding-right: 16px;
+}
+
+.calendar-hour-cell {
+  height: 73px;
+  border-left: 1px solid var(--color-card-border);
+}
+
+.calendar-hour-cell-first {
+  border-left: none;
+}
