@@ -1,4 +1,4 @@
-import { Pencil } from "lucide-react";
+import { Pencil, UserRound } from "lucide-react";
 
 export default function ProfilePicture({ avatarUrl, onChange }) {
   return (
@@ -7,6 +7,7 @@ export default function ProfilePicture({ avatarUrl, onChange }) {
       style={avatarUrl ? { backgroundImage: `url(${avatarUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
     >
       <input type="file" accept="image/*" hidden onChange={onChange} />
+      {!avatarUrl && <UserRound className="profile-picture-placeholder-icon" />}
       <span className="profile-picture-edit-icon">
         <Pencil size={16} />
       </span>

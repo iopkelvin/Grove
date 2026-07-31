@@ -104,6 +104,14 @@
   cursor: pointer;
 }
 
+/* sized relative to the circle (not a fixed px) so it scales down
+   automatically at the 160px mobile size too */
+.profile-picture-placeholder-icon {
+  width: 45%;
+  height: 45%;
+  color: var(--color-text-secondary);
+}
+
 .profile-picture-edit-icon {
   position: absolute;
   bottom: 4px;
