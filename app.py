@@ -4,6 +4,7 @@
 # Entry point for the Flask backend. 
 # Serves the app as a pure JSON API for the React frontend to consume.
 
+from datetime import date, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -11,6 +12,8 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
+from api.models.task import Task, Tag
+from api.models.streak import Streak
 
 # App setup
 app = Flask(__name__)
@@ -35,6 +38,27 @@ if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
 
 def find_user_by_supabase_id(supabase_id):
     return User.query.filter_by(supabase_id=supabase_id).first()
+
+
+def bump_streak_for_completion(user):
+    """Completing a task bumps the streak at most once per calendar day
+    (see api/models/streak.py). Same day as last activity -> no change,
+    yesterday -> streak continues (+1), anything older -> streak restarts
+    at 1. Creates the Streak row on first use rather than at signup, so
+    existing users don't need a backfill."""
+    streak = user.streak
+    if streak is None:
+        streak = Streak(user_id=user.id, current_count=0, last_activity_date=None)
+        db.session.add(streak)
+
+    today = date.today()
+    if streak.last_activity_date == today:
+        return
+    if streak.last_activity_date == today - timedelta(days=1):
+        streak.current_count += 1
+    else:
+        streak.current_count = 1
+    streak.last_activity_date = today
 
 
 def generate_unique_username(base):
@@ -202,21 +226,102 @@ def get_room(room_id):
 
 
 # Task routes
+def get_or_create_tags(user, tag_names):
+    tags = []
+    for name in tag_names:
+        name = name.strip()
+        if not name:
+            continue
+        tag = Tag.query.filter_by(user_id=user.id, name=name).first()
+        if not tag:
+            tag = Tag(user_id=user.id, name=name)
+            db.session.add(tag)
+        tags.append(tag)
+    return tags
+
+
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
-    pass
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    tasks = Task.query.filter_by(user_id=user.id).order_by(Task.created_at.desc()).all()
+    return jsonify([t.to_dict() for t in tasks]), 200
+
 
 @app.route("/api/tasks", methods=["POST"])
 def create_task():
-    pass
+    data = request.json or {}
+    user = find_user_by_supabase_id(data.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-@app.route("/api/tasks/<task_id>", methods=["PUT"])
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+
+    task = Task(
+        title=title,
+        description=(data.get("description") or "").strip() or None,
+        user_id=user.id,
+        tags=get_or_create_tags(user, data.get("tags") or []),
+    )
+    db.session.add(task)
+    db.session.commit()
+    return jsonify(task.to_dict()), 201
+
+
+# Only the task's owner can update it. Flipping "done" False -> True is
+# what bumps the streak; flipping it back off does NOT undo the bump —
+# same-day credit stays earned, matching how habit trackers usually treat
+# an accidental uncheck.
+@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
-    pass
+    data = request.json or {}
+    user = find_user_by_supabase_id(data.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
 
-@app.route("/api/tasks/<task_id>", methods=["DELETE"])
+    task = Task.query.get(task_id)
+    if not task or task.user_id != user.id:
+        return jsonify({"error": "Task not found"}), 404
+
+    if "title" in data:
+        title = (data.get("title") or "").strip()
+        if not title:
+            return jsonify({"error": "title cannot be empty"}), 400
+        task.title = title
+
+    if "description" in data:
+        task.description = (data.get("description") or "").strip() or None
+
+    if "tags" in data:
+        task.tags = get_or_create_tags(user, data.get("tags") or [])
+
+    if "done" in data:
+        newly_completed = bool(data["done"]) and not task.completed
+        task.completed = bool(data["done"])
+        if newly_completed:
+            bump_streak_for_completion(user)
+
+    db.session.commit()
+    return jsonify(task.to_dict()), 200
+
+
+@app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    pass
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    task = Task.query.get(task_id)
+    if not task or task.user_id != user.id:
+        return jsonify({"error": "Task not found"}), 404
+
+    db.session.delete(task)
+    db.session.commit()
+    return "", 204
 
 
 # Friend routes

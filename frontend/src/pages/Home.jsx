@@ -8,7 +8,7 @@ import UpNextCard from "../components/UpNextCard";
 import TaskList from "../components/TaskList";
 
 function Home() {
-  const { loading, profile } = useUser();
+  const { session, loading, profile } = useUser();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
@@ -17,6 +17,7 @@ function Home() {
   }
 
   const firstName = capitalize(profile?.first_name) || "there";
+  const streak = profile?.current_streak ?? 0;
 
   return (
     <div className="page">
@@ -24,7 +25,7 @@ function Home() {
       <h1 className="page-title">{greeting}, {firstName}</h1>
 
       <div className="grid">
-        <StreakTree streak={0} />
+        <StreakTree streak={streak} userId={session?.user?.id} />
 
         <div className="grid-column">
           <FriendsCard friendsOnline={0} />
