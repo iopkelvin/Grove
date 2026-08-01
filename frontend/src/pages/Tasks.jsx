@@ -1,46 +1,74 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. For now it owns its task list in local state seeded with mock
-// data, because the Flask /api/tasks endpoints are still stubs (they `pass`).
-// When they're implemented, swap INITIAL_TASKS + the three handlers for fetch
-// calls — the rest of the UI won't change. If/when a task needs to be tied to
-// the signed-in user, identity comes from useUser().session.user.
+// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount and
+// keeps them in local state; add/toggle/delete call the backend, then update
+// state from the server's response. Identity is the supabase_id from
+// useUser().session.user.id — the same id the API resolves against. Task shape
+// matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Plus } from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 
-// Stand-in for the backend. Shape mirrors the Task model: id, title, done, tags.
-const INITIAL_TASKS = [
-  { id: 1, title: "Finish CS 160 hi-fi prototype", done: false, tags: ["Today", "School"] },
-  { id: 2, title: "Model Janss House roof in Rhino", done: false, tags: ["School"] },
-  { id: 3, title: "Reply to Kelvin about app.py", done: true, tags: ["Today"] },
-];
-
 export default function Tasks() {
-  const [tasks, setTasks] = useState(INITIAL_TASKS);
+  const { session, loading } = useUser();
+  const supabaseId = session?.user?.id;
+
+  const [tasks, setTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
 
-  function addTask() {
+const loadTasks = useCallback(async () => {
+  if (!supabaseId) {
+    setTasks([]);
+    setTasksLoading(false);
+    return;
+  }
+  setTasksLoading(true);
+  setTasks(await getTasks(supabaseId));
+  setTasksLoading(false);
+}, [supabaseId]);
+
+  useEffect(() => {
+    loadTasks();
+  }, [loadTasks]);
+
+  async function addTask() {
     const title = newTitle.trim();
-    if (!title) return;
-    setTasks((prev) => [
-      ...prev,
-      { id: Date.now(), title, done: false, tags: [] },
-    ]);
-    setNewTitle("");
+    if (!title || !supabaseId) return;
+    const res = await createTask(supabaseId, { title });
+    if (res.ok) {
+      const created = await res.json();
+      setTasks((prev) => [...prev, created]);
+      setNewTitle("");
+    }
   }
 
-  function toggleTask(id) {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
-    );
+  async function toggleTask(id) {
+    const task = tasks.find((t) => t.id === id);
+    if (!task) return;
+    const res = await updateTask(id, supabaseId, { completed: !task.completed });
+    if (res.ok) {
+      const updated = await res.json();
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    }
   }
 
-  function deleteTask(id) {
-    setTasks((prev) => prev.filter((t) => t.id !== id));
+  // Named removeTask (not deleteTask) so it doesn't shadow the imported deleteTask.
+  async function removeTask(id) {
+    const res = await deleteTask(id, supabaseId);
+    if (res.ok) {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    }
+  }
+
+  // Wait for auth to resolve before deciding what to show.
+  if (loading) {
+    return <div className="page">Loading...</div>;
   }
 
   return (
@@ -64,7 +92,13 @@ export default function Tasks() {
           </button>
         </div>
 
-        <TaskList tasks={tasks} onToggle={toggleTask} onDelete={deleteTask} />
+        {tasksLoading ? (
+          <div className="card task-list">
+            <p className="task-empty">Loading tasks…</p>
+          </div>
+        ) : (
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+        )}
       </div>
     </div>
   );

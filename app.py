@@ -12,6 +12,8 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
+from api.services import task as task_service # added by Kyle -- tasks service 
+
 
 # App setup
 app = Flask(__name__)
@@ -199,22 +201,51 @@ def get_room(room_id):
     pass
 
 
-# Task routes
+# Task routes - Kyle 
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
-    pass
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(task_service.list_tasks(user.id)), 200
 
 @app.route("/api/tasks", methods=["POST"])
 def create_task():
-    pass
+    data = request.json or {}
+    user = find_user_by_supabase_id(data.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    title = (data.get("title") or "").strip()
+    if not title:
+        return jsonify({"error": "title is required"}), 400
+    created = task_service.create_task(
+        user.id,
+        title=title,
+        description=(data.get("description") or None),
+        tag_names=data.get("tags"),
+    )
+    return jsonify(created), 201
 
-@app.route("/api/tasks/<task_id>", methods=["PUT"])
+@app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
-    pass
+    data = request.json or {}
+    user = find_user_by_supabase_id(data.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    fields = {k: data[k] for k in ("title", "description", "completed", "tags") if k in data}
+    updated = task_service.update_task(user.id, task_id, fields)
+    if updated is None:
+        return jsonify({"error": "Task not found"}), 404
+    return jsonify(updated), 200
 
-@app.route("/api/tasks/<task_id>", methods=["DELETE"])
+@app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    pass
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if not task_service.delete_task(user.id, task_id):
+        return jsonify({"error": "Task not found"}), 404
+    return "", 204
 
 
 # Friend routes
