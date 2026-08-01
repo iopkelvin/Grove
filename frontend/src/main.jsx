@@ -16,6 +16,8 @@ import './styles/friends.css'
 import './styles/tasks.css'
 import "./styles/home-tutorial.css";
 import "./styles/settings.css";
+import "./styles/study-rooms.css";
+import "./styles/tree.css";
 
 
 ReactDOM.createRoot(document.getElementById('root')).render(

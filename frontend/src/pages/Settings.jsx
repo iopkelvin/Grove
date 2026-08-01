@@ -3,12 +3,10 @@ import MenuIcon from "../components/MenuIcon";
 import { queueHomeTutorialReplay } from "../hooks/useHomeTutorial";
 
 export default function Settings() {
-  const manualUrl = `${import.meta.env.BASE_URL}manual.html`;
+  const manualPdfUrl = `${import.meta.env.BASE_URL}manual.pdf`;
 
   function replayHomeTutorial() {
     queueHomeTutorialReplay();
-
-    // Reload Home so the queued tutorial is consumed reliably.
     window.location.assign(import.meta.env.BASE_URL || "/");
   }
 
@@ -26,7 +24,7 @@ export default function Settings() {
             <div>
               <h2>Help and guidance</h2>
               <p>
-                Review how Grove works or replay the Home-page walkthrough.
+                Read the Grove manual or replay the Home-page tutorial.
               </p>
             </div>
           </div>
@@ -34,15 +32,13 @@ export default function Settings() {
           <div className="settings-actions">
             <a
               className="settings-action"
-              href={manualUrl}
+              href={manualPdfUrl}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               <span>
                 <strong>Open the app manual</strong>
-                <small>
-                  Read about tasks, friends, rooms, streaks, and profiles.
-                </small>
+                <small>Open the Grove PDF guide in a new tab.</small>
               </span>
 
               <ExternalLink size={20} aria-hidden="true" />
@@ -56,7 +52,7 @@ export default function Settings() {
               <span>
                 <strong>Replay the Home tutorial</strong>
                 <small>
-                  Show the guided popups over the Home dashboard again.
+                  Show the guided Home-page walkthrough again.
                 </small>
               </span>
 
