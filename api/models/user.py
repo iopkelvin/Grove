@@ -16,11 +16,10 @@ class User(db.Model):
 
     # Auth identity
     # Supabase Auth is the source of truth for login/password; supabase_id
-    # links this row to the Supabase user, and password_hash is unused.
+    # links this row to the Supabase user.
     supabase_id = db.Column(db.String(64), unique=True, nullable=False)
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
-    password_hash = db.Column(db.String(255), nullable=True)
 
     # Profile (shown on Profile + Friends pages)
     first_name = db.Column(db.String(50), nullable=False)
@@ -45,7 +44,6 @@ class User(db.Model):
     # Friendships and room memberships are reached via their own models.
 
     def to_dict(self):
-        """JSON-safe view. Never includes password_hash."""
         return {
             "id": self.id,
             "supabase_id": self.supabase_id,
