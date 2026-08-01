@@ -1,7 +1,8 @@
-const API_URL = import.meta.env.VITE_API_URL;
+import { apiFetch } from "../lib/api";
+
 // fetches tree progress from database.
 export async function getTreeProgress(supabaseId) {
-  const res = await fetch(`${API_URL}/api/streaks/${supabaseId}`);
+  const res = await apiFetch(`/api/streaks/${supabaseId}`);
   if (!res.ok) throw new Error("Could not load tree progress");
   return res.json();
 }
