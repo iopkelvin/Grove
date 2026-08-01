@@ -57,14 +57,20 @@ def create_task(user_id, title, description=None, tag_names=None):
     return task.to_dict()
 
 
-def update_task(user_id, task_id, fields):
+def update_task(user_id, task_id, fields, commit=True):
     """Partial update. `fields` only contains the keys the client actually sent
     (title / description / completed / tags), so an omitted key is left alone —
     same pattern as the update_user route. Returns (task_dict, became_completed),
     or (None, False) if no task with that id belongs to this user (route turns
     that into a 404). became_completed is True only on the false -> true edge —
     the caller uses it to decide whether to bump the streak, since re-saving an
-    already-completed task shouldn't count as completing it again."""
+    already-completed task shouldn't count as completing it again.
+
+    commit=False lets a caller fold this into a bigger transaction (e.g. the
+    streak bump) instead of committing here — otherwise SQLAlchemy expires
+    every object in the session on commit, and whatever the caller touches
+    next (like the user's streak) silently costs an extra round trip to
+    re-fetch it from scratch."""
     task = Task.query.filter_by(id=task_id, user_id=user_id).first()
     if task is None:
         return None, False
@@ -82,8 +88,15 @@ def update_task(user_id, task_id, fields):
 
     became_completed = task.completed and not was_completed
 
-    db.session.commit()
-    return task.to_dict(), became_completed
+    # Read while everything's still fresh in memory, before a commit would
+    # expire it and force a needless re-SELECT just to serialize the same
+    # values we already have.
+    result = task.to_dict()
+
+    if commit:
+        db.session.commit()
+
+    return result, became_completed
 
 
 def delete_task(user_id, task_id):

@@ -22,15 +22,18 @@ export default function TaskList({ tasks = [], onToggle, onDelete }) {
       {tasks.map((task) => (
         <div
           key={task.id}
-          className={`task-item ${task.completed ? "task-item-done" : ""}`}
+          className={`task-item ${task.done ? "task-item-done" : ""}`}
         >
-          {/* Checkbox: swaps between an empty and a checked square icon */}
+          {/* Checkbox: swaps between an empty and a checked square icon.
+              Note: the API's Task.to_dict() deliberately serializes the
+              `completed` column as "done" in the response — see the
+              comment there. Requests still send { completed: ... }. */}
           <button
             className="task-checkbox"
             onClick={() => onToggle?.(task.id)}
-            aria-label={task.completed ? "Mark task incomplete" : "Mark task complete"}
+            aria-label={task.done ? "Mark task incomplete" : "Mark task complete"}
           >
-            {task.completed ? <CheckSquare size={22} /> : <Square size={22} />}
+            {task.done ? <CheckSquare size={22} /> : <Square size={22} />}
           </button>
 
           <div className="task-body">

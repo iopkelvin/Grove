@@ -365,14 +365,18 @@ def update_task(task_id):
         return jsonify({"error": "User not found"}), 404
 
     fields = {k: data[k] for k in ("title", "description", "completed", "tags") if k in data}
-    updated, became_completed = task_service.update_task(user.id, task_id, fields)
+    # commit=False: `user` was fetched above and hasn't been touched by a
+    # commit yet, so bump_streak_for_completion below can still read
+    # user.streak without SQLAlchemy silently re-fetching it — then this
+    # route does the one commit that covers both changes together.
+    updated, became_completed = task_service.update_task(user.id, task_id, fields, commit=False)
     if updated is None:
         return jsonify({"error": "Task not found"}), 404
 
     if became_completed:
         bump_streak_for_completion(user)
-        db.session.commit()
 
+    db.session.commit()
     return jsonify(updated), 200
 
 
