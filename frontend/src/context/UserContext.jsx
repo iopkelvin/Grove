@@ -66,7 +66,12 @@ export function UserProvider({ children }) {
   }, [fetchProfile, refreshPendingRequestCount]);
 
   async function logout() {
-    await supabase.auth.signOut();
+    // scope: "local" clears this browser's session directly instead of
+    // asking Supabase's server to invalidate it first — the default
+    // "global" scope leaves the user stuck logged in if the server ever
+    // says the session's already gone (e.g. after token/session rotation),
+    // since the SDK doesn't fall back to a local clear on that failure.
+    await supabase.auth.signOut({ scope: "local" });
   }
 
   async function updateProfile(updates) {
