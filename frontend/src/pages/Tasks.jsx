@@ -1,11 +1,13 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. Backed by the real /api/tasks endpoints now — identity
-// comes from useUser().session.user, matching the plan already noted here
-// before the backend existed.
+// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount
+// and keeps them in local state; add/toggle/delete call the backend, then
+// update state from the server's response. Identity is the supabase_id from
+// useUser().session.user.id — the same id the API resolves against. Task
+// shape matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
@@ -13,58 +15,65 @@ import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 
 export default function Tasks() {
-  const { session, loading, refreshProfile } = useUser();
+  const { session, loading: authLoading } = useUser();
   const supabaseId = session?.user?.id;
 
-  const [tasks, setTasks] = useState([]);
   const [newTitle, setNewTitle] = useState("");
-
-  const loadTasks = useCallback(async () => {
-    if (!supabaseId) return;
-    setTasks(await getTasks(supabaseId));
-  }, [supabaseId]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    if (!supabaseId) return;
+
+    setTasksLoading(true);
+    getTasks(supabaseId)
+      .then(setTasks)
+      .catch(() => setError("Tasks could not be loaded. Check that the Flask API is running."))
+      .finally(() => setTasksLoading(false));
+  }, [supabaseId]);
 
   async function addTask() {
     const title = newTitle.trim();
     if (!title || !supabaseId) return;
 
-    const res = await createTask(supabaseId, { title, tags: [] });
-    if (res.ok) {
-      const task = await res.json();
-      setTasks((prev) => [task, ...prev]);
+    try {
+      const task = await createTask(supabaseId, title, ["Today"]);
+      setTasks((current) => [task, ...current]);
       setNewTitle("");
+      setError("");
+    } catch {
+      setError("The task could not be created.");
     }
   }
 
   async function toggleTask(id) {
-    const task = tasks.find((t) => t.id === id);
-    if (!task || !supabaseId) return;
+    const currentTask = tasks.find((task) => task.id === id);
+    if (!supabaseId || !currentTask) return;
 
-    const nextDone = !task.done;
-    const res = await updateTask(supabaseId, id, { done: nextDone });
-    if (res.ok) {
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, done: nextDone } : t)));
-      // Completing a task can bump the streak — refresh so the tree/count
-      // shown elsewhere (Home, Profile) reflects it without a reload.
-      if (nextDone) {
-        refreshProfile(supabaseId);
-      }
+    try {
+      const updated = await updateTask(supabaseId, id, { completed: !currentTask.completed });
+      setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
+      setError("");
+    } catch {
+      setError("The task could not be updated.");
     }
   }
 
+  // Named removeTask (not deleteTask) so it doesn't shadow the imported deleteTask.
   async function removeTask(id) {
     if (!supabaseId) return;
-    const res = await deleteTask(supabaseId, id);
-    if (res.ok) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteTask(supabaseId, id);
+      setTasks((current) => current.filter((task) => task.id !== id));
+      setError("");
+    } catch {
+      setError("Task can't be deleted.");
     }
   }
 
-  if (loading) {
+  // Wait for auth to resolve before deciding what to show.
+  if (authLoading) {
     return <div className="page">Loading...</div>;
   }
 
@@ -89,7 +98,14 @@ export default function Tasks() {
           </button>
         </div>
 
-        <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+        {error && <p className="task-api-error">{error}</p>}
+        {tasksLoading ? (
+          <div className="card task-list">
+            <p className="task-empty">Loading tasks…</p>
+          </div>
+        ) : (
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+        )}
       </div>
     </div>
   );

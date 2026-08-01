@@ -22,15 +22,15 @@ export default function TaskList({ tasks = [], onToggle, onDelete }) {
       {tasks.map((task) => (
         <div
           key={task.id}
-          className={`task-item ${task.done ? "task-item-done" : ""}`}
+          className={`task-item ${task.completed ? "task-item-done" : ""}`}
         >
           {/* Checkbox: swaps between an empty and a checked square icon */}
           <button
             className="task-checkbox"
             onClick={() => onToggle?.(task.id)}
-            aria-label={task.done ? "Mark task incomplete" : "Mark task complete"}
+            aria-label={task.completed ? "Mark task incomplete" : "Mark task complete"}
           >
-            {task.done ? <CheckSquare size={22} /> : <Square size={22} />}
+            {task.completed ? <CheckSquare size={22} /> : <Square size={22} />}
           </button>
 
           <div className="task-body">

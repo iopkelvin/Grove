@@ -22,3 +22,116 @@
 .streak-tree-ground-shadow {
   fill: rgba(0, 0, 0, 0.18);
 }
+
+/* ── Streak display: overlay layout (Home page) ── */
+/* sized off viewport height, not the grid column's width — a column-width
+   cap kept shrinking the tree to fit alongside the other cards. This is
+   deliberately allowed to overflow its column and overlap neighboring
+   cards rather than stay boxed in. The inner wrapper uses aspect-ratio
+   (instead of width-driven height:auto) so its own box still matches the
+   svg's rendered size exactly — that's what keeps the label's
+   percentage-based position lined up with the tree artwork. */
+.streak-frame {
+  height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.streak-tree-inner {
+  position: relative;
+  height: 100%;
+  aspect-ratio: 200 / 200;
+}
+
+.streak-tree-svg-large {
+  display: block;
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  margin-top: 0;
+}
+
+/* The tree's trunk is always dead-center in its viewBox (regardless of
+   streak/stage), so this offset is measured from the trunk, not the
+   canopy's edge — that's what keeps the label snug against the stem
+   instead of drifting out into the empty space beside a wide canopy. */
+.streak-frame-label {
+  position: absolute;
+  right: 12%;
+  bottom: 20%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  pointer-events: none;
+}
+
+.streak-frame-label p {
+  margin: 0 0 2px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
+}
+
+.streak-frame-label .streak-number {
+  font-size: 22px;
+  color: var(--color-text-primary);
+}
+
+/* ── Medium screens ── */
+/* below this, a viewport-height-driven tree can get wide enough (via its
+   aspect ratio) to overflow a narrower window with no way to scroll to
+   it, since .page clips horizontal overflow — cap it by width instead
+   of height so it always fits inside the (now single) grid column */
+@media (max-width: 1100px) and (min-width: 641px) {
+  .streak-frame {
+    height: auto;
+  }
+
+  .streak-tree-inner {
+    height: auto;
+    aspect-ratio: 200 / 200;
+    max-width: 420px;
+  }
+
+  .streak-tree-svg-large {
+    height: auto;
+  }
+}
+
+@media (max-width: 640px) {
+  /* height-driven sizing (like the desktop tier uses) computes its width
+     from the SQUARE aspect-ratio times that height — on a narrow-but-tall
+     phone, 50% of viewport height alone is often wider than the whole
+     screen. That oversized child then forces the single grid column
+     wider too, cutting off the cards sharing that row. Width-capped
+     instead, same as the medium-screen tier. */
+  .streak-frame {
+    height: auto;
+  }
+
+  .streak-tree-inner {
+    height: auto;
+    aspect-ratio: 200 / 200;
+    max-width: 260px;
+  }
+
+  .streak-tree-svg-large {
+    height: auto;
+  }
+
+  /* the label's own font size doesn't shrink with the tree, so at this
+     smaller scale it needs to be smaller (and nudged right) or it
+     crowds into the trunk */
+  .streak-frame-label {
+    right: 8%;
+  }
+
+  .streak-frame-label p {
+    font-size: 9px;
+  }
+
+  .streak-frame-label .streak-number {
+    font-size: 15px;
+  }
+}

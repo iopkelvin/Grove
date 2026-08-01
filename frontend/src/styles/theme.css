@@ -60,3 +60,23 @@ body {
     --font-size-body: 16px;
   }
 }
+
+:root {
+  /* ── Study rooms / tree ── */
+  --color-surface-soft: #E7EAE4;
+  --color-surface-warm: #ECE9DF;
+  --color-surface-strong: #C7D2C9;
+  --color-surface-white: #FFFDF7;
+  --color-study-ink: #17342C;
+  --color-study-muted: #66736C;
+  --color-study-line: #BCC8BF;
+  --color-study-online: #2E6D50;
+  --color-study-task: #C7E7F4;
+  --color-study-points: #C9F2CF;
+  --color-study-scene: #21142B;
+  --color-study-overlay: rgba(15, 20, 17, 0.56);
+  --color-study-overlay-soft: rgba(255, 253, 247, 0.84);
+  --color-tree-night: #142B4B;
+  --color-tree-card: rgba(244, 243, 238, 0.90);
+  --color-tree-water: #7EB9DE;
+}

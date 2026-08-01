@@ -50,7 +50,7 @@ export default function MenuPanel({ isOpen, onClose }) {
           <Link
             key={label}
             to={path}
-            className={`menu-item ${location.pathname === path ? "menu-item-active" : ""}`}
+            className={`menu-item ${location.pathname === path || (path !== "/" && location.pathname.startsWith(`${path}/`)) ? "menu-item-active" : ""}`}
             onClick={onClose}
           >
             <Icon size={22} />
