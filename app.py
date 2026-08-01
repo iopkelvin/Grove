@@ -26,13 +26,10 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 migrate = Migrate(app, db)
 
-# Zero-setup local SQLite gets its tables auto-created on startup. A real
-# database (DATABASE_URL set, e.g. Supabase Postgres) is expected to be
-# managed with `flask db upgrade` instead, so schema changes are tracked
-# migrations rather than "delete the file and let create_all rebuild it".
-# Checked against the resolved URI (not the raw env var) so a blank
-# DATABASE_URL — which database.py already treats as unset — doesn't
-# accidentally skip auto-create too.
+# Local SQLite auto-creates its tables on startup (zero setup). A real
+# database is expected to be managed with `flask db upgrade` migrations
+# instead — checked against the resolved URI so a blank DATABASE_URL
+# (already treated as "unset" by database.py) doesn't skip auto-create too.
 if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
     with app.app_context():
         db.create_all()
@@ -129,13 +126,10 @@ def search_users():
 
 
 # Room routes
+# Global room + rooms the user hosts or is a member of. (The Lobby page
+# also shows its own placeholder rooms so a fresh database isn't empty.)
 @app.route("/api/rooms", methods=["GET"])
 def get_rooms():
-    """Return rooms visible to the signed-in user.
-
-    The lobby also has clearly-commented frontend placeholder rooms so a fresh
-    database still has something useful to display during design work.
-    """
     supabase_id = request.args.get("supabase_id")
     user = user_service.find_by_supabase_id(supabase_id) if supabase_id else None
     rooms = room_service.list_visible(user)
@@ -184,11 +178,9 @@ def get_room(room_id):
 
 
 # Task routes
-# Thin routes — everything that touches the database lives in
-# api/services/task.py (ownership checks included). The one thing that
-# lives here instead is the streak bump: it's a cross-cutting side effect
-# of completion, not really a "task" concern, and it needs the full User
-# object that streak_service.bump_for_completion() expects.
+# Thin routes — DB work lives in api/services/task.py. The one exception is
+# the streak bump: a cross-cutting side effect of completion, not a "task"
+# concern, and it needs the full User object bump_for_completion() expects.
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = user_service.find_by_supabase_id(request.args.get("supabase_id"))
