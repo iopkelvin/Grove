@@ -1,0 +1,137 @@
+.home-tour-blocker {
+  background: transparent;
+  inset: 0;
+  position: fixed;
+  z-index: 1000;
+}
+
+.home-tour-highlight {
+  border: 3px solid var(--color-button-background);
+  border-radius: 18px;
+  box-shadow: 0 0 0 9999px rgba(10, 20, 15, 0.65);
+  pointer-events: none;
+  position: fixed;
+  transition: top 0.2s ease, left 0.2s ease, width 0.2s ease,
+    height 0.2s ease;
+  z-index: 1001;
+}
+
+.home-tour-popover {
+  background: var(--color-surface-white);
+  border: 1px solid var(--color-study-line);
+  border-radius: 18px;
+  box-shadow: 0 18px 55px rgba(0, 0, 0, 0.25);
+  color: var(--color-study-ink);
+  font-family: var(--font-family-base);
+  padding: 24px;
+  position: fixed;
+  z-index: 1002;
+}
+
+.home-tour-close {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  padding: 4px;
+  position: absolute;
+  right: 14px;
+  top: 14px;
+}
+
+.home-tour-icon {
+  align-items: center;
+  background: var(--color-surface-strong);
+  border-radius: 14px;
+  display: flex;
+  height: 54px;
+  justify-content: center;
+  margin-bottom: 16px;
+  width: 54px;
+}
+
+.home-tour-step {
+  color: var(--color-study-muted);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  margin: 0 0 6px;
+  text-transform: uppercase;
+}
+
+.home-tour-popover h2 {
+  font-size: 25px;
+  font-weight: var(--font-weight-title);
+  margin: 0 32px 10px 0;
+}
+
+.home-tour-description {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.home-tour-actions {
+  align-items: center;
+  display: flex;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.home-tour-button {
+  align-items: center;
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  gap: 5px;
+  justify-content: center;
+  padding: 9px 14px;
+}
+
+.home-tour-button-primary {
+  background: var(--color-button-background);
+  border: 1px solid var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.home-tour-button-secondary {
+  background: transparent;
+  border: 1px solid var(--color-study-line);
+  color: var(--color-text-primary);
+}
+
+.home-tour-button-secondary:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+
+.home-tour-manual-link {
+  color: var(--color-study-muted);
+  font-size: var(--font-size-small);
+  text-decoration: none;
+}
+
+.home-tour-manual-link:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 500px) {
+  .home-tour-popover {
+    padding: 20px;
+  }
+
+  .home-tour-actions {
+    flex-wrap: wrap;
+  }
+
+  .home-tour-manual-link {
+    order: 3;
+    text-align: center;
+    width: 100%;
+  }
+}
