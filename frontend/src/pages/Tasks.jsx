@@ -52,7 +52,7 @@ export default function Tasks() {
     if (!supabaseId || !currentTask) return;
 
     try {
-      const updated = await updateTask(supabaseId, id, { completed: !currentTask.completed });
+      const updated = await updateTask(supabaseId, id, { completed: !currentTask.done });
       setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
       setError("");
     } catch {
