@@ -27,7 +27,11 @@ function readStoredTheme() {
 }
 
 function prefersDark() {
-  return window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false;
+  // Both `?.` are load-bearing: the second guards environments where
+  // matchMedia exists but returns nothing useful, which is the case in
+  // jsdom and in a few older mobile browsers. Without it this throws
+  // during the very first render and takes the whole app down.
+  return window.matchMedia?.("(prefers-color-scheme: dark)")?.matches ?? false;
 }
 
 export function ThemeProvider({ children }) {
