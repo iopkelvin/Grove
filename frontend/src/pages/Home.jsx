@@ -10,6 +10,8 @@ import MiniCalendar from "../components/MiniCalendar";
 import UpNextCard from "../components/UpNextCard";
 import TaskList from "../components/TaskList";
 import UndoToast from "../components/UndoToast";
+import HomeTutorial from "../components/HomeTutorial";
+import useHomeTutorial from "../hooks/useHomeTutorial";
 
 // Prefer the soonest-due incomplete task; if nothing has a due date, fall
 // back to the oldest incomplete one (tasks arrive oldest-first already).
@@ -22,6 +24,10 @@ function pickNextTask(tasks) {
 function Home() {
   const { session, loading, profile } = useUser();
   const supabaseId = session?.user?.id;
+  const { showTutorial, completeTutorial, closeTutorial } = useHomeTutorial(
+    supabaseId,
+    loading
+  );
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
@@ -49,22 +55,41 @@ function Home() {
   return (
     <div className="page">
       <MenuIcon />
+
       <h1 className="page-title">{greeting}, {firstName}</h1>
 
       <div className="grid">
-        <StreakTree streak={streak} userId={supabaseId} layout="overlay" />
-
-        <div className="grid-column">
-          <FriendsCard friendsOnline={friendsOnline} />
-          <MiniCalendar />
+        <div data-home-tour="streak">
+          <StreakTree streak={streak} userId={supabaseId} layout="overlay" />
         </div>
 
         <div className="grid-column">
-          <UpNextCard task={nextTask} />
+          <div data-home-tour="friends">
+            <FriendsCard friendsOnline={friendsOnline} />
+          </div>
+
+          <div data-home-tour="calendar">
+            <MiniCalendar />
+          </div>
+        </div>
+
+        <div className="grid-column">
+          <div data-home-tour="up-next">
+            <UpNextCard task={nextTask} />
+          </div>
           <UndoToast task={pendingDelete} onUndo={undoDelete} />
-          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} onEdit={editTask} />
+          <div data-home-tour="tasks">
+            <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} onEdit={editTask} />
+          </div>
         </div>
       </div>
+
+      {showTutorial && (
+        <HomeTutorial
+          onComplete={completeTutorial}
+          onClose={closeTutorial}
+        />
+      )}
     </div>
   );
 }

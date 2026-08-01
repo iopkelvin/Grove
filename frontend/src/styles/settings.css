@@ -1,0 +1,68 @@
+.settings-content {
+  max-width: 760px;
+}
+
+.settings-section {
+  padding: 28px;
+}
+
+.settings-section-heading {
+  align-items: flex-start;
+  display: flex;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.settings-section-heading h2 {
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-title);
+  margin: 0 0 6px;
+}
+
+.settings-section-heading p {
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.settings-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-action {
+  align-items: center;
+  background: var(--color-page-background);
+  border: 1px solid var(--color-study-line);
+  border-radius: 12px;
+  color: var(--color-text-primary);
+  display: flex;
+  font-family: var(--font-family-base);
+  justify-content: space-between;
+  padding: 16px 18px;
+  text-align: left;
+  text-decoration: none;
+  width: 100%;
+}
+
+.settings-action-button {
+  cursor: pointer;
+}
+
+.settings-action:hover {
+  border-color: var(--color-button-background);
+}
+
+.settings-action span {
+  display: grid;
+  gap: 4px;
+}
+
+.settings-action strong {
+  font-size: var(--font-size-body);
+  font-weight: 600;
+}
+
+.settings-action small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
