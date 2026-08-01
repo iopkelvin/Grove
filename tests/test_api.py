@@ -3,9 +3,15 @@ Focused backend test suite — covers the core workflows, not every route.
 
 Picked to match what actually matters for Grove: account creation, the
 task -> streak loop (including the once-per-day rule, which is easy to
-get wrong), the friend request flow, and the two places the backend is
-supposed to protect user data (another user's task, another user's email).
+get wrong), recurring/habit tasks, the friend request flow, and the two
+places the backend is supposed to protect user data (another user's
+task, another user's email).
 """
+
+from datetime import date, timedelta
+
+from api.config.database import db
+from api.models.task import Task
 
 
 def sync_user(client, supabase_id, username, first_name="a", last_name="a"):
@@ -86,6 +92,87 @@ def test_uncompleting_a_task_does_not_reduce_the_streak(client):
 
     assert res.status_code == 200
     assert get_streak(client, "sb-1") == 1
+
+
+# ── Due dates + recurring tasks ──────────────────────────────────────
+
+def test_due_date_is_stored_and_returned(client):
+    sync_user(client, "sb-1", "alice")
+    res = client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Submit report", "due_date": "2026-08-15"},
+    )
+    assert res.get_json()["due_date"] == "2026-08-15"
+
+
+def test_completing_a_recurring_task_bumps_streak(client):
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+    ).get_json()
+    assert task["done"] is False
+
+    complete_task(client, "sb-1", task["id"])
+
+    assert get_streak(client, "sb-1") == 1
+    tasks = client.get("/api/tasks?supabase_id=sb-1").get_json()
+    assert tasks[0]["done"] is True
+
+
+def test_recurring_task_resets_the_next_day(client):
+    """A recurring task's "done" state is derived from whether it was
+    completed today, not a flag someone has to reset — completing it
+    yesterday shouldn't still show as done today."""
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+    ).get_json()
+    complete_task(client, "sb-1", task["id"])
+
+    row = Task.query.get(task["id"])
+    row.last_completed_date = date.today() - timedelta(days=1)
+    db.session.commit()
+
+    tasks = client.get("/api/tasks?supabase_id=sb-1").get_json()
+    assert tasks[0]["done"] is False
+
+
+def test_completing_a_recurring_task_again_the_next_day_bumps_streak_again(client):
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+    ).get_json()
+    complete_task(client, "sb-1", task["id"])
+    assert get_streak(client, "sb-1") == 1
+
+    # simulate yesterday's streak activity so today's completion continues
+    # the streak (+1) instead of restarting it — isolates the recurring
+    # reset behavior from the separate once-per-day streak rule.
+    row = Task.query.get(task["id"])
+    row.last_completed_date = date.today() - timedelta(days=1)
+    from api.models.streak import Streak
+    streak_row = Streak.query.filter_by(user_id=row.user_id).first()
+    streak_row.last_activity_date = date.today() - timedelta(days=1)
+    db.session.commit()
+
+    complete_task(client, "sb-1", task["id"])
+
+    assert get_streak(client, "sb-1") == 2
+
+
+def test_creating_a_task_with_new_tags_makes_them_listable(client):
+    """Covers the create-task form's tag picker: tags typed for a new
+    task should show up in GET /api/tags for next time, not just live on
+    that one task."""
+    sync_user(client, "sb-1", "alice")
+    client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Read", "tags": ["School", "Today"]},
+    )
+
+    tags = client.get("/api/tags?supabase_id=sb-1").get_json()
+
+    assert sorted(t["name"] for t in tags) == ["School", "Today"]
 
 
 # ── Friend requests ───────────────────────────────────────────────────
