@@ -8,9 +8,8 @@ import { getTasks } from "../api/tasks";
 import { createRoom, getRooms } from "../api/rooms";
 import { capitalize } from "../lib/format";
 
-// PLACEHOLDER ROOMS: remove these once the database has seeded public rooms
-// and finished artwork for every map. These keep the lobby usable in a fresh DB.
-// to be removed for production
+// Shown only until the database has seeded public rooms and finished
+// artwork for every map — keeps the lobby usable on a fresh DB.
 const PLACEHOLDER_ROOMS = [
   {
     id: "campsite-61c",
@@ -55,9 +54,7 @@ const PLACEHOLDER_ROOMS = [
   },
 ];
 
-// PLACEHOLDER FRIENDS: shown only when the signed-in account does not yet have
-// accepted friends in the database. Replace naturally as friend data arrives.
-// to be removed for production
+// Shown only when the signed-in account has no accepted friends yet.
 const PLACEHOLDER_FRIENDS = [
   { id: "placeholder-friend-1", display_name: "Jeff", username: "jeff", is_online: true },
   { id: "placeholder-friend-2", display_name: "John", username: "john", is_online: false },
@@ -65,28 +62,13 @@ const PLACEHOLDER_FRIENDS = [
   { id: "placeholder-friend-4", display_name: "Julia", username: "julia", is_online: false },
 ];
 
-// PLACEHOLDER TASKS: used only while the API is unavailable or before a user
-// creates their first task. They are intentionally marked as placeholders.
-// to be removed for production
+// Shown only while the API is unavailable or before a user creates their
+// first task.
 const PLACEHOLDER_TASKS = [
   { id: "placeholder-task-1", title: "Finish your first Grove task", completed: false },
   { id: "placeholder-task-2", title: "Invite a friend to study", completed: false },
   { id: "placeholder-task-3", title: "Water your tree", completed: false },
 ];
-
-
-// Create Room Modal
-// use state variables store the room name, map, friend search, selected friends, music/chat chache toggles, and timer lenght cache.
-// DOCUMENTATION for USE STATE
-// [React useState](https://react.dev/reference/react/useState)
-// [React input state](https://react.dev/reference/react-dom/components/input)
-// use memo derived the filtered friend list.
-// DOCUMENTATION for USE_STATE
-// https://react.dev/reference/react/useMemo
-// Added toggle for the checkboxes to updaed the room array.
-// form submission to update the room.
-// Added overlay click to close.
-// form controls like label, input, select, fieldset, and legent to add functionality to the form.
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [name, setName] = useState("My Study Room");
@@ -222,10 +204,6 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
     </div>
   );
 }
-//Lobby 
-// every thing loads at the same time for all the users for their session storages.
-// session documentation:
-// https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
 
 export default function Lobby() {
   const navigate = useNavigate();
@@ -259,6 +237,8 @@ export default function Lobby() {
   const displayedFriends = friends.length ? friends : PLACEHOLDER_FRIENDS;
   const firstName = capitalize(profile?.first_name) || "there";
 
+  // Router state carries `room` on navigation, but a page refresh loses it —
+  // sessionStorage is the fallback Room.jsx reads from in that case.
   function openRoom(room) {
     sessionStorage.setItem(`grove-room-${room.id}`, JSON.stringify(room));
     navigate(`/rooms/${room.id}`, { state: { room } });
