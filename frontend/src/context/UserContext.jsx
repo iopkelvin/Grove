@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { apiFetch } from "../api/client";
 import { getFriends } from "../api/friends";
@@ -37,18 +37,29 @@ export function UserProvider({ children }) {
     }
   }, []);
 
+  const lastUserId = useRef(undefined);
+
   useEffect(() => {
+    // Supabase also fires this listener on silent token refreshes, which
+    // happen periodically for a still-signed-in user. Only refetch profile
+    // and pending requests when the signed-in user actually changes (sign
+    // in, sign out, switch account) — not on every token refresh.
+    function handleSession(newSession) {
+      setSession(newSession);
+      const userId = newSession?.user?.id;
+      if (userId === lastUserId.current) return;
+      lastUserId.current = userId;
+      fetchProfile(userId);
+      refreshPendingRequestCount(userId);
+    }
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      handleSession(data.session);
       setLoading(false);
-      fetchProfile(data.session?.user?.id);
-      refreshPendingRequestCount(data.session?.user?.id);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      fetchProfile(newSession?.user?.id);
-      refreshPendingRequestCount(newSession?.user?.id);
+      handleSession(newSession);
     });
 
     return () => listener.subscription.unsubscribe();
