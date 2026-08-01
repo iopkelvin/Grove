@@ -244,25 +244,19 @@ export default function Lobby() {
     navigate(`/rooms/${room.id}`, { state: { room } });
   }
 
-
-// create room
-//  checks errors
-//  detects loaded friends
-//  calls backend when user exists
-//  checks time and user
-//  adds user to the room
-// async doc: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-// error catching: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch
-// date now doc: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
   async function handleCreateRoom(formValues) {
     setCreating(true);
     setCreateError("");
 
     try {
       let room;
-      const hasOnlyPlaceholderFriends = formValues.selected_placeholder_friends.every(
-        (friend) => typeof friend.id !== "number"
-      );
+      // .every() on an empty array is vacuously true, so this only counts as
+      // "placeholder-only" when at least one friend was actually selected —
+      // otherwise a real room with zero invitees would wrongly get treated
+      // as a placeholder-preview room below.
+      const hasOnlyPlaceholderFriends =
+        formValues.selected_placeholder_friends.length > 0 &&
+        formValues.selected_placeholder_friends.every((friend) => typeof friend.id !== "number");
 
       if (session?.user?.id) {
         room = await createRoom({
