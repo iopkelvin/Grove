@@ -91,7 +91,7 @@
   z-index: 3;
   top: 24%;
   left: 50%;
-  color: var(--color-surface-white);
+  color: var(--color-scene-foreground);
   font-size: 42px;
   transform: translateX(-50%);
   animation: tree-sparkle 1.2s ease-in-out infinite alternate;
@@ -222,7 +222,7 @@
   border: 1px solid var(--color-study-overlay-soft);
   border-radius: 999px;
   background-color: var(--color-study-overlay);
-  color: var(--color-surface-white);
+  color: var(--color-scene-foreground);
   transform: translateX(-50%);
   backdrop-filter: blur(8px);
   align-items: center;
