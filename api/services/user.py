@@ -2,8 +2,6 @@
 Grove — User service.
 
 Data layer for users: lookups, signup sync, profile updates, and search.
-Routes in app.py stay thin and only deal with HTTP; everything that touches
-the database lives here, same split as api/services/task.py.
 """
 
 from api.config.database import db
@@ -72,22 +70,17 @@ def update_profile(user, data):
         if not first_name:
             return None, "first_name cannot be empty"
         user.first_name = first_name
-
     if "last_name" in data:
         last_name = (data.get("last_name") or "").strip().lower()
         if not last_name:
             return None, "last_name cannot be empty"
         user.last_name = last_name
-
     if "display_name" in data:
         user.display_name = (data.get("display_name") or "").strip() or None
-
     if "bio" in data:
         user.bio = (data.get("bio") or "").strip() or None
-
     if "avatar_url" in data:
         user.avatar_url = (data.get("avatar_url") or "").strip() or None
-
     if "banner_url" in data:
         user.banner_url = (data.get("banner_url") or "").strip() or None
 
