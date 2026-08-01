@@ -101,6 +101,8 @@ function Friends() {
     setError("");
     try {
       setResults(await searchUsers(query.trim(), supabaseId));
+    } catch {
+      setError("Search failed. Please try again.");
     } finally {
       setSearching(false);
     }
@@ -123,6 +125,8 @@ function Friends() {
       await loadRequests();
       await refreshPendingRequests();
       if (status === "accepted") await loadFriends();
+    } else {
+      setError("Failed to respond to friend request.");
     }
   }
 
@@ -130,6 +134,8 @@ function Friends() {
     const res = await removeFriend(friendshipId, supabaseId);
     if (res.ok) {
       await loadFriends();
+    } else {
+      setError("Failed to remove friend.");
     }
   }
 
