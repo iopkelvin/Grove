@@ -44,13 +44,15 @@ export function useTasks(supabaseId) {
 
   async function addTask(title, options) {
     const trimmed = title.trim();
-    if (!trimmed || !supabaseId) return;
+    if (!trimmed || !supabaseId) return false;
     try {
       const task = await createTask(supabaseId, trimmed, options);
       setTasks((current) => [task, ...current]);
       setError("");
+      return true;
     } catch {
       setError("The task could not be created.");
+      return false;
     }
   }
 

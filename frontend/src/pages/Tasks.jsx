@@ -26,14 +26,14 @@ export default function Tasks() {
 
   async function handleCreate(fields) {
     setCreating(true);
-    await addTask(fields.title, {
+    const created = await addTask(fields.title, {
       description: fields.description,
       tags: fields.tags,
       dueDate: fields.dueDate,
       recurring: fields.recurring,
     });
     setCreating(false);
-    setShowModal(false);
+    if (created) setShowModal(false);
   }
 
   // Wait for auth to resolve before deciding what to show.
