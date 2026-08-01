@@ -16,7 +16,7 @@ Tag lives here (not its own file) because it's part of the tasks feature.
 Split into api/models/tag.py later if we prefer one-per-file.
 """
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from api.config.database import db
 
@@ -62,6 +62,12 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, nullable=True)   # body, opens on click
     completed = db.Column(db.Boolean, default=False, nullable=False)
+    due_date = db.Column(db.Date, nullable=True)
+
+    # Habit-style tasks: "done today" is derived from last_completed_date
+    # vs today's date, so it self-resets with no daily job needed.
+    recurring = db.Column(db.Boolean, default=False, nullable=False)
+    last_completed_date = db.Column(db.Date, nullable=True)
 
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
@@ -71,6 +77,12 @@ class Task(db.Model):
     # Many-to-many. backref gives each Tag a .tasks list for free.
     tags = db.relationship("Tag", secondary=task_tags, backref="tasks")
 
+    @property
+    def is_done_today(self):
+        if self.recurring:
+            return self.last_completed_date == date.today()
+        return self.completed
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -79,11 +91,13 @@ class Task(db.Model):
             # frontend/src/pages/Tasks.jsx already expects "done" (built
             # against mock data before the API existed) — matching that
             # here means nothing on the frontend needs to change.
-            "done": self.completed,
+            "done": self.is_done_today,
+            "recurring": self.recurring,
+            "due_date": self.due_date.isoformat() if self.due_date else None,
             "user_id": self.user_id,
             "tags": [tag.name for tag in self.tags],
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
     def __repr__(self):
-        return f"<Task {self.title!r} done={self.completed}>"
+        return f"<Task {self.title!r} done={self.is_done_today}>"
