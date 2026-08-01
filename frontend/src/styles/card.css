@@ -7,13 +7,3 @@
   padding: 24px;
   color: var(--color-text-primary);
 }
-
-/* ── Accent card ── */
-/* used for banners, titled sections, or anything that should stand out slightly darker */
-.card-accent {
-  box-sizing: border-box;
-  background-color: var(--color-card-accent-background);
-  border-radius: 16px;
-  padding: 24px;
-  color: var(--color-text-primary);
-}
