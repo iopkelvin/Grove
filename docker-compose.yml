@@ -1,1 +1,76 @@
-# Kelvin
+# Local development stack.
+#
+# Previously one comment line, so `docker compose up` did nothing.
+#
+# Three services: Postgres, the Flask API, and the built frontend behind
+# nginx. Running against real Postgres locally is the point — the SQLite
+# fallback is convenient but it is not what production uses, and the
+# differences (case sensitivity, date handling, constraint behaviour) are
+# exactly the kind of thing that only shows up after deploying.
+#
+#   docker compose up --build          everything
+#   docker compose up db               just Postgres, run Flask on the host
+#   docker compose exec api flask --app app db upgrade
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: grove
+      POSTGRES_PASSWORD: grove
+      POSTGRES_DB: grove
+    ports:
+      # 5433 on the host: 5432 is very often already taken by a local
+      # Postgres, and the resulting "port is allocated" error is confusing.
+      - "5433:5432"
+    volumes:
+      - grove-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grove -d grove"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        # Waits for Postgres to accept connections, not merely to start.
+        # Without this the API boots first, fails to connect, and exits.
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://grove:grove@db:5432/grove
+      FLASK_ENV: development
+      LOG_LEVEL: INFO
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8080
+      # Set this in a .env file next to this one to exercise real token
+      # verification locally. Unset means trusted-client mode, which the
+      # API warns about on every startup.
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+    ports:
+      - "5000:5000"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Empty: nginx and the API are on different ports here, so the
+        # browser needs the absolute API origin.
+        VITE_API_URL: http://localhost:5000
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:-}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:-}
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  grove-db:

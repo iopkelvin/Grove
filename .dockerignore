@@ -1,0 +1,24 @@
+# Keeps the build context small and keeps secrets out of images.
+.git
+.github
+node_modules
+frontend/node_modules
+frontend/dist
+__pycache__
+*.py[cod]
+.pytest_cache
+.ruff_cache
+.coverage
+coverage.xml
+htmlcov
+venv
+.venv
+*.db
+*.sqlite3
+instance
+.env
+*.env
+!.env.example
+docs
+tests
+README.md

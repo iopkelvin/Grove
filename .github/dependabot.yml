@@ -1,0 +1,38 @@
+# Dependency updates.
+#
+# Grouped and monthly rather than per-package and daily: five people sharing
+# one repository will ignore a stream of individual bumps, and an ignored
+# bot is worse than no bot. Security updates are not grouped — those should
+# arrive on their own and be obvious.
+
+version: 2
+
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      python-minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: npm
+    directory: "/frontend"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    groups:
+      js-minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: "deps"
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "ci"

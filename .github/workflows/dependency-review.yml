@@ -1,0 +1,27 @@
+# Blocks a pull request that introduces a dependency with a known
+# vulnerability, or one whose licence we cannot use.
+#
+# Cheap to run and it catches the problem at the moment somebody adds the
+# package, which is the only time it is easy to pick a different one.
+
+name: Dependency review
+
+on:
+  pull_request:
+    branches: [main, development]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          deny-licenses: AGPL-3.0, GPL-3.0

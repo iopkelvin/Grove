@@ -142,13 +142,52 @@ def _init_extensions(app: Flask, settings: Config) -> None:
 
     from api import models  # noqa: F401 — registers every table
 
-    # A local SQLite file gets its tables created on boot, so a fresh clone
-    # runs with no setup step. A real database is expected to be managed
-    # with `flask db upgrade`, so schema changes stay tracked migrations
-    # rather than "delete the file and let create_all rebuild it".
     if settings.is_sqlite:
         with app.app_context():
-            db.create_all()
+            _bootstrap_sqlite_schema(app)
+
+
+def _bootstrap_sqlite_schema(app: Flask) -> None:
+    """Give a local SQLite database its tables, once, without breaking Alembic.
+
+    A fresh clone should run with no setup step, which is what `create_all()`
+    is for. But calling it unconditionally made `flask db upgrade` impossible
+    against SQLite: create_app runs first, builds every table, and the
+    initial migration then fails with "table users already exists".
+
+    So it only runs when the database has never been touched — no
+    alembic_version table — and immediately stamps the revision as head
+    afterwards. The result is a database that create_all built but that
+    Alembic considers fully migrated, so a later `flask db upgrade` applies
+    exactly the revisions added since, and `flask db downgrade` works too.
+
+    A real database (DATABASE_URL set) never reaches this: it is managed
+    entirely with migrations.
+    """
+    from sqlalchemy import inspect
+
+    inspector = inspect(db.engine)
+    if inspector.has_table("alembic_version"):
+        return
+
+    db.create_all()
+
+    # Tests run against a private in-memory database and never migrate it;
+    # stamping would only cost a table and an import.
+    if app.config.get("TESTING"):
+        return
+
+    try:
+        from flask_migrate import stamp
+
+        stamp(revision="head")
+        logger.info("initialised local SQLite schema and stamped it at head")
+    except Exception:  # pragma: no cover — missing/!unreadable migrations dir
+        logger.warning(
+            "created the SQLite schema but could not stamp the migration "
+            "revision; `flask db upgrade` may need `flask db stamp head` first",
+            exc_info=True,
+        )
 
 
 def _register_middleware(app: Flask) -> None:

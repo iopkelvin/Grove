@@ -1,0 +1,45 @@
+# Static security analysis.
+#
+# Grove handles authentication tokens and per-user data, and the codebase had
+# no automated security checking of any kind. CodeQL catches the classes of
+# bug that survive code review: injection, unsafe deserialisation, missing
+# authorisation on a route somebody added in a hurry.
+
+name: CodeQL
+
+on:
+  push:
+    branches: [main, development]
+  pull_request:
+    branches: [main, development]
+  schedule:
+    # Weekly, so a newly published rule finds an old bug without waiting for
+    # somebody to happen to open a pull request.
+    - cron: "17 5 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [python, javascript-typescript]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          language: ${{ matrix.language }}
+          queries: security-and-quality
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: /language:${{ matrix.language }}
