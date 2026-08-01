@@ -15,20 +15,10 @@ const FALLBACK_PROGRESS = {
   points_remaining: 3,
 };
 
-// PLACEHOLDER TASK: shown only when no database task is available. It keeps
-// the tree call-to-action understandable on a brand-new account.
-// placeholder task, to be deleted for production.
+// Shown only when the user has no incomplete tasks, so the "water your
+// tree" card still has something to point at on a brand-new account.
 const PLACEHOLDER_TASK = { id: "placeholder-water-task", title: "Finish one task today" };
 
-
-// important documentation: 
-// useState - component states and functional updates
-// useEffect - API loading, synchronization, arrays, and cleanup functions
-// useMemo  - caches friends and percentages.
-// DOCUMENTATION
-// https://react.dev/reference/react/useState
-// https://react.dev/reference/react/useEffect
-// https://react.dev/reference/react/useMemo
 export default function Streaks() {
   const { session } = useUser();
   const [progress, setProgress] = useState(FALLBACK_PROGRESS);
@@ -53,6 +43,8 @@ export default function Streaks() {
 
   const progressPercent = useMemo(() => {
     if (atMaxLevel) return 100;
+    // Mirrors TREE_THRESHOLDS in api/services/streak.py (with a leading 0 so
+    // the 1-based `level` indexes straight in) — keep both in sync.
     const currentLevelStart = [0, 0, 3, 7, 12, 18, 25, 33][level] || 0;
     const range = Math.max(1, progress.next_level_points - currentLevelStart);
     return Math.max(0, Math.min(100, ((progress.points - currentLevelStart) / range) * 100));
