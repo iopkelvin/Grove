@@ -1,14 +1,14 @@
-// Routing (Kelvin)
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Friends from "./pages/Friends";
-import Tasks from "./pages/Tasks"; 
+import Tasks from "./pages/Tasks";
 import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import Streaks from "./pages/Streaks";
+import Settings from "./pages/Settings";
 import AuthGate from "./components/RequireAuth";
 
 function App() {
@@ -27,7 +27,10 @@ function App() {
         <Route path="/rooms/:roomId" element={<Room />} />
         <Route path="/streaks" element={<Streaks />} />
         <Route path="/calendar" element={<Navigate to="/" replace />} />
-        <Route path="/settings" element={<Navigate to="/" replace />} />
+
+        {/* This must render Settings, not Navigate. */}
+        <Route path="/settings" element={<Settings />} />
+
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
