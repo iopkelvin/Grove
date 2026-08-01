@@ -9,8 +9,9 @@ name: Frontend
 on:
   push:
     branches: [main, development]
+  # Unfiltered by base branch, so a stacked pull request still gets checked.
+  # See the same note in backend.yml.
   pull_request:
-    branches: [main, development]
 
 concurrency:
   group: frontend-${{ github.ref }}
