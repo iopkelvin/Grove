@@ -35,6 +35,15 @@
   gap: 24px;
 }
 
+/* Grid items default to min-width:auto, meaning an oversized child (e.g.
+   the streak tree) can force its whole column track wider than the
+   viewport — dragging every other item sharing that track along with
+   it, off the edge of the screen. This overrides that default so a
+   track's size is never held hostage by one item's intrinsic content. */
+.grid > * {
+  min-width: 0;
+}
+
 /* stacks components vertically inside a grid column */
 .grid-column {
   display: flex;

@@ -100,8 +100,24 @@
 }
 
 @media (max-width: 640px) {
+  /* height-driven sizing (like the desktop tier uses) computes its width
+     from the SQUARE aspect-ratio times that height — on a narrow-but-tall
+     phone, 50% of viewport height alone is often wider than the whole
+     screen. That oversized child then forces the single grid column
+     wider too, cutting off the cards sharing that row. Width-capped
+     instead, same as the medium-screen tier. */
   .streak-frame {
-    height: 50vh;
+    height: auto;
+  }
+
+  .streak-tree-inner {
+    height: auto;
+    aspect-ratio: 200 / 200;
+    max-width: 260px;
+  }
+
+  .streak-tree-svg-large {
+    height: auto;
   }
 
   /* the label's own font size doesn't shrink with the tree, so at this
