@@ -95,6 +95,17 @@ def test_the_body_does_not_override_the_token(client, secured):
     assert len(client.get("/api/tasks", headers=bearer("sb-bob")).get_json()) == 1
 
 
+def test_only_you_see_your_own_email(client, secured):
+    sync_user(client, "sb-alice", "alice", bearer("sb-alice"))
+    sync_user(client, "sb-bob", "bob", bearer("sb-bob"))
+
+    mine = client.get("/api/users/sb-alice", headers=bearer("sb-alice"))
+    theirs = client.get("/api/users/sb-alice", headers=bearer("sb-bob"))
+
+    assert mine.get_json()["email"] == "alice@example.com"
+    assert "email" not in theirs.get_json()
+
+
 # ── Bad tokens ───────────────────────────────────────────────────────
 
 def test_a_request_with_no_token_is_refused(client, secured):

@@ -138,7 +138,13 @@ def get_user(supabase_id):
     user = User.query.filter_by(supabase_id=supabase_id).first()
     if not user:
         return jsonify({"error": "User not found"}), 404
-    return jsonify(user.to_dict()), 200
+
+    data = user.to_dict()
+    # The friends list hands out supabase_ids, so this route is reachable
+    # for anyone you can see. Email is yours alone.
+    if auth.resolve_supabase_id((), supabase_id) != user.supabase_id:
+        data.pop("email", None)
+    return jsonify(data), 200
 
 
 # Public profile lookup by username (the /user/<username> page). Unlike
