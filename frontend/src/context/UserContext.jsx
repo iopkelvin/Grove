@@ -66,12 +66,18 @@ export function UserProvider({ children }) {
   }, [fetchProfile, refreshPendingRequestCount]);
 
   async function logout() {
-    // scope: "local" clears this browser's session directly instead of
-    // asking Supabase's server to invalidate it first — the default
-    // "global" scope leaves the user stuck logged in if the server ever
-    // says the session's already gone (e.g. after token/session rotation),
-    // since the SDK doesn't fall back to a local clear on that failure.
-    await supabase.auth.signOut({ scope: "local" });
+    const { error } = await supabase.auth.signOut({ scope: "local" });
+    if (error) {
+      // Known gap in @supabase/auth-js: when the server says the session
+      // is already gone ("session_not_found"), it's wrapped as an
+      // AuthSessionMissingError instead of AuthApiError — which fails the
+      // SDK's own "ignore this and clear locally anyway" check inside
+      // signOut(), so the local session/localStorage token never gets
+      // cleared and the user stays stuck logged in. Force it ourselves;
+      // an error here means there's nothing valid left server-side, so
+      // treating it as "already logged out" locally is correct either way.
+      await supabase.auth._removeSession();
+    }
   }
 
   async function updateProfile(updates) {
