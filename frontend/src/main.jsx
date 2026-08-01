@@ -17,11 +17,14 @@ import './styles/tasks.css'
 import './styles/calendar.css'
 import './styles/study-rooms.css'
 import './styles/tree.css'
+import { ThemeProvider } from './context/ThemeContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )

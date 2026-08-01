@@ -136,3 +136,39 @@
   text-align: left;
   cursor: pointer;
 }
+
+/* ── Theme toggle (moon/sun) ── */
+.theme-toggle {
+  position: fixed;
+  top: 32px;
+  right: 40px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-primary);
+  transition: opacity 0.2s ease;
+}
+
+/* On the study-room page, the scene is dark in both modes, so pin the
+   toggle to the always-light scene color instead of --color-text-primary. */
+body:has(.study-room-page) .theme-toggle {
+  color: var(--color-scene-foreground);
+}
+
+.theme-toggle:hover {
+  opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    top: 20px;
+    right: 20px;
+  }
+}

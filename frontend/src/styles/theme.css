@@ -18,6 +18,7 @@ body {
 :root {
   /* ── Page ── */
   --color-page-background: #F4F3EE;
+  --color-scene-foreground: #FFFDF7;   /* light text/borders on the night scenes */
 
   /* ── Cards ── */
   --color-card-background: #D6DDD7;         /* standard cards: friends, calendar, tasks, up next */
@@ -39,6 +40,7 @@ body {
   --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */
   --color-streak-accent: #d9622b;      /* highlighted calendar day, streak fire */
   --color-overlay-background: rgba(0, 0, 0, 0.25);  /* dimming overlay behind modals/menus */
+  --color-divider: rgba(26, 26, 26, 0.08); /* for light mode */  
 
   /* ── Font family ── */
   --font-family-base: 'Newsreader', 'Georgia', serif;
@@ -79,4 +81,52 @@ body {
   --color-tree-night: #142B4B;
   --color-tree-card: rgba(244, 243, 238, 0.90);
   --color-tree-water: #7EB9DE;
+}
+
+/* Dark theme — same tokens, dark values. Toggled via <html data-theme="dark">. */
+:root[data-theme="dark"] {
+  /* ── Page ── */
+  --color-page-background: #1A1915;
+
+  /* ── Cards ── */
+  --color-card-background: #262B27;
+  --color-card-accent-background: #333A34;
+  --color-card-border: #3D403C;
+  --color-picture-placeholder: #3A3A38;
+
+  /* ── Buttons ── */
+  --color-button-background: #6E8A71;
+  --color-button-text: #16150F;
+
+  /* ── Text ── */
+  --color-title-text: #F4F3EE;
+  --color-text-primary: #ECEAE0;
+  --color-text-secondary: #A8A79E;
+  --color-error-text: #FF6B6B;
+
+  /* ── Accents ── */
+  --color-badge-background: #333A31;
+  --color-streak-accent: #E5733A;
+  --color-overlay-background: rgba(0, 0, 0, 0.5);
+  --color-divider: rgba(255, 255, 255, 0.10);
+
+  /* ── Study rooms / tree: surfaces → dark, ink → light ── */
+  --color-surface-white:  #1F241F;
+  --color-surface-soft:   #232823;
+  --color-surface-warm:   #262520;
+  --color-surface-strong: #2C332D;
+  --color-study-ink:   #E8EDE6;
+  --color-study-muted: #9CA79E;
+  --color-study-line: #38403A;
+  --color-study-points: #2C4A33;
+  --color-study-task:   #294A54;
+  --color-study-online: #4FA97E;
+  --color-study-overlay-soft: rgba(20, 26, 22, 0.72);
+  --color-tree-card:          rgba(30, 33, 28, 0.90);
+
+  /* Deliberately NOT overridden — already correct:
+     --color-study-scene, --color-tree-night   night backgrounds
+     --color-study-overlay                      dark dim
+     --color-tree-water                         glow accent
+     --color-scene-foreground                   light-on-scene text */
 }
