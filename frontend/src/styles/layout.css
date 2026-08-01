@@ -35,12 +35,31 @@
   gap: 24px;
 }
 
+/* Grid items default to min-width:auto, meaning an oversized child (e.g.
+   the streak tree) can force its whole column track wider than the
+   viewport — dragging every other item sharing that track along with
+   it, off the edge of the screen. This overrides that default so a
+   track's size is never held hostage by one item's intrinsic content. */
+.grid > * {
+  min-width: 0;
+}
+
 /* stacks components vertically inside a grid column */
 .grid-column {
   display: flex;
   flex-direction: column;
   gap: 24px;
   align-self: start;
+}
+
+/* ── Medium screens ── */
+/* a half-width desktop window (or a tablet) is much wider than a phone
+   but still doesn't have room for 3 columns side by side — stack to one
+   column same as mobile, just at a higher threshold */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Small screens ── */
@@ -53,9 +72,5 @@
 
   .page-title {
     margin-bottom: 16px;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
   }
 }

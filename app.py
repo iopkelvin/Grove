@@ -8,6 +8,7 @@ from datetime import date, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
+from sqlalchemy.orm import selectinload
 from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
@@ -484,16 +485,23 @@ def get_friends():
 
     status = request.args.get("status", "accepted")
 
+    # Eager-load both sides of the friendship plus each side's streak in a
+    # handful of batched queries — without this, accessing row.friend/
+    # row.user and other.streak below lazy-loads one query PER friend,
+    # which turns a 24-friend list into ~50 round trips to the database.
+    eager = (selectinload(Friendship.user).selectinload(User.streak),
+             selectinload(Friendship.friend).selectinload(User.streak))
+
     if status == "pending":
         direction = request.args.get("direction", "incoming")
         if direction == "sent":
-            rows = Friendship.query.filter_by(user_id=me.id, status="pending").all()
+            rows = Friendship.query.options(*eager).filter_by(user_id=me.id, status="pending").all()
             pairs = [(row, row.friend) for row in rows]
         else:
-            rows = Friendship.query.filter_by(friend_id=me.id, status="pending").all()
+            rows = Friendship.query.options(*eager).filter_by(friend_id=me.id, status="pending").all()
             pairs = [(row, row.user) for row in rows]
     else:
-        rows = Friendship.query.filter(
+        rows = Friendship.query.options(*eager).filter(
             db.or_(Friendship.user_id == me.id, Friendship.friend_id == me.id),
             Friendship.status == status,
         ).all()
