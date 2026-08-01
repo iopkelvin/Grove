@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — database config.
 
@@ -7,10 +5,17 @@ Defines the single SQLAlchemy `db` object the rest of the backend imports.
 Deliberately does NOT attach to the Flask app here — app.py does that with
 db.init_app(app). Keeping them separate avoids circular imports between
 app.py and the model files.
+
+DATABASE_URL points at Supabase Postgres in production (and optionally in
+local dev, see .env.example). If it's unset, blank, or malformed, we fall
+back to a local SQLite file rather than crashing the app.
 """
+
+from __future__ import annotations
 
 import os
 import warnings
+
 from dotenv import load_dotenv
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.engine import make_url
@@ -23,33 +28,31 @@ db = SQLAlchemy()
 
 _DEFAULT_DATABASE_URL = "sqlite:///grove.db"
 
-# DATABASE_URL is set in production (Render) to point at Supabase's Postgres,
-# and can optionally be set locally (in a root .env, see .env.example) to
-# develop against that same shared database. If it's unset, fall back to a
-# local SQLite file — zero setup, but not shared and not persistent in
-# ephemeral hosting environments.
-_database_url = (os.environ.get("DATABASE_URL") or "").strip() or _DEFAULT_DATABASE_URL
 
-# Some providers (Supabase included) hand out "postgres://" URLs, but
-# SQLAlchemy 1.4+ only recognizes the "postgresql://" scheme.
-if _database_url.startswith("postgres://"):
-    _database_url = _database_url.replace("postgres://", "postgresql://", 1)
+def _resolve_database_url(raw: str | None) -> str:
+    url = (raw or "").strip()
+    if not url:
+        return _DEFAULT_DATABASE_URL
 
-# Blank is handled above, but the value can also just be malformed — e.g.
-# someone pastes "DATABASE_URL=postgresql://..." (the whole line) as the
-# *value* in a host's dashboard instead of just the "postgresql://..."
-# part, or it's literally the text "None". Rather than let a typo take
-# the whole app down, fall back to SQLite and log loudly so it's still
-# obvious something needs fixing.
-try:
-    make_url(_database_url)
-except ArgumentError:
-    warnings.warn(
-        f"DATABASE_URL isn't a valid database URL (starts with "
-        f"{_database_url[:20]!r}) — falling back to local SQLite. Check "
-        f"the value in your host's environment variable settings.",
-        stacklevel=2,
-    )
-    _database_url = _DEFAULT_DATABASE_URL
+    # Supabase (and other providers) hand out "postgres://" URLs, but
+    # SQLAlchemy 1.4+ only recognizes "postgresql://".
+    if url.startswith("postgres://"):
+        url = "postgresql://" + url[len("postgres://") :]
 
-SQLALCHEMY_DATABASE_URI = _database_url
+    try:
+        make_url(url)
+    except ArgumentError:
+        # Don't echo any part of `url` here — a mis-pasted value can
+        # contain real credentials, and this ends up in logs.
+        warnings.warn(
+            "DATABASE_URL isn't a valid database URL — falling back to "
+            "local SQLite. Check the value in your host's environment "
+            "variable settings.",
+            stacklevel=2,
+        )
+        return _DEFAULT_DATABASE_URL
+
+    return url
+
+
+SQLALCHEMY_DATABASE_URI = _resolve_database_url(os.environ.get("DATABASE_URL"))
