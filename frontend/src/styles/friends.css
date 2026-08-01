@@ -216,6 +216,7 @@
   margin-top: var(--space-sm);
   font-size: var(--font-size-small);
   color: var(--color-streak-accent);
+}
 
 /* ── From `development`: the friends alphabet index and pagination ── */
 /* ── Friends tab: list + A-Z quick filter ── */
@@ -295,5 +296,4 @@
 .friends-pagination button:disabled {
   opacity: 0.4;
   cursor: default;
-
 }
