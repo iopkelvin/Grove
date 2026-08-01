@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL;
-// added CRUD FUNCTIONS to tasks page.
+
 export async function getTasks(supabaseId, { completed } = {}) {
   const params = new URLSearchParams({ supabase_id: supabaseId });
   if (typeof completed === "boolean") params.set("completed", String(completed));
@@ -9,11 +9,11 @@ export async function getTasks(supabaseId, { completed } = {}) {
   return res.json();
 }
 
-export async function createTask(supabaseId, title, tags = []) {
+export async function createTask(supabaseId, title, tags = [], description) {
   const res = await fetch(`${API_URL}/api/tasks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, title, tags }),
+    body: JSON.stringify({ supabase_id: supabaseId, title, description, tags }),
   });
   if (!res.ok) throw new Error("Could not create task");
   return res.json();

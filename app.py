@@ -13,10 +13,10 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
+from api.services import task as task_service # added by Kyle -- tasks service
 from api.models.room import Room, RoomMembership
 from api.models.streak import Streak
-from api.models.task import Tag, Task
-from datetime import date, timedelta
+from api.models.task import Task
 
 # App setup
 app = Flask(__name__)
@@ -317,28 +317,24 @@ def get_room(room_id):
     return jsonify(room.to_dict()), 200
 
 
-
-# Task routes 
-# get tasks just sends out hte get request ot the database to retrieve the list of rooms, also checks for errors and save errors.
-# create task creates a task and adds it to the database.
-# record_daily_streak allows the user to have their streak saved in the database.
-# update_task just creates a patch request to the databse.
-# delete task deletes the requested task
-# documentation: https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html
-# documentation: https://docs.sqlalchemy.org/en/20/orm/session.html
+# Task routes
+# Thin routes — everything that touches the database lives in
+# api/services/task.py (ownership checks included). The one thing that
+# lives here instead is the streak bump: it's a cross-cutting side effect
+# of completion, not really a "task" concern, and it needs the full User
+# object that bump_streak_for_completion() (above) already expects.
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = find_user_by_supabase_id(request.args.get("supabase_id"))
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    query = Task.query.filter_by(user_id=user.id)
+    tasks = task_service.list_tasks(user.id)
     completed = request.args.get("completed")
     if completed in ("true", "false"):
-        query = query.filter_by(completed=completed == "true")
-
-    tasks = query.order_by(Task.completed.asc(), Task.created_at.desc()).all()
-    return jsonify([task.to_dict() for task in tasks]), 200
+        want_completed = completed == "true"
+        tasks = [t for t in tasks if t["completed"] == want_completed]
+    return jsonify(tasks), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
@@ -352,91 +348,41 @@ def create_task():
     if not title:
         return jsonify({"error": "Task title is required"}), 400
 
-    task = Task(
+    created = task_service.create_task(
+        user.id,
         title=title,
-        description=(data.get("description") or "").strip() or None,
-        user_id=user.id,
+        description=(data.get("description") or None),
+        tag_names=data.get("tags"),
     )
-
-    tag_names = []
-    for tag_name in data.get("tags", []):
-        cleaned = str(tag_name).strip()[:40]
-        if cleaned and cleaned.lower() not in {t.lower() for t in tag_names}:
-            tag_names.append(cleaned)
-
-    for name in tag_names:
-        tag = Tag.query.filter(
-            Tag.user_id == user.id,
-            db.func.lower(Tag.name) == name.lower(),
-        ).first()
-        if not tag:
-            tag = Tag(user_id=user.id, name=name)
-        task.tags.append(tag)
-
-    db.session.add(task)
-    db.session.commit()
-    return jsonify(task.to_dict()), 201
-
-
-def record_daily_streak(user):
-    """Record one active day. Multiple tasks on the same day still count once."""
-    today = date.today()
-    streak = user.streak
-    if not streak:
-        streak = Streak(user_id=user.id, current_count=0)
-        db.session.add(streak)
-
-    if streak.last_activity_date == today:
-        return
-    if streak.last_activity_date == today - timedelta(days=1):
-        streak.current_count += 1
-    else:
-        streak.current_count = 1
-    streak.last_activity_date = today
+    return jsonify(created), 201
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
-    task = db.session.get(Task, task_id)
-    if not task:
-        return jsonify({"error": "Task not found"}), 404
-
     data = request.json or {}
     user = find_user_by_supabase_id(data.get("supabase_id"))
-    if not user or task.user_id != user.id:
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    fields = {k: data[k] for k in ("title", "description", "completed", "tags") if k in data}
+    updated, became_completed = task_service.update_task(user.id, task_id, fields)
+    if updated is None:
         return jsonify({"error": "Task not found"}), 404
 
-    if "title" in data:
-        title = (data.get("title") or "").strip()
-        if not title:
-            return jsonify({"error": "Task title cannot be empty"}), 400
-        task.title = title
+    if became_completed:
+        bump_streak_for_completion(user)
+        db.session.commit()
 
-    if "description" in data:
-        task.description = (data.get("description") or "").strip() or None
-
-    was_completed = task.completed
-    if "completed" in data:
-        task.completed = bool(data.get("completed"))
-        if task.completed and not was_completed:
-            record_daily_streak(user)
-
-    db.session.commit()
-    return jsonify(task.to_dict()), 200
+    return jsonify(updated), 200
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    task = db.session.get(Task, task_id)
-    if not task:
-        return jsonify({"error": "Task not found"}), 404
-
     user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user or task.user_id != user.id:
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if not task_service.delete_task(user.id, task_id):
         return jsonify({"error": "Task not found"}), 404
-
-    db.session.delete(task)
-    db.session.commit()
     return "", 204
 # end of task routes
 
