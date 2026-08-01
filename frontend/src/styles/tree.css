@@ -105,6 +105,7 @@
 .tree-progress-card,
 .tree-water-card {
   position: absolute;
+  top: 26px;
   z-index: 4;
   width: min(300px, 29%);
   padding: 22px;
@@ -115,12 +116,10 @@
 }
 
 .tree-progress-card {
-  top: 26px;
   left: 26px;
 }
 
 .tree-water-card {
-  top: 26px;
   right: 26px;
 }
 /* formatting for the progress */

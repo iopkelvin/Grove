@@ -13,6 +13,8 @@ from datetime import date, timedelta
 from api.config.database import db
 from api.models.task import Task
 
+from .conftest import auth_headers
+
 
 def sync_user(client, supabase_id, username, first_name="a", last_name="a"):
     return client.post(
@@ -24,19 +26,27 @@ def sync_user(client, supabase_id, username, first_name="a", last_name="a"):
             "first_name": first_name,
             "last_name": last_name,
         },
+        headers=auth_headers(supabase_id),
     )
 
 
 def create_task(client, supabase_id, title="Read"):
-    return client.post("/api/tasks", json={"supabase_id": supabase_id, "title": title})
+    return client.post(
+        "/api/tasks", json={"supabase_id": supabase_id, "title": title}, headers=auth_headers(supabase_id)
+    )
 
 
 def complete_task(client, supabase_id, task_id):
-    return client.put(f"/api/tasks/{task_id}", json={"supabase_id": supabase_id, "completed": True})
+    return client.put(
+        f"/api/tasks/{task_id}",
+        json={"supabase_id": supabase_id, "completed": True},
+        headers=auth_headers(supabase_id),
+    )
 
 
 def get_streak(client, supabase_id):
-    return client.get(f"/api/users/{supabase_id}").get_json()["current_streak"]
+    res = client.get(f"/api/users/{supabase_id}", headers=auth_headers(supabase_id))
+    return res.get_json()["current_streak"]
 
 
 # ── Account creation ─────────────────────────────────────────────────
@@ -88,7 +98,11 @@ def test_uncompleting_a_task_does_not_reduce_the_streak(client):
     task = create_task(client, "sb-1").get_json()
     complete_task(client, "sb-1", task["id"])
 
-    res = client.put(f"/api/tasks/{task['id']}", json={"supabase_id": "sb-1", "completed": False})
+    res = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "completed": False},
+        headers=auth_headers("sb-1"),
+    )
 
     assert res.status_code == 200
     assert get_streak(client, "sb-1") == 1
@@ -101,6 +115,7 @@ def test_due_date_is_stored_and_returned(client):
     res = client.post(
         "/api/tasks",
         json={"supabase_id": "sb-1", "title": "Submit report", "due_date": "2026-08-15"},
+        headers=auth_headers("sb-1"),
     )
     assert res.get_json()["due_date"] == "2026-08-15"
 
@@ -108,14 +123,16 @@ def test_due_date_is_stored_and_returned(client):
 def test_completing_a_recurring_task_bumps_streak(client):
     sync_user(client, "sb-1", "alice")
     task = client.post(
-        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
     ).get_json()
     assert task["done"] is False
 
     complete_task(client, "sb-1", task["id"])
 
     assert get_streak(client, "sb-1") == 1
-    tasks = client.get("/api/tasks?supabase_id=sb-1").get_json()
+    tasks = client.get("/api/tasks?supabase_id=sb-1", headers=auth_headers("sb-1")).get_json()
     assert tasks[0]["done"] is True
 
 
@@ -125,7 +142,9 @@ def test_recurring_task_resets_the_next_day(client):
     yesterday shouldn't still show as done today."""
     sync_user(client, "sb-1", "alice")
     task = client.post(
-        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
     ).get_json()
     complete_task(client, "sb-1", task["id"])
 
@@ -133,14 +152,16 @@ def test_recurring_task_resets_the_next_day(client):
     row.last_completed_date = date.today() - timedelta(days=1)
     db.session.commit()
 
-    tasks = client.get("/api/tasks?supabase_id=sb-1").get_json()
+    tasks = client.get("/api/tasks?supabase_id=sb-1", headers=auth_headers("sb-1")).get_json()
     assert tasks[0]["done"] is False
 
 
 def test_completing_a_recurring_task_again_the_next_day_bumps_streak_again(client):
     sync_user(client, "sb-1", "alice")
     task = client.post(
-        "/api/tasks", json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True}
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
     ).get_json()
     complete_task(client, "sb-1", task["id"])
     assert get_streak(client, "sb-1") == 1
@@ -168,9 +189,10 @@ def test_creating_a_task_with_new_tags_makes_them_listable(client):
     client.post(
         "/api/tasks",
         json={"supabase_id": "sb-1", "title": "Read", "tags": ["School", "Today"]},
+        headers=auth_headers("sb-1"),
     )
 
-    tags = client.get("/api/tags?supabase_id=sb-1").get_json()
+    tags = client.get("/api/tags?supabase_id=sb-1", headers=auth_headers("sb-1")).get_json()
 
     assert sorted(t["name"] for t in tags) == ["School", "Today"]
 
@@ -181,23 +203,41 @@ def test_send_and_accept_friend_request(client):
     sync_user(client, "sb-1", "alice")
     bob = sync_user(client, "sb-2", "bob").get_json()
 
-    sent = client.post("/api/friends", json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]})
+    sent = client.post(
+        "/api/friends",
+        json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]},
+        headers=auth_headers("sb-1"),
+    )
     assert sent.status_code == 201
     friendship_id = sent.get_json()["id"]
 
-    accepted = client.patch(f"/api/friends/{friendship_id}", json={"supabase_id": "sb-2", "status": "accepted"})
+    accepted = client.patch(
+        f"/api/friends/{friendship_id}",
+        json={"supabase_id": "sb-2", "status": "accepted"},
+        headers=auth_headers("sb-2"),
+    )
     assert accepted.status_code == 200
 
-    alice_friends = client.get("/api/friends?supabase_id=sb-1&status=accepted").get_json()
+    alice_friends = client.get(
+        "/api/friends?supabase_id=sb-1&status=accepted", headers=auth_headers("sb-1")
+    ).get_json()
     assert [f["user"]["username"] for f in alice_friends] == ["bob"]
 
 
 def test_duplicate_friend_request_is_rejected(client):
     sync_user(client, "sb-1", "alice")
     bob = sync_user(client, "sb-2", "bob").get_json()
-    client.post("/api/friends", json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]})
+    client.post(
+        "/api/friends",
+        json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]},
+        headers=auth_headers("sb-1"),
+    )
 
-    again = client.post("/api/friends", json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]})
+    again = client.post(
+        "/api/friends",
+        json={"requester_supabase_id": "sb-1", "target_user_id": bob["id"]},
+        headers=auth_headers("sb-1"),
+    )
 
     assert again.status_code == 409
 
@@ -211,7 +251,11 @@ def test_user_cannot_modify_another_users_task(client):
     sync_user(client, "sb-2", "bob")
     alice_task = create_task(client, "sb-1").get_json()
 
-    res = client.put(f"/api/tasks/{alice_task['id']}", json={"supabase_id": "sb-2", "completed": True})
+    res = client.put(
+        f"/api/tasks/{alice_task['id']}",
+        json={"supabase_id": "sb-2", "completed": True},
+        headers=auth_headers("sb-2"),
+    )
 
     assert res.status_code == 404
     assert get_streak(client, "sb-1") == 0  # Alice's streak must not move either
@@ -222,10 +266,12 @@ def test_user_cannot_delete_another_users_task(client):
     sync_user(client, "sb-2", "bob")
     alice_task = create_task(client, "sb-1").get_json()
 
-    res = client.delete(f"/api/tasks/{alice_task['id']}?supabase_id=sb-2")
+    res = client.delete(
+        f"/api/tasks/{alice_task['id']}?supabase_id=sb-2", headers=auth_headers("sb-2")
+    )
 
     assert res.status_code == 404
-    still_there = client.get("/api/tasks?supabase_id=sb-1").get_json()
+    still_there = client.get("/api/tasks?supabase_id=sb-1", headers=auth_headers("sb-1")).get_json()
     assert len(still_there) == 1
 
 
@@ -233,7 +279,7 @@ def test_public_profile_hides_email_from_other_users(client):
     sync_user(client, "sb-1", "alice")
     sync_user(client, "sb-2", "bob")
 
-    res = client.get("/api/users/by-username/alice?viewer_supabase_id=sb-2")
+    res = client.get("/api/users/by-username/alice", headers=auth_headers("sb-2"))
 
     assert res.status_code == 200
     assert "email" not in res.get_json()

@@ -1,4 +1,4 @@
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "./client";
 
 export async function getUserByUsername(username, viewerSupabaseId) {
   const params = viewerSupabaseId

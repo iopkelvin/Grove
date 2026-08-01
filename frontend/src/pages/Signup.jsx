@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "../api/client";
 import { useUser } from "../context/UserContext";
 
 function Signup() {
@@ -34,9 +34,8 @@ function Signup() {
     }
 
     try {
-      await apiFetch(`/api/users/sync`, {
+      const res = await apiFetch("/api/users/sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supabase_id: data.user.id,
           email: data.user.email,
@@ -45,9 +44,12 @@ function Signup() {
           last_name: normalizedLastName,
         }),
       });
+      if (!res.ok) throw new Error(`sync failed with status ${res.status}`);
       await refreshProfile(data.user.id);
     } catch (syncError) {
       console.error("Failed to sync user with backend:", syncError);
+      setError("Something went wrong finishing your signup. Please try again.");
+      return;
     }
 
     if (!data.session) {

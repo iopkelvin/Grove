@@ -1,4 +1,4 @@
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "./client";
 
 export async function searchUsers(query, excludeSupabaseId) {
   const params = new URLSearchParams({ q: query });
@@ -17,30 +17,23 @@ export async function getFriends(supabaseId, { status = "accepted", direction } 
 }
 
 export async function sendFriendRequest(requesterSupabaseId, targetUserId) {
-  const res = await apiFetch(`/api/friends`, {
+  return apiFetch("/api/friends", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       requester_supabase_id: requesterSupabaseId,
       target_user_id: targetUserId,
     }),
   });
-  return res;
 }
 
 export async function respondToFriendRequest(friendshipId, supabaseId, status) {
-  const res = await apiFetch(`/api/friends/${friendshipId}`, {
+  return apiFetch(`/api/friends/${friendshipId}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ supabase_id: supabaseId, status }),
   });
-  return res;
 }
 
 export async function removeFriend(friendshipId, supabaseId) {
   const params = new URLSearchParams({ supabase_id: supabaseId });
-  const res = await apiFetch(`/api/friends/${friendshipId}?${params}`, {
-    method: "DELETE",
-  });
-  return res;
+  return apiFetch(`/api/friends/${friendshipId}?${params}`, { method: "DELETE" });
 }

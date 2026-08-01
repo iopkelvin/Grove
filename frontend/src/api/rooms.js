@@ -1,7 +1,5 @@
-import { apiFetch } from "../lib/api";
+import { apiFetch } from "./client";
 
-// added CRUD operations to the rooms controller section.
-// aded get rooms, get room , create room,
 export async function getRooms(supabaseId) {
   const params = new URLSearchParams();
   if (supabaseId) params.set("supabase_id", supabaseId);
@@ -17,9 +15,8 @@ export async function getRoom(roomId) {
 }
 
 export async function createRoom(payload) {
-  const res = await apiFetch(`/api/rooms`, {
+  const res = await apiFetch("/api/rooms", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
   if (!res.ok) {

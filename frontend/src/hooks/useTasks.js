@@ -29,24 +29,30 @@ export function useTasks(supabaseId) {
     load();
   }, [load]);
 
+  function commitDelete(id) {
+    deleteTask(supabaseId, id).catch((err) => console.error("Failed to delete task:", err));
+  }
+
   // Only one undo window open at a time — starting a new delete finalizes
   // whatever was already pending instead of stacking multiple toasts.
   function finalizePendingDelete() {
     if (!pendingDelete) return;
     clearTimeout(deleteTimer.current);
-    deleteTask(supabaseId, pendingDelete.id).catch((err) => console.error("Failed to delete task:", err));
+    commitDelete(pendingDelete.id);
     setPendingDelete(null);
   }
 
   async function addTask(title, options) {
     const trimmed = title.trim();
-    if (!trimmed || !supabaseId) return;
+    if (!trimmed || !supabaseId) return false;
     try {
       const task = await createTask(supabaseId, trimmed, options);
       setTasks((current) => [task, ...current]);
       setError("");
+      return true;
     } catch {
       setError("The task could not be created.");
+      return false;
     }
   }
 
@@ -84,7 +90,7 @@ export function useTasks(supabaseId) {
     setTasks((current) => current.filter((t) => t.id !== id));
     setPendingDelete(task);
     deleteTimer.current = setTimeout(() => {
-      deleteTask(supabaseId, id).catch((err) => console.error("Failed to delete task:", err));
+      commitDelete(id);
       setPendingDelete(null);
     }, UNDO_WINDOW_MS);
   }

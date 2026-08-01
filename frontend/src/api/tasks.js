@@ -1,7 +1,4 @@
-import { apiFetch } from "../lib/api";
-
-// supabase_id is still sent so a backend running without a JWT secret
-// (no local setup) keeps working. When a secret is set it's ignored.
+import { apiFetch } from "./client";
 
 export async function getTasks(supabaseId, { completed } = {}) {
   const params = new URLSearchParams({ supabase_id: supabaseId });
@@ -13,9 +10,8 @@ export async function getTasks(supabaseId, { completed } = {}) {
 }
 
 export async function createTask(supabaseId, title, { tags = [], description, dueDate, recurring } = {}) {
-  const res = await apiFetch(`/api/tasks`, {
+  const res = await apiFetch("/api/tasks", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       supabase_id: supabaseId,
       title,
@@ -32,7 +28,6 @@ export async function createTask(supabaseId, title, { tags = [], description, du
 export async function updateTask(supabaseId, taskId, updates) {
   const res = await apiFetch(`/api/tasks/${taskId}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ supabase_id: supabaseId, ...updates }),
   });
   if (!res.ok) throw new Error("Could not update task");
@@ -41,9 +36,7 @@ export async function updateTask(supabaseId, taskId, updates) {
 
 export async function deleteTask(supabaseId, taskId) {
   const params = new URLSearchParams({ supabase_id: supabaseId });
-  const res = await apiFetch(`/api/tasks/${taskId}?${params}`, {
-    method: "DELETE",
-  });
+  const res = await apiFetch(`/api/tasks/${taskId}?${params}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Could not delete task");
 }
 

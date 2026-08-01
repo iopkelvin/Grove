@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — Room models (study rooms / co-presence).
 
@@ -10,19 +8,10 @@ membership is a separate join table. Co-presence for now = the set of member
 avatars + a population count; something richer can come later.
 """
 
-from datetime import datetime, timezone
-
 from api.config.database import db
+from api.utils import utcnow
 
 
-def utcnow():
-    return datetime.now(timezone.utc)
-
-# turner changes to the class
-# added new room columns for different maps and features for each of the rooms
-# documentation: https://flask-sqlalchemy.palletsprojects.com/en/stable/models/
-# https://docs.sqlalchemy.org/en/20/core/metadata.html#sqlalchemy.schema.Column)
-# [SQLAlchemy types](https://docs.sqlalchemy.org/en/20/core/type_basics.html
 class Room(db.Model):
     __tablename__ = "rooms"
 
@@ -35,39 +24,28 @@ class Room(db.Model):
 
     created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
 
-    # turner change - MVP room settings selected in the Create Study Room dialog.
+    # MVP room settings selected in the Create Study Room dialog.
     setting = db.Column(db.String(40), default="campsite", nullable=False)
     music_enabled = db.Column(db.Boolean, default=True, nullable=False)
     chat_enabled = db.Column(db.Boolean, default=True, nullable=False)
     focus_minutes = db.Column(db.Integer, default=50, nullable=False)
 
-    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
-
-
     memberships = db.relationship(
         "RoomMembership", back_populates="room", cascade="all, delete-orphan"
     )
-    
-# added more features the the room toggleability
-# added more security to the fields making sure that only specific fields were normalized.
-# DOCUMENTATION:
-# [Flask JSON responses](https://flask.palletsprojects.com/en/stable/quickstart/#apis-with-json)
-# [SQLAlchemy relationship API](https://docs.sqlalchemy.org/en/20/orm/relationship_api.html
+
     def to_dict(self):
         return {
             "id": self.id,
             "name": self.name,
             "is_global": self.is_global,
             "host_id": self.host_id,
-            # added features - turner
             "setting": self.setting,
             "music_enabled": self.music_enabled,
             "chat_enabled": self.chat_enabled,
             "focus_minutes": self.focus_minutes,
-
             "population": len(self.memberships),
             # avatars of everyone currently in the room, for co-presence
-            # turner change - specified the specific attributes that should be allowed.
             "members": [
                 {
                     "id": membership.user.id,
