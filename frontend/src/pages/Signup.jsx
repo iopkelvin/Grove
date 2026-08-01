@@ -34,7 +34,7 @@ function Signup() {
     }
 
     try {
-      await apiFetch("/api/users/sync", {
+      const res = await apiFetch("/api/users/sync", {
         method: "POST",
         body: JSON.stringify({
           supabase_id: data.user.id,
@@ -44,9 +44,12 @@ function Signup() {
           last_name: normalizedLastName,
         }),
       });
+      if (!res.ok) throw new Error(`sync failed with status ${res.status}`);
       await refreshProfile(data.user.id);
     } catch (syncError) {
       console.error("Failed to sync user with backend:", syncError);
+      setError("Something went wrong finishing your signup. Please try again.");
+      return;
     }
 
     if (!data.session) {
