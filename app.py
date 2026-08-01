@@ -181,6 +181,16 @@ def sync_user():
     if existing:
         return jsonify(existing.to_dict()), 200
 
+    # Deleting a Supabase account and signing up again with the same email
+    # issues a fresh supabase_id. Re-point the row we already have, rather
+    # than colliding with its unique email and stranding their tasks behind
+    # an id nobody can log in as.
+    returning = User.query.filter_by(email=email).first() if email else None
+    if returning:
+        returning.supabase_id = supabase_id
+        db.session.commit()
+        return jsonify(returning.to_dict()), 200
+
     username = generate_unique_username(username_seed(data.get("username"), email))
 
     new_user = User(

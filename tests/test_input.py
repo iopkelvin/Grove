@@ -91,6 +91,26 @@ def test_an_email_with_nothing_usable_still_produces_a_username(client):
     assert res.get_json()["username"] == "grove"
 
 
+def test_a_recreated_supabase_account_keeps_its_tasks(client):
+    """Same person, same email, brand-new supabase_id after a delete."""
+    sync_user(client, "sb-old", "ada")
+    client.post("/api/tasks", json={"supabase_id": "sb-old", "title": "Read"})
+
+    again = client.post(
+        "/api/users/sync",
+        json={
+            "supabase_id": "sb-new",
+            "email": "ada@example.com",
+            "first_name": "a",
+            "last_name": "a",
+        },
+    )
+
+    assert again.status_code == 200
+    tasks = client.get("/api/tasks?supabase_id=sb-new").get_json()
+    assert [t["title"] for t in tasks] == ["Read"]
+
+
 # ── Oversized fields ─────────────────────────────────────────────────
 
 def test_a_huge_task_title_is_refused(client):
