@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sys
 import uuid
 from contextvars import ContextVar
@@ -34,6 +35,32 @@ _request_id: ContextVar[str | None] = ContextVar("grove_request_id", default=Non
 _STANDARD_RECORD_KEYS = frozenset(
     logging.LogRecord("", 0, "", 0, "", None, None).__dict__
 ) | {"message", "asctime", "taskName"}
+
+
+# Characters that let a log line pretend to be several. A request path of
+# "/api/x%0A2026-01-01 ERROR admin deleted everything" would otherwise
+# produce a second, entirely fabricated log entry.
+_UNSAFE_LOG_CHARS = re.compile(r"[\x00-\x1f\x7f]")
+MAX_LOGGED_VALUE = 200
+
+
+def scrub(value: object, *, limit: int = MAX_LOGGED_VALUE, annotate: bool = True) -> str:
+    """Make an untrusted value safe to put in a log line.
+
+    Anything derived from a request — a path, a username, a field name —
+    goes through this first. It strips control characters (newlines above
+    all) so a caller cannot forge log entries, and truncates so one enormous
+    value cannot bury everything around it.
+
+    `annotate` appends the original length when something was cut, which is
+    what you want in a log line. Pass False where the result has to obey a
+    hard length limit, such as a header value.
+    """
+    text = str(value)
+    cleaned = _UNSAFE_LOG_CHARS.sub("", text)
+    if len(cleaned) > limit:
+        cleaned = f"{cleaned[:limit]}…[{len(text)} chars]" if annotate else cleaned[:limit]
+    return cleaned
 
 
 def new_request_id() -> str:

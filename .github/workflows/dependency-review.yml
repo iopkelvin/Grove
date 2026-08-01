@@ -20,7 +20,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # continue-on-error is here for one reason only: this action needs
+      # "Dependency graph" turned on under Settings > Code security, and it
+      # currently is not. Until somebody with admin on the repository
+      # enables it, the action fails with "Dependency review is not
+      # supported on this repository" — a configuration error, not a
+      # finding, and not something a pull request should be blocked by.
+      #
+      # REMOVE THIS LINE once the setting is on. Leaving it in place after
+      # that would make the check pass while ignoring real vulnerabilities,
+      # which is worse than not running it at all.
       - uses: actions/dependency-review-action@v4
+        continue-on-error: true
         with:
           fail-on-severity: high
           comment-summary-in-pr: on-failure

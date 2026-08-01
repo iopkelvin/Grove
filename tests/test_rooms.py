@@ -107,7 +107,8 @@ class TestHostedRooms:
 
     def test_hosting_is_limited(self, api):
         for index in range(room_service.MAX_ROOMS_PER_HOST):
-            assert api.post("/api/rooms", json={"name": f"Room {index}"}).status_code == 201
+            created = api.post("/api/rooms", json={"name": f"Room {index}"})
+            assert created.status_code == 201
 
         response = api.post("/api/rooms", json={"name": "One too many"})
 
@@ -136,13 +137,18 @@ class TestHostedRooms:
         room = api.post("/api/rooms", json={"name": "Study"}).get_json()
         other_api.post(f"/api/rooms/{room['id']}/join")
 
-        assert other_api.delete(f"/api/rooms/{room['id']}").status_code == 403
-        assert api.delete(f"/api/rooms/{room['id']}").status_code == 204
+        by_member = other_api.delete(f"/api/rooms/{room['id']}")
+        by_host = api.delete(f"/api/rooms/{room['id']}")
+
+        assert by_member.status_code == 403
+        assert by_host.status_code == 204
 
     def test_the_global_room_cannot_be_closed(self, api):
         lobby = api.get("/api/rooms/lobby").get_json()["room"]
 
-        assert api.delete(f"/api/rooms/{lobby['id']}").status_code == 403
+        response = api.delete(f"/api/rooms/{lobby['id']}")
+
+        assert response.status_code == 403
 
     def test_a_room_that_does_not_exist(self, api):
         assert api.get("/api/rooms/999999").status_code == 404

@@ -123,7 +123,9 @@ class TestOwnership:
     def test_you_cannot_delete_someone_elses_task(self, make_task, other_api, api):
         task = make_task("Not yours")
 
-        assert other_api.delete(f"/api/tasks/{task['id']}").status_code == 404
+        removal = other_api.delete(f"/api/tasks/{task['id']}")
+
+        assert removal.status_code == 404
         assert api.get("/api/tasks").get_json()["total"] == 1
 
     def test_not_yours_looks_the_same_as_does_not_exist(self, make_task, other_api):
@@ -196,14 +198,18 @@ class TestDelete:
     def test_deleting_a_task(self, api, make_task):
         task = make_task()
 
-        assert api.delete(f"/api/tasks/{task['id']}").status_code == 204
+        removal = api.delete(f"/api/tasks/{task['id']}")
+
+        assert removal.status_code == 204
         assert api.get("/api/tasks").get_json()["total"] == 0
 
     def test_deleting_a_task_that_is_already_gone(self, api, make_task):
         task = make_task()
         api.delete(f"/api/tasks/{task['id']}")
 
-        assert api.delete(f"/api/tasks/{task['id']}").status_code == 404
+        second_removal = api.delete(f"/api/tasks/{task['id']}")
+
+        assert second_removal.status_code == 404
 
     def test_clear_completed_removes_only_finished_tasks(self, api, make_task):
         done = make_task("Done")

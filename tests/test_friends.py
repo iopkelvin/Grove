@@ -213,13 +213,17 @@ class TestRemoval:
         sent = api.post("/api/friends", json={"target_user_id": other_user.id}).get_json()
         other_api.patch(f"/api/friends/{sent['id']}", json={"status": "accepted"})
 
-        assert other_api.delete(f"/api/friends/{sent['id']}").status_code == 204
+        removal = other_api.delete(f"/api/friends/{sent['id']}")
+
+        assert removal.status_code == 204
         assert api.get("/api/friends").get_json() == []
 
     def test_the_sender_can_cancel_a_pending_request(self, api, other_api, other_user):
         sent = api.post("/api/friends", json={"target_user_id": other_user.id}).get_json()
 
-        assert api.delete(f"/api/friends/{sent['id']}").status_code == 204
+        cancellation = api.delete(f"/api/friends/{sent['id']}")
+
+        assert cancellation.status_code == 204
         assert other_api.get("/api/friends?status=pending").get_json() == []
 
     def test_a_bystander_cannot_break_up_a_friendship(
@@ -231,7 +235,9 @@ class TestRemoval:
         other_api.patch(f"/api/friends/{sent['id']}", json={"status": "accepted"})
         bystander = AuthedClient(client, make_user("nosy"))
 
-        assert bystander.delete(f"/api/friends/{sent['id']}").status_code == 403
+        attempt = bystander.delete(f"/api/friends/{sent['id']}")
+
+        assert attempt.status_code == 403
         assert len(api.get("/api/friends").get_json()) == 1
 
 

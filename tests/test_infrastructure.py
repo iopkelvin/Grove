@@ -163,6 +163,52 @@ class TestDatabaseUrlResolution:
         assert resolve_database_url("None") == DEFAULT_DATABASE_URL
 
 
+class TestLogScrubbing:
+    """Anything caller-controlled that reaches a log line goes through
+    scrub() first. Without it a request for a path containing a newline
+    writes a second, entirely fabricated entry into the log."""
+
+    def test_newlines_are_removed(self):
+        from api.utils.logger import scrub
+
+        forged = "/api/x\n2026-01-01 ERROR admin deleted everything"
+
+        assert "\n" not in scrub(forged)
+
+    @pytest.mark.parametrize("char", ["\r", "\n", "\x00", "\x1b", "\x7f"])
+    def test_control_characters_are_removed(self, char):
+        from api.utils.logger import scrub
+
+        assert char not in scrub(f"before{char}after")
+
+    def test_ordinary_text_is_untouched(self):
+        from api.utils.logger import scrub
+
+        assert scrub("/api/users/by-username/kelvin") == "/api/users/by-username/kelvin"
+
+    def test_long_values_are_truncated_but_say_so(self):
+        from api.utils.logger import scrub
+
+        result = scrub("x" * 5000, limit=50)
+
+        assert len(result) < 100
+        assert "5000" in result
+
+    def test_non_strings_are_coerced(self):
+        from api.utils.logger import scrub
+
+        assert scrub(42) == "42"
+        assert scrub(None) == "None"
+
+    def test_a_request_path_reaches_the_log_scrubbed(self, client, caplog):
+        import logging
+
+        with caplog.at_level(logging.INFO, logger="api"):
+            client.get("/api/health")
+
+        assert all("\n" not in record.getMessage() for record in caplog.records)
+
+
 class TestBackgroundQueue:
     def test_eager_mode_runs_a_job_immediately(self, app):
         seen = []

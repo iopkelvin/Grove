@@ -17,7 +17,7 @@ from api.config.database import db
 from api.models import User
 from api.models.user import utcnow
 from api.utils.errors import Conflict, NotFound, ValidationError
-from api.utils.logger import get_logger
+from api.utils.logger import get_logger, scrub
 from api.utils.validation import escape_like
 
 logger = get_logger(__name__)
@@ -207,7 +207,13 @@ def update_profile(account: User, changes: dict) -> User:
         setattr(account, field, value)
 
     db.session.commit()
-    logger.info("profile updated", extra={"user_id": account.id, "fields": sorted(changes)})
+    # Field names are allow-listed above, but scrubbed anyway: a value that
+    # reaches a log line should never be able to forge one, and relying on a
+    # check three lines up is how that guarantee gets lost in a later edit.
+    logger.info(
+        "profile updated",
+        extra={"user_id": account.id, "fields": [scrub(field, limit=40) for field in sorted(changes)]},
+    )
     return account
 
 

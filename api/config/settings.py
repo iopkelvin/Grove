@@ -116,7 +116,6 @@ class DevelopmentConfig(Config):
 class TestingConfig(Config):
     ENV_NAME = "testing"
     TESTING = True
-    SQLALCHEMY_ENGINE_OPTIONS: dict = {}  # noqa: RUF012
     LOG_LEVEL = "CRITICAL"
 
     def __init__(self) -> None:
@@ -125,6 +124,10 @@ class TestingConfig(Config):
         # DATABASE_URL, so running the suite cannot touch the shared
         # Supabase instance even when a developer has it exported.
         self.SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+        # Pool tuning is meaningless against in-memory SQLite. Set on the
+        # instance rather than shadowing the base class attribute, which
+        # reads as an accidental override.
+        self.SQLALCHEMY_ENGINE_OPTIONS = {}
 
 
 class ProductionConfig(Config):

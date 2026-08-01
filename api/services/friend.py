@@ -29,7 +29,7 @@ from api.models import (
     User,
 )
 from api.utils.errors import BadRequest, Conflict, Forbidden, NotFound
-from api.utils.logger import get_logger
+from api.utils.logger import get_logger, scrub
 
 logger = get_logger(__name__)
 
@@ -182,7 +182,13 @@ def respond(me: User, friendship_id: int, new_status: str) -> Friendship:
 
     logger.info(
         "friend request answered",
-        extra={"user_id": me.id, "friendship_id": friendship.id, "status": new_status},
+        extra={
+            "user_id": me.id,
+            "friendship_id": friendship.id,
+            # Constrained to RESPONDABLE_STATUSES above; scrubbed regardless,
+            # for the same reason as in the user service.
+            "status": scrub(new_status, limit=20),
+        },
     )
     return friendship
 

@@ -28,7 +28,13 @@ from flask_migrate import Migrate
 
 from api.config.database import db
 from api.config.settings import Config, get_config
-from api.utils.logger import configure_logging, get_logger, new_request_id, set_request_id
+from api.utils.logger import (
+    configure_logging,
+    get_logger,
+    new_request_id,
+    scrub,
+    set_request_id,
+)
 
 migrate = Migrate()
 logger = get_logger(__name__)
@@ -195,7 +201,12 @@ def _register_middleware(app: Flask) -> None:
     def _start_request():
         # Honour an id from an upstream proxy so a trace spans both hops,
         # but cap the length — this value ends up in every log line.
-        incoming = (request.headers.get(REQUEST_ID_HEADER) or "").strip()[:64]
+        # Scrubbed as well as truncated: this value goes into every log line
+        # for the request and back out in a response header, so it needs a
+        # hard length cap rather than the annotated one scrub uses by default.
+        incoming = scrub(
+            (request.headers.get(REQUEST_ID_HEADER) or "").strip(), limit=64, annotate=False
+        )
         request_id = incoming or new_request_id()
         set_request_id(request_id)
         g.request_id = request_id
@@ -209,14 +220,19 @@ def _register_middleware(app: Flask) -> None:
         if started is not None:
             duration_ms = round((time.perf_counter() - started) * 1000, 1)
             level = logger.warning if duration_ms > SLOW_REQUEST_MS else logger.info
+            # The path is caller-controlled. Without scrubbing, a request for
+            # "/api/x%0A2026-01-01 ERROR everything is fine" writes a second,
+            # entirely fabricated line into the log.
+            method = scrub(request.method, limit=10)
+            path = scrub(request.path)
             level(
                 "%s %s -> %s",
-                request.method,
-                request.path,
+                method,
+                path,
                 response.status_code,
                 extra={
-                    "method": request.method,
-                    "path": request.path,
+                    "method": method,
+                    "path": path,
                     "status": response.status_code,
                     "duration_ms": duration_ms,
                 },
