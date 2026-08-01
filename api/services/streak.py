@@ -2,8 +2,7 @@
 Grove — Streak service.
 
 Streak bumping and the tree-growth/points computation shown on the Streaks
-page. Routes in app.py stay thin; everything else lives here, same split
-as api/services/task.py.
+page.
 """
 
 from datetime import date, timedelta
