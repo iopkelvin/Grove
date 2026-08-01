@@ -14,6 +14,10 @@ frontend/.vite/
 # Database
 *.rdb
 
+# Test artifacts
+.coverage
+.pytest_cache/
+
 # OS
 .DS_Storeinstance/
 .DS_Store
