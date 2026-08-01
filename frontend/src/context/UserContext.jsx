@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { apiFetch } from "../api/client";
 import { getFriends } from "../api/friends";
 
 const UserContext = createContext(null);
@@ -16,7 +17,7 @@ export function UserProvider({ children }) {
       return;
     }
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`);
+      const res = await apiFetch(`/api/users/${supabaseId}`);
       setProfile(res.ok ? await res.json() : null);
     } catch (err) {
       console.error("Failed to load profile:", err);
@@ -61,9 +62,8 @@ export function UserProvider({ children }) {
     const supabaseId = session?.user?.id;
     if (!supabaseId) return { ok: false };
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`, {
+    const res = await apiFetch(`/api/users/${supabaseId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
 

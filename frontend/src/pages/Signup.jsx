@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { apiFetch } from "../api/client";
 import { useUser } from "../context/UserContext";
 
 function Signup() {
@@ -33,9 +34,8 @@ function Signup() {
     }
 
     try {
-      await fetch(`${import.meta.env.VITE_API_URL}/api/users/sync`, {
+      await apiFetch("/api/users/sync", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           supabase_id: data.user.id,
           email: data.user.email,
