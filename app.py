@@ -333,8 +333,16 @@ def get_tasks():
     completed = request.args.get("completed")
     if completed in ("true", "false"):
         want_completed = completed == "true"
-        tasks = [t for t in tasks if t["completed"] == want_completed]
+        tasks = [t for t in tasks if t["done"] == want_completed]
     return jsonify(tasks), 200
+
+
+@app.route("/api/tags", methods=["GET"])
+def get_tags():
+    user = find_user_by_supabase_id(request.args.get("supabase_id"))
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify(task_service.list_tags(user.id)), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
@@ -353,6 +361,8 @@ def create_task():
         title=title,
         description=(data.get("description") or None),
         tag_names=data.get("tags"),
+        due_date=data.get("due_date"),
+        recurring=data.get("recurring", False),
     )
     return jsonify(created), 201
 
@@ -364,15 +374,23 @@ def update_task(task_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    fields = {k: data[k] for k in ("title", "description", "completed", "tags") if k in data}
-    updated, became_completed = task_service.update_task(user.id, task_id, fields)
+    fields = {
+        k: data[k]
+        for k in ("title", "description", "completed", "tags", "due_date", "recurring")
+        if k in data
+    }
+    # commit=False: `user` was fetched above and hasn't been touched by a
+    # commit yet, so bump_streak_for_completion below can still read
+    # user.streak without SQLAlchemy silently re-fetching it — then this
+    # route does the one commit that covers both changes together.
+    updated, became_completed = task_service.update_task(user.id, task_id, fields, commit=False)
     if updated is None:
         return jsonify({"error": "Task not found"}), 404
 
     if became_completed:
         bump_streak_for_completion(user)
-        db.session.commit()
 
+    db.session.commit()
     return jsonify(updated), 200
 
 

@@ -1,75 +1,42 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount
-// and keeps them in local state; add/toggle/delete call the backend, then
-// update state from the server's response. Identity is the supabase_id from
-// useUser().session.user.id — the same id the API resolves against. Task
-// shape matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
+// The Tasks page. Task fetch/mutate logic lives in useTasks so Home.jsx
+// can share the exact same behavior instead of a second copy of it.
+// Identity is the supabase_id from useUser().session.user.id — the same
+// id the API resolves against.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
+import { useTasks } from "../hooks/useTasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
+import UndoToast from "../components/UndoToast";
+import TaskFormModal from "../components/TaskFormModal";
 
 export default function Tasks() {
   const { session, loading: authLoading } = useUser();
   const supabaseId = session?.user?.id;
 
-  const [newTitle, setNewTitle] = useState("");
-  const [tasksLoading, setTasksLoading] = useState(true);
-  const [tasks, setTasks] = useState([]);
-  const [error, setError] = useState("");
+  const {
+    tasks, loading: tasksLoading, error, pendingDelete,
+    addTask, toggleTask, editTask, removeTask, undoDelete,
+  } = useTasks(supabaseId);
 
-  useEffect(() => {
-    if (!supabaseId) return;
+  const [showModal, setShowModal] = useState(false);
+  const [creating, setCreating] = useState(false);
 
-    setTasksLoading(true);
-    getTasks(supabaseId)
-      .then(setTasks)
-      .catch(() => setError("Tasks could not be loaded. Check that the Flask API is running."))
-      .finally(() => setTasksLoading(false));
-  }, [supabaseId]);
-
-  async function addTask() {
-    const title = newTitle.trim();
-    if (!title || !supabaseId) return;
-
-    try {
-      const task = await createTask(supabaseId, title, ["Today"]);
-      setTasks((current) => [task, ...current]);
-      setNewTitle("");
-      setError("");
-    } catch {
-      setError("The task could not be created.");
-    }
-  }
-
-  async function toggleTask(id) {
-    const currentTask = tasks.find((task) => task.id === id);
-    if (!supabaseId || !currentTask) return;
-
-    try {
-      const updated = await updateTask(supabaseId, id, { completed: !currentTask.completed });
-      setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
-      setError("");
-    } catch {
-      setError("The task could not be updated.");
-    }
-  }
-
-  // Named removeTask (not deleteTask) so it doesn't shadow the imported deleteTask.
-  async function removeTask(id) {
-    if (!supabaseId) return;
-    try {
-      await deleteTask(supabaseId, id);
-      setTasks((current) => current.filter((task) => task.id !== id));
-      setError("");
-    } catch {
-      setError("Task can't be deleted.");
-    }
+  async function handleCreate(fields) {
+    setCreating(true);
+    await addTask(fields.title, {
+      description: fields.description,
+      tags: fields.tags,
+      dueDate: fields.dueDate,
+      recurring: fields.recurring,
+    });
+    setCreating(false);
+    setShowModal(false);
   }
 
   // Wait for auth to resolve before deciding what to show.
@@ -83,30 +50,30 @@ export default function Tasks() {
       <h1 className="page-title">Tasks</h1>
 
       <div className="page-content task-page-content">
-        {/* Add-task row. Input styling mirrors the auth form for consistency. */}
-        <div className="task-add">
-          <input
-            className="task-add-input"
-            type="text"
-            placeholder="Add a task…"
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addTask()}
-          />
-          <button className="task-add-button" onClick={addTask} aria-label="Add task">
-            <Plus size={20} />
-          </button>
-        </div>
+        <button type="button" className="task-create-button" onClick={() => setShowModal(true)}>
+          <Plus size={18} /> Create task
+        </button>
 
         {error && <p className="task-api-error">{error}</p>}
+        <UndoToast task={pendingDelete} onUndo={undoDelete} />
         {tasksLoading ? (
           <div className="card task-list">
             <p className="task-empty">Loading tasks…</p>
           </div>
         ) : (
-          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} onEdit={editTask} />
         )}
       </div>
+
+      {showModal && (
+        <TaskFormModal
+          supabaseId={supabaseId}
+          onClose={() => setShowModal(false)}
+          onCreate={handleCreate}
+          creating={creating}
+          error={error}
+        />
+      )}
     </div>
   );
 }

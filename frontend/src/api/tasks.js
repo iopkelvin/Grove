@@ -9,11 +9,18 @@ export async function getTasks(supabaseId, { completed } = {}) {
   return res.json();
 }
 
-export async function createTask(supabaseId, title, tags = [], description) {
+export async function createTask(supabaseId, title, { tags = [], description, dueDate, recurring } = {}) {
   const res = await fetch(`${API_URL}/api/tasks`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, title, description, tags }),
+    body: JSON.stringify({
+      supabase_id: supabaseId,
+      title,
+      description,
+      tags,
+      due_date: dueDate,
+      recurring,
+    }),
   });
   if (!res.ok) throw new Error("Could not create task");
   return res.json();
@@ -35,4 +42,11 @@ export async function deleteTask(supabaseId, taskId) {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Could not delete task");
+}
+
+export async function getTags(supabaseId) {
+  const params = new URLSearchParams({ supabase_id: supabaseId });
+  const res = await fetch(`${API_URL}/api/tags?${params}`);
+  if (!res.ok) throw new Error("Could not load tags");
+  return res.json();
 }

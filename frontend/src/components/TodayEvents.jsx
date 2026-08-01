@@ -1,24 +1,33 @@
+import { useUser } from "../context/UserContext";
+import { useTasks } from "../hooks/useTasks";
 import EventCard from "./EventCard";
 
-// [pending]: Placeholders
-const entries = [
-  { id: 1, title: "CS161 Project Meet", time: "9:00am - 10:00am", type: "event" },
-  { id: 2, title: "Study for Finals", time: "10:30am - 3:00pm", type: "task" },
-  { id: 3, title: "CS161 P2 Design Doc", time: "4:00pm - 5:00pm", type: "task" },
-  { id: 4, title: "CS160 Project Meet", time: "5:00pm - 7:00pm", type: "event" },
-];
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 export default function TodayEvents() {
+  const { session } = useUser();
+  const { tasks, loading } = useTasks(session?.user?.id);
+  const today = todayISO();
+
+  const relevant = tasks.filter(
+    (task) => !task.done && (task.recurring || task.due_date === today || (task.due_date && task.due_date < today))
+  );
+
   return (
     <div className="today-events">
-      <h2 className="today-events-title">Todays Events & Tasks</h2>
+      <h2 className="today-events-title">Today's Events & Tasks</h2>
       <div className="today-events-list">
-        {entries.map((entry) => (
+        {!loading && relevant.length === 0 && (
+          <p className="today-events-empty">Nothing due today.</p>
+        )}
+        {relevant.map((task) => (
           <EventCard
-            key={entry.id}
-            title={entry.title}
-            time={entry.time}
-            type={entry.type}
+            key={task.id}
+            title={task.title}
+            time={task.due_date && task.due_date < today ? "Overdue" : task.recurring ? "Daily habit" : "Due today"}
+            type="task"
           />
         ))}
       </div>

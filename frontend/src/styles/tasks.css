@@ -6,48 +6,212 @@
   max-width: 640px;
 }
 
-/* ── Add-task row ── */
-.task-add {
+/* ── Create-task button ── */
+.task-create-button {
   display: flex;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 14px;
   margin-bottom: 24px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+  transition: opacity 0.15s ease;
 }
 
-/* Mirrors .auth-form input so form controls feel the same app-wide. */
-.task-add-input {
-  flex: 1;
-  padding: 12px 14px;
+.task-create-button:hover {
+  opacity: 0.9;
+}
+
+/* ── Create-task modal ── */
+.task-modal-backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: grid;
+  padding: 24px;
+  background-color: var(--color-overlay-background);
+  place-items: center;
+}
+
+.task-modal {
+  position: relative;
+  width: min(480px, 100%);
+  max-height: calc(100vh - 48px);
+  padding: 32px;
+  overflow-y: auto;
+  border-radius: 16px;
+  background-color: var(--color-page-background);
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+}
+
+.task-modal h2 {
+  margin: 0 0 20px;
+  color: var(--color-title-text);
+  font-size: 22px;
+}
+
+.task-modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.task-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.task-form input:not([type="checkbox"]),
+.task-form textarea {
+  padding: 10px 12px;
   border: 1px solid var(--color-card-border);
   border-radius: 8px;
   font-family: var(--font-family-base);
   font-size: var(--font-size-body);
   background-color: var(--color-page-background);
   color: var(--color-text-primary);
-  box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  resize: vertical;
 }
 
-.task-add-input:focus {
-  outline: none;
-  border-color: var(--color-button-background);
-  box-shadow: 0 0 0 3px rgba(94, 122, 97, 0.2);
+.task-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: end;
 }
 
-.task-add-button {
+.task-form-recurring {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding-bottom: 10px;
+}
+
+.task-form-recurring input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-button-background);
+}
+
+.task-tag-picker {
+  margin: 0;
+  padding: 12px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+}
+
+.task-tag-picker legend {
+  padding: 0 6px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.task-tag-options {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 48px;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.task-tag-option {
+  padding: 4px 12px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 999px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.task-tag-option-selected {
+  border-color: var(--color-button-background);
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.task-tag-new {
+  display: flex;
+  gap: 8px;
+}
+
+.task-tag-new input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+}
+
+.task-tag-new button {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.task-tag-selected {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.task-tag-selected .task-tag button {
+  display: flex;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.task-form-submit {
+  padding: 12px;
   border: none;
   border-radius: 8px;
   background-color: var(--color-button-background);
   color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
   cursor: pointer;
-  transition: opacity 0.15s ease;
 }
 
-.task-add-button:hover {
-  opacity: 0.9;
+.task-form-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
 }
 
 /* ── Task list ── */
@@ -98,6 +262,22 @@
 .task-title {
   font-size: var(--font-size-body);
   color: var(--color-text-primary);
+  cursor: text;
+}
+
+.task-edit-input {
+  width: 100%;
+  padding: 2px 0;
+  border: none;
+  border-bottom: 1px solid var(--color-button-background);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  color: var(--color-text-primary);
+  background: none;
+}
+
+.task-edit-input:focus {
+  outline: none;
 }
 
 /* Completed: muted + struck through, checkbox picks up the green accent. */
@@ -117,11 +297,44 @@
 }
 
 .task-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   padding: 2px 10px;
   border-radius: 999px;
   background-color: var(--color-badge-background);
   color: var(--color-text-secondary);
   font-size: var(--font-size-small);
+}
+
+.task-tag-recurring {
+  color: var(--color-button-background);
+}
+
+.task-tag-overdue {
+  color: var(--color-error-text);
+}
+
+/* ── Undo-delete toast ── */
+.task-undo-toast {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0;
+  padding: 10px 16px;
+  border-radius: 8px;
+  background-color: var(--color-badge-background);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-small);
+}
+
+.task-undo-toast button {
+  border: none;
+  background: none;
+  color: var(--color-button-background);
+  font-weight: var(--font-weight-title);
+  cursor: pointer;
 }
 
 /* ── Delete ── */
