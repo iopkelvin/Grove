@@ -3,8 +3,9 @@ Grove — Auth verification.
 
 Verifies the Supabase-issued access token so routes can trust
 `g.supabase_id` instead of a client-submitted value. Verification is
-always local (an HMAC check or a cached JWKS lookup) — never a network
-call per request, so this doesn't add latency.
+always local, using the project's cached JWKS — never a network call per
+request, so this doesn't add latency, and it keeps working transparently
+across Supabase's key rotations with no config change on our end.
 """
 
 import os
@@ -15,34 +16,25 @@ import jwt
 from flask import g, jsonify, request
 from jwt import PyJWKClient
 
-_JWT_SECRET = os.environ.get("SUPABASE_JWT_SECRET")
 _SUPABASE_URL = (os.environ.get("SUPABASE_URL") or "").rstrip("/")
 _jwks_client = PyJWKClient(f"{_SUPABASE_URL}/auth/v1/.well-known/jwks.json") if _SUPABASE_URL else None
 
-if not _JWT_SECRET and not _jwks_client:
+if not _jwks_client:
     warnings.warn(
-        "Neither SUPABASE_JWT_SECRET nor SUPABASE_URL is set — every "
-        "authenticated route will reject every request. Set one of them "
-        "(see .env.example).",
+        "SUPABASE_URL isn't set — every authenticated route will reject "
+        "every request. Set it (see .env.example).",
         stacklevel=2,
     )
 
 
 def verify_token(token):
     """Return the verified Supabase user id (the `sub` claim), or None if
-    there's no token, it's expired, or it doesn't check out. Prefers the
-    shared HS256 secret (older Supabase projects) when configured; falls
-    back to the project's cached JWKS (newer, rotating-key projects)."""
-    if not token:
+    there's no token, it's expired, or it doesn't check out."""
+    if not token or not _jwks_client:
         return None
     try:
-        if _JWT_SECRET:
-            payload = jwt.decode(token, _JWT_SECRET, algorithms=["HS256"], audience="authenticated")
-        elif _jwks_client:
-            signing_key = _jwks_client.get_signing_key_from_jwt(token)
-            payload = jwt.decode(token, signing_key.key, algorithms=["RS256", "ES256"], audience="authenticated")
-        else:
-            return None
+        signing_key = _jwks_client.get_signing_key_from_jwt(token)
+        payload = jwt.decode(token, signing_key.key, algorithms=["RS256", "ES256"], audience="authenticated")
     except jwt.PyJWTError:
         return None
     return payload.get("sub")

@@ -8,9 +8,12 @@ reads DATABASE_URL at import time and load_dotenv() there won't override
 a value that's already set, so setting it here first is what makes the
 isolation actually stick.
 
-Same reasoning for SUPABASE_JWT_SECRET: it has to be set before app.py
-imports api/services/auth.py, and it lets auth_headers() below sign
-tokens that the app's own verify_token() will accept.
+Production verifies tokens against Supabase's live JWKS — there's no live
+project to check against in tests, so auth_headers() below signs tokens
+against a local test secret instead, and verify_token() is monkeypatched
+to check against that same secret. Everything else about auth (header
+parsing, g.supabase_id, the 401/403 behavior routes build on) still runs
+for real.
 """
 
 import os
@@ -21,20 +24,31 @@ import pytest
 
 _db_fd, _db_path = tempfile.mkstemp(suffix=".db")
 os.environ["DATABASE_URL"] = f"sqlite:///{_db_path}"
-
-_TEST_JWT_SECRET = "test-secret-not-used-anywhere-real"
-os.environ["SUPABASE_JWT_SECRET"] = _TEST_JWT_SECRET
+os.environ.setdefault("SUPABASE_URL", "https://test.supabase.co")
 
 from app import app as flask_app  # noqa: E402 — must import after DATABASE_URL is set
 from api.config.database import db  # noqa: E402
+from api.services import auth as auth_module  # noqa: E402
+
+_TEST_SECRET = "test-secret-not-used-anywhere-real"
+
+
+def _test_verify_token(token):
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, _TEST_SECRET, algorithms=["HS256"], audience="authenticated")
+    except jwt.PyJWTError:
+        return None
+    return payload.get("sub")
+
+
+auth_module.verify_token = _test_verify_token
 
 
 def auth_headers(supabase_id):
-    """Authorization header for a request acting as `supabase_id` — signs
-    a token the app's own verify_token() (same secret) will accept."""
-    token = jwt.encode(
-        {"sub": supabase_id, "aud": "authenticated"}, _TEST_JWT_SECRET, algorithm="HS256"
-    )
+    """Authorization header for a request acting as `supabase_id`."""
+    token = jwt.encode({"sub": supabase_id, "aud": "authenticated"}, _TEST_SECRET, algorithm="HS256")
     return {"Authorization": f"Bearer {token}"}
 
 
