@@ -2,7 +2,7 @@
 # Entry point for the Flask backend.
 # Serves the app as a pure JSON API for the React frontend to consume.
 
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 
@@ -10,11 +10,14 @@ from api.config.database import db, SQLALCHEMY_DATABASE_URI
 from api import models
 from api.models.room import Room
 from api.models.user import User
+from api.services import auth as auth_service
 from api.services import friend as friend_service
 from api.services import room as room_service
 from api.services import streak as streak_service
 from api.services import task as task_service
 from api.services import user as user_service
+
+require_auth = auth_service.require_auth
 
 # App setup
 app = Flask(__name__)
@@ -46,8 +49,16 @@ def sync_user():
     if not first_name or not last_name:
         return jsonify({"error": "first_name and last_name are required"}), 400
 
+    # A session (and therefore a verifiable token) may not exist yet if the
+    # Supabase project requires email confirmation before login — fall back
+    # to the client-claimed id only in that case. Once a token is present
+    # it always wins over whatever the body claims.
+    supabase_id = auth_service.verify_request() or data.get("supabase_id")
+    if not supabase_id:
+        return jsonify({"error": "supabase_id is required"}), 400
+
     user, created = user_service.get_or_create(
-        supabase_id=data.get("supabase_id"),
+        supabase_id=supabase_id,
         email=data.get("email"),
         first_name=first_name,
         last_name=last_name,
@@ -58,9 +69,13 @@ def sync_user():
 
 # User routes
 # Looked up by supabase_id since that's the only identifier the frontend
-# has after login (it never sees our internal integer id).
+# has after login (it never sees our internal integer id). Must match the
+# verified token — nobody can look up (or edit) another user's row here.
 @app.route("/api/users/<supabase_id>", methods=["GET"])
+@require_auth
 def get_user(supabase_id):
+    if supabase_id != g.supabase_id:
+        return jsonify({"error": "Forbidden"}), 403
     user = user_service.find_by_supabase_id(supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -74,6 +89,7 @@ def get_user(supabase_id):
 # endpoint, and supabase_id would let anyone pivot to get_user (by
 # supabase_id) for the full profile, email included.
 @app.route("/api/users/by-username/<username>", methods=["GET"])
+@require_auth
 def get_user_by_username(username):
     user = user_service.find_by_username(username)
     if not user:
@@ -82,7 +98,7 @@ def get_user_by_username(username):
     data.pop("email", None)
     data.pop("supabase_id", None)
 
-    viewer = user_service.find_by_supabase_id(request.args.get("viewer_supabase_id"))
+    viewer = user_service.find_by_supabase_id(g.supabase_id)
     if viewer:
         data["friendship_status"] = friend_service.get_friendship_status(viewer, user)
 
@@ -92,7 +108,10 @@ def get_user_by_username(username):
 # Only first_name, last_name, display_name, bio, avatar_url, and banner_url
 # are editable here. Email and streak are intentionally never read from the body.
 @app.route("/api/users/<supabase_id>", methods=["PATCH"])
+@require_auth
 def update_user(supabase_id):
+    if supabase_id != g.supabase_id:
+        return jsonify({"error": "Forbidden"}), 403
     user = user_service.find_by_supabase_id(supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
@@ -107,14 +126,14 @@ def update_user(supabase_id):
 # fields (unlike supabase_id, which is an opaque UUID nobody would type
 # in a search box, or email, which is never exposed to other users).
 @app.route("/api/users/search", methods=["GET"])
+@require_auth
 def search_users():
     query = (request.args.get("q") or "").strip()
     if not query:
         return jsonify([]), 200
 
-    exclude_supabase_id = request.args.get("exclude_supabase_id")
-    viewer = user_service.find_by_supabase_id(exclude_supabase_id) if exclude_supabase_id else None
-    results = user_service.search(query, exclude_supabase_id=exclude_supabase_id)
+    viewer = user_service.find_by_supabase_id(g.supabase_id)
+    results = user_service.search(query, exclude_supabase_id=g.supabase_id)
 
     return jsonify([
         {
@@ -132,17 +151,18 @@ def search_users():
 # Global room + rooms the user hosts or is a member of. (The Lobby page
 # also shows its own placeholder rooms so a fresh database isn't empty.)
 @app.route("/api/rooms", methods=["GET"])
+@require_auth
 def get_rooms():
-    supabase_id = request.args.get("supabase_id")
-    user = user_service.find_by_supabase_id(supabase_id) if supabase_id else None
+    user = user_service.find_by_supabase_id(g.supabase_id)
     rooms = room_service.list_visible(user)
     return jsonify([room.to_dict() for room in rooms]), 200
 
 
 @app.route("/api/rooms", methods=["POST"])
+@require_auth
 def create_room():
     data = request.json or {}
-    host = user_service.find_by_supabase_id(data.get("host_supabase_id"))
+    host = user_service.find_by_supabase_id(g.supabase_id)
     if not host:
         return jsonify({"error": "User not found"}), 404
 
@@ -173,6 +193,7 @@ def create_room():
 
 
 @app.route("/api/rooms/<int:room_id>", methods=["GET"])
+@require_auth
 def get_room(room_id):
     room = db.session.get(Room, room_id)
     if not room:
@@ -185,8 +206,9 @@ def get_room(room_id):
 # the streak bump: a cross-cutting side effect of completion, not a "task"
 # concern, and it needs the full User object bump_for_completion() expects.
 @app.route("/api/tasks", methods=["GET"])
+@require_auth
 def get_tasks():
-    user = user_service.find_by_supabase_id(request.args.get("supabase_id"))
+    user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -199,17 +221,19 @@ def get_tasks():
 
 
 @app.route("/api/tags", methods=["GET"])
+@require_auth
 def get_tags():
-    user = user_service.find_by_supabase_id(request.args.get("supabase_id"))
+    user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
     return jsonify(task_service.list_tags(user.id)), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
+@require_auth
 def create_task():
     data = request.json or {}
-    user = user_service.find_by_supabase_id(data.get("supabase_id"))
+    user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -229,9 +253,10 @@ def create_task():
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
+@require_auth
 def update_task(task_id):
     data = request.json or {}
-    user = user_service.find_by_supabase_id(data.get("supabase_id"))
+    user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
 
@@ -256,8 +281,9 @@ def update_task(task_id):
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
+@require_auth
 def delete_task(task_id):
-    user = user_service.find_by_supabase_id(request.args.get("supabase_id"))
+    user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
     if not task_service.delete_task(user.id, task_id):
@@ -270,9 +296,10 @@ def delete_task(task_id):
 # is the recipient, and status starts "pending" until the recipient
 # accepts or declines. Nothing here is instant — see api/models/friend.py.
 @app.route("/api/friends", methods=["POST"])
+@require_auth
 def send_friend_request():
     data = request.json or {}
-    requester = user_service.find_by_supabase_id(data.get("requester_supabase_id"))
+    requester = user_service.find_by_supabase_id(g.supabase_id)
     if not requester:
         return jsonify({"error": "User not found"}), 404
 
@@ -295,8 +322,9 @@ def send_friend_request():
 # defaults to "incoming" (requests waiting on me to respond) — pass
 # direction=sent to see requests I sent that are still waiting on someone else.
 @app.route("/api/friends", methods=["GET"])
+@require_auth
 def get_friends():
-    me = user_service.find_by_supabase_id(request.args.get("supabase_id"))
+    me = user_service.find_by_supabase_id(g.supabase_id)
     if not me:
         return jsonify({"error": "User not found"}), 404
 
@@ -327,9 +355,10 @@ def get_friends():
 
 # Only the recipient (friend_id) can accept or decline.
 @app.route("/api/friends/<int:friendship_id>", methods=["PATCH"])
+@require_auth
 def respond_to_friend_request(friendship_id):
     data = request.json or {}
-    me = user_service.find_by_supabase_id(data.get("supabase_id"))
+    me = user_service.find_by_supabase_id(g.supabase_id)
     if not me:
         return jsonify({"error": "User not found"}), 404
 
@@ -351,8 +380,9 @@ def respond_to_friend_request(friendship_id):
 
 # Either side can remove an accepted friendship, or cancel a pending one.
 @app.route("/api/friends/<int:friendship_id>", methods=["DELETE"])
+@require_auth
 def remove_friend(friendship_id):
-    me = user_service.find_by_supabase_id(request.args.get("supabase_id"))
+    me = user_service.find_by_supabase_id(g.supabase_id)
     if not me:
         return jsonify({"error": "User not found"}), 404
 
@@ -370,14 +400,18 @@ def remove_friend(friendship_id):
 
 # Streaks / Calendar routes
 @app.route("/api/streaks/<user_id>", methods=["GET"])
+@require_auth
 def get_streaks(user_id):
     user = user_service.find_for_streaks(user_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
+    if user.supabase_id != g.supabase_id:
+        return jsonify({"error": "Forbidden"}), 403
     return jsonify(streak_service.tree_progress(user)), 200
 
 
 @app.route("/api/calendar/<user_id>", methods=["GET"])
+@require_auth
 def get_calendar(user_id):
     return jsonify([]), 200
 
