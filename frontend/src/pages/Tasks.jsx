@@ -1,10 +1,7 @@
-// Kyle
-// pages/Tasks.jsx
-//
-// The Tasks page. Task fetch/mutate logic lives in useTasks so Home.jsx
-// can share the exact same behavior instead of a second copy of it.
-// Identity is the supabase_id from useUser().session.user.id — the same
-// id the API resolves against.
+// The Tasks page. Fetch/mutate logic lives in useTasks so Home.jsx shares
+// the exact same behavior instead of duplicating it. Identity is the
+// supabase_id from useUser().session.user.id — the same id the API
+// resolves against.
 
 import { useState } from "react";
 import { Plus } from "lucide-react";
