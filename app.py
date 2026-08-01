@@ -10,7 +10,9 @@ from datetime import date, timedelta
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from werkzeug.exceptions import HTTPException
 from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
@@ -645,6 +647,30 @@ def get_calendar(user_id):
 @app.route("/")
 def index():
     return {"status": "Grove API is running"}
+
+
+# Errors
+# Flask's default error page is HTML, which breaks a JSON client twice:
+# once on the request, and again when res.json() chokes on the apology.
+@app.errorhandler(HTTPException)
+def handle_http_error(error):
+    return jsonify({"error": error.description}), error.code
+
+
+@app.errorhandler(IntegrityError)
+def handle_integrity_error(error):
+    # Nearly always a double-click racing itself, not a server fault.
+    db.session.rollback()
+    return jsonify({"error": "That already exists"}), 409
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    if app.testing or app.debug:
+        raise error
+    db.session.rollback()
+    app.logger.exception("Unhandled error")
+    return jsonify({"error": "Something went wrong"}), 500
 
 
 if __name__ == "__main__":
