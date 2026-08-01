@@ -35,9 +35,9 @@ def bump_for_completion(user):
     streak.last_activity_date = today
 
 
-# Builds the tree-growth data shown on the Streaks page: points, tree level,
-# progress to the next level, and the user's current streak.
 def tree_progress(user):
+    """Builds the tree-growth data shown on the Streaks page: points, tree
+    level, progress to the next level, and the user's current streak."""
     points = Task.query.filter_by(user_id=user.id, completed=True).count()
     level = sum(1 for threshold in TREE_THRESHOLDS if points >= threshold)
 
