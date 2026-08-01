@@ -1,8 +1,17 @@
-/* No CSS reset existed anywhere in this project — every element defaulted
-   to box-sizing: content-box, so padding/border get added on top of a
-   percentage width instead of being included in it. That's the recurring
-   root cause of elements silently overflowing their container on narrow
-   screens. Fixing it once, globally, instead of patching each component. */
+/* Design tokens.
+ *
+ * Every colour in the app resolves through one of these variables — the
+ * stylelint config in frontend/stylelint.config.cjs refuses raw hex and rgb
+ * values in component CSS. That discipline is what makes dark mode a
+ * twenty-line addition to this file rather than a change to every component:
+ * the [data-theme="dark"] block below redefines the same names, and nothing
+ * downstream knows or cares which set is active.
+ */
+
+/* No CSS reset existed anywhere in this project — every element defaulted to
+   box-sizing: content-box, so padding and borders were added on top of a
+   percentage width rather than included in it. That is the recurring root
+   cause of elements overflowing their container on narrow screens. */
 *,
 *::before,
 *::after {
@@ -13,70 +22,181 @@ html,
 body {
   max-width: 100%;
   overflow-x: hidden;
+  margin: 0;
 }
 
 :root {
   /* ── Page ── */
-  --color-page-background: #F4F3EE;
+  --color-page-background: #f4f3ee;
 
   /* ── Cards ── */
-  --color-card-background: #D6DDD7;         /* standard cards: friends, calendar, tasks, up next */
-  --color-card-accent-background: #A3B7A5;  /* accent cards: banner, titles, highlighted sections */
+  --color-card-background: #d6ddd7;         /* standard cards */
+  --color-card-accent-background: #a3b7a5;  /* banners, highlighted sections */
   --color-card-border: #1a1a1a;
-  --color-picture-placeholder: #cccccc;     /* placeholder background for unfilled profile photo */
+  --color-card-border-subtle: #c2cbc4;
+  --color-picture-placeholder: #cccccc;
 
   /* ── Buttons ── */
-  --color-button-background: #5E7A61;
+  --color-button-background: #5e7a61;
+  --color-button-background-hover: #4c6650;
   --color-button-text: #ffffff;
+  --color-button-disabled: #a9b5aa;
 
   /* ── Text ── */
   --color-title-text: #1a1a1a;
   --color-text-primary: #1a1a1a;
   --color-text-secondary: #4a4a4a;
+  --color-text-muted: #6b6f6b;
   --color-error-text: #b00020;
+  --color-success-text: #2f6b3f;
 
   /* ── Accents ── */
-  --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */
-  --color-streak-accent: #d9622b;      /* highlighted calendar day, streak fire */
-  --color-overlay-background: rgba(0, 0, 0, 0.25);  /* dimming overlay behind modals/menus */
+  --color-badge-background: #c9cfc0;
+  --color-streak-accent: #d9622b;
+  --color-online-indicator: #3f8f5a;
+  --color-overlay-background: rgba(0, 0, 0, 0.25);
+  --color-focus-ring: #3d6b8a;
 
-  /* ── Font family ── */
-  --font-family-base: 'Newsreader', 'Georgia', serif;
+  /* Heatmap intensity ramp, lightest to densest. */
+  --color-heat-0: #e3e6de;
+  --color-heat-1: #c3d6bd;
+  --color-heat-2: #98bb92;
+  --color-heat-3: #6d9a6b;
+  --color-heat-4: #45733f;
 
-  /* ── Font sizes ── */
+  /* ── Typography ── */
+  --font-family-base: "Newsreader", "Georgia", serif;
   --font-size-title: 48px;
   --font-size-subtitle: 24px;
   --font-size-body: 18px;
   --font-size-small: 15px;
   --font-weight-title: 400;
+
+  /* ── Spacing, radii, elevation ── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 48px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(26, 26, 26, 0.08);
+  --shadow-raised: 0 6px 20px rgba(26, 26, 26, 0.14);
 }
 
-/* smaller type on narrow screens — every element built from these
-   tokens shrinks automatically, no per-page changes needed */
+/* Dark theme.
+ *
+ * Set by ThemeContext as data-theme on <html>, which also covers the
+ * "match my system" case — the provider resolves that to light or dark
+ * before writing the attribute, so there is only ever one code path here. */
+:root[data-theme="dark"] {
+  --color-page-background: #14181a;
+
+  --color-card-background: #1e2320;
+  --color-card-accent-background: #2a332c;
+  --color-card-border: #3a423b;
+  --color-card-border-subtle: #2c332d;
+  --color-picture-placeholder: #333a34;
+
+  --color-button-background: #6f9074;
+  --color-button-background-hover: #83a689;
+  --color-button-text: #10130f;
+  --color-button-disabled: #454d46;
+
+  --color-title-text: #e8e6e1;
+  --color-text-primary: #e8e6e1;
+  --color-text-secondary: #b3b9b2;
+  --color-text-muted: #8b918a;
+  --color-error-text: #f08a8a;
+  --color-success-text: #7fc294;
+
+  --color-badge-background: #333c34;
+  --color-streak-accent: #e0803f;
+  --color-online-indicator: #61c184;
+  --color-overlay-background: rgba(0, 0, 0, 0.55);
+  --color-focus-ring: #7fb4dc;
+
+  --color-heat-0: #232823;
+  --color-heat-1: #33452f;
+  --color-heat-2: #47643f;
+  --color-heat-3: #5e8552;
+  --color-heat-4: #7fae6c;
+
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-raised: 0 6px 20px rgba(0, 0, 0, 0.55);
+}
+
+/* Smaller type on narrow screens. Every element built from these tokens
+   shrinks automatically, with no per-page changes. */
 @media (max-width: 640px) {
   :root {
     --font-size-title: 32px;
     --font-size-subtitle: 20px;
     --font-size-body: 16px;
+    --space-xl: 24px;
   }
 }
 
+/* A visible focus ring on every interactive element. Browsers provide one by
+   default; enough of the component CSS overrode outline that keyboard
+   navigation had become invisible in places. */
+:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Respect a user's reduced-motion preference. The spinners and hover
+   transitions elsewhere are decorative, and vestibular disorders are not. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Study-room and tree tokens, from Turner's work on `development`. Values
+   unchanged; dark-mode counterparts added below so his pages do not stay
+   bright white when the rest of the app goes dark. */
 :root {
-  /* ── Study rooms / tree ── */
-  --color-surface-soft: #E7EAE4;
-  --color-surface-warm: #ECE9DF;
-  --color-surface-strong: #C7D2C9;
-  --color-surface-white: #FFFDF7;
-  --color-study-ink: #17342C;
-  --color-study-muted: #66736C;
-  --color-study-line: #BCC8BF;
-  --color-study-online: #2E6D50;
-  --color-study-task: #C7E7F4;
-  --color-study-points: #C9F2CF;
-  --color-study-scene: #21142B;
+  --color-surface-soft: #e7eae4;
+  --color-surface-warm: #ece9df;
+  --color-surface-strong: #c7d2c9;
+  --color-surface-white: #fffdf7;
+  --color-study-ink: #17342c;
+  --color-study-muted: #66736c;
+  --color-study-line: #bcc8bf;
+  --color-study-online: #2e6d50;
+  --color-study-task: #c7e7f4;
+  --color-study-points: #c9f2cf;
+  --color-study-scene: #21142b;
   --color-study-overlay: rgba(15, 20, 17, 0.56);
   --color-study-overlay-soft: rgba(255, 253, 247, 0.84);
-  --color-tree-night: #142B4B;
-  --color-tree-card: rgba(244, 243, 238, 0.90);
-  --color-tree-water: #7EB9DE;
+  --color-tree-night: #142b4b;
+  --color-tree-card: rgba(244, 243, 238, 0.9);
+  --color-tree-water: #7eb9de;
+}
+
+:root[data-theme="dark"] {
+  --color-surface-soft: #1c211d;
+  --color-surface-warm: #211f1a;
+  --color-surface-strong: #2b332d;
+  --color-surface-white: #1a1e1b;
+  --color-study-ink: #dce6df;
+  --color-study-muted: #8d968f;
+  --color-study-line: #39433b;
+  --color-study-online: #61c184;
+  --color-study-task: #2b4a58;
+  --color-study-points: #2e5237;
+  --color-study-scene: #150d1c;
+  --color-study-overlay: rgba(0, 0, 0, 0.66);
+  --color-study-overlay-soft: rgba(20, 24, 21, 0.86);
+  --color-tree-night: #0d1a2c;
+  --color-tree-card: rgba(30, 35, 32, 0.9);
+  --color-tree-water: #4d7f9e;
 }

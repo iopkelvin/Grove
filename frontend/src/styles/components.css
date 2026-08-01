@@ -1,5 +1,5 @@
 /* ── Streak display ── */
-/* reusable anywhere a streak needs to be shown (Home, Profile, etc.) */
+/* Reusable anywhere a streak is shown: Home, Profile, Streaks. */
 .streak-column {
   display: flex;
   flex-direction: column;
@@ -9,6 +9,7 @@
 
 .streak-number {
   font-size: 64px;
+  line-height: 1;
   color: var(--color-text-primary);
 }
 
@@ -16,13 +17,92 @@
   width: 100%;
   max-width: 180px;
   height: auto;
-  margin-top: 8px;
+  margin-top: var(--space-sm);
 }
 
 .streak-tree-ground-shadow {
-  fill: rgba(0, 0, 0, 0.18);
+  fill: var(--color-overlay-background);
 }
 
+/* ── Buttons ── */
+.primary-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 18px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.primary-button:hover:not(:disabled) {
+  background-color: var(--color-button-background-hover);
+}
+
+.primary-button:disabled {
+  background-color: var(--color-button-disabled);
+  cursor: not-allowed;
+}
+
+/* ── Theme toggle ── */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  transition: background-color 120ms ease;
+}
+
+.theme-toggle:hover {
+  background-color: var(--color-card-accent-background);
+}
+
+/* ── Card headings ── */
+.card-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0 0 var(--space-md);
+  font-size: var(--font-size-subtitle);
+  font-weight: var(--font-weight-title);
+  color: var(--color-title-text);
+}
+
+/* ── Form field messages ── */
+/* Validation errors sit next to the input that caused them, which is what
+   the per-field `details.fields` in the API's error responses is for. */
+.field-error {
+  display: block;
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-small);
+  color: var(--color-error-text);
+}
+
+.field-hint {
+  display: block;
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--color-error-text);
+}
+
+/* ── Enlarged streak tree (Home page) ── */
+/* Turner's overlay layout, kept as written. */
 /* ── Streak display: overlay layout (Home page) ── */
 /* sized off viewport height, not the grid column's width — a column-width
    cap kept shrinking the tree to fit alongside the other cards. This is
@@ -98,3 +178,4 @@
     font-size: 15px;
   }
 }
+

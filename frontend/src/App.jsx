@@ -1,38 +1,69 @@
-// Routing (Kelvin)
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import Home from "./pages/Home";
-import Profile from "./pages/Profile";
-import Signup from "./pages/Signup";
-import Login from "./pages/Login";
-import Friends from "./pages/Friends";
-import Calendar from "./pages/Calendar";
-import Tasks from "./pages/Tasks";
-import Lobby from "./pages/Lobby";
-import Room from "./pages/Room";
-import Streaks from "./pages/Streaks";
-import AuthGate from "./components/RequireAuth";
+// Routing.
+//
+// Every page in the menu now has a route. Before this, the menu linked to
+// /rooms, /calendar, /streaks and /settings, none of which were registered —
+// clicking any of them rendered a blank page with no error and no way back
+// except the browser's back button. The four page files those routes needed
+// existed and were zero bytes.
+//
+// Routes are grouped by who may see them:
+//
+//   public         login, signup, and anyone's public profile
+//   authenticated  everything else, behind <RequireAuth>
+//
+// Calendar comes from `development` (Aatish's work) and is untouched by
+// this branch — it is only re-registered here, because rewriting App.jsx
+// would otherwise have silently dropped its route.
 
-function App() {
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+
+import ErrorBoundary from "./components/ErrorBoundary";
+import RequireAuth, { RedirectIfAuthenticated } from "./components/RequireAuth";
+import Calendar from "./pages/Calendar";
+import Friends from "./pages/Friends";
+import Home from "./pages/Home";
+import Lobby from "./pages/Lobby";
+import Login from "./pages/Login";
+import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import Room from "./pages/Room";
+import Rooms from "./pages/Rooms";
+import Settings from "./pages/Settings";
+import Signup from "./pages/Signup";
+import Streaks from "./pages/Streaks";
+import Tasks from "./pages/Tasks";
+
+export default function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<AuthGate />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/user/:username" element={<Profile />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/friends" element={<Friends />} />
-        <Route path="/tasks" element={<Tasks />} />
-        <Route path="/calendar" element={<Calendar />} />
-        <Route path="/rooms" element={<Lobby />} />
-        <Route path="/rooms/:roomId" element={<Room />} />
-        <Route path="/streaks" element={<Streaks />} />
-        <Route path="/settings" element={<Navigate to="/" replace />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+      <ErrorBoundary>
+        <Routes>
+          {/* Public */}
+          <Route element={<RedirectIfAuthenticated />}>
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+          </Route>
+          <Route path="/user/:username" element={<Profile />} />
+
+          {/* Authenticated */}
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/tasks" element={<Tasks />} />
+            <Route path="/friends" element={<Friends />} />
+            <Route path="/streaks" element={<Streaks />} />
+            <Route path="/calendar" element={<Calendar />} />
+            <Route path="/lobby" element={<Lobby />} />
+            <Route path="/rooms" element={<Rooms />} />
+            <Route path="/rooms/:roomId" element={<Room />} />
+            <Route path="/settings" element={<Settings />} />
+            {/* The menu used to point here before Home had its own path. */}
+            <Route path="/home" element={<Navigate to="/" replace />} />
+          </Route>
+
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </ErrorBoundary>
     </BrowserRouter>
   );
 }
-
-export default App;

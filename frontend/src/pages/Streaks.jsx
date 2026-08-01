@@ -1,114 +1,114 @@
-import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
-import { Droplets, Flame, Sprout } from "lucide-react";
-import MenuIcon from "../components/MenuIcon";
+// Streaks.
+//
+// This file was zero bytes. The menu linked to /streaks, the route was never
+// registered, and clicking it rendered nothing.
+//
+// The page answers three questions the number on the home page cannot: how
+// long is the current run, how long was the best one, and which days did I
+// actually show up.
+
+import { useCallback, useEffect, useState } from "react";
+import { Flame, Sprout, TrendingUp } from "lucide-react";
+
+import { getMyStreak } from "../api/streaks";
+import PageLayout from "../components/PageLayout";
+import StreakHeatmap from "../components/StreakHeatmap";
+import StreakTree from "../components/StreakTree";
+import { AsyncBoundary, EmptyState } from "../components/states";
 import { useUser } from "../context/UserContext";
-import { getTasks } from "../api/tasks";
-import { getTreeProgress } from "../api/streaks";
 
-const FALLBACK_PROGRESS = {
-  points: 0,
-  current_streak: 0,
-  tree_level: 1,
-  max_tree_level: 7,
-  next_level_points: 3,
-  points_remaining: 3,
-};
-
-// PLACEHOLDER TASK: shown only when no database task is available. It keeps
-// the tree call-to-action understandable on a brand-new account.
-// placeholder task, to be deleted for production.
-const PLACEHOLDER_TASK = { id: "placeholder-water-task", title: "Finish one task today" };
-
-
-// important documentation: 
-// useState - component states and functional updates
-// useEffect - API loading, synchronization, arrays, and cleanup functions
-// useMemo  - caches friends and percentages.
-// DOCUMENTATION
-// https://react.dev/reference/react/useState
-// https://react.dev/reference/react/useEffect
-// https://react.dev/reference/react/useMemo
 export default function Streaks() {
   const { session } = useUser();
-  const [progress, setProgress] = useState(FALLBACK_PROGRESS);
-  const [tasks, setTasks] = useState([]);
-  const [watered, setWatered] = useState(false);
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await getMyStreak({ days: 91 }));
+    } catch (err) {
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const supabaseId = session?.user?.id;
-    if (!supabaseId) return;
+    load();
+  }, [load]);
 
-    Promise.allSettled([getTreeProgress(supabaseId), getTasks(supabaseId, { completed: false })])
-      .then(([progressResult, taskResult]) => {
-        if (progressResult.status === "fulfilled") setProgress(progressResult.value);
-        if (taskResult.status === "fulfilled") setTasks(taskResult.value);
-      });
-  }, [session?.user?.id]);
-
-  const level = Math.max(1, Math.min(7, progress.tree_level || 1));
-  const previewLevel = Math.max(1, Math.min(6, level + 1));
-  const nextTask = tasks[0] || PLACEHOLDER_TASK;
-  const atMaxLevel = level >= (progress.max_tree_level || 7);
-
-  const progressPercent = useMemo(() => {
-    if (atMaxLevel) return 100;
-    const currentLevelStart = [0, 0, 3, 7, 12, 18, 25, 33][level] || 0;
-    const range = Math.max(1, progress.next_level_points - currentLevelStart);
-    return Math.max(0, Math.min(100, ((progress.points - currentLevelStart) / range) * 100));
-  }, [atMaxLevel, level, progress.next_level_points, progress.points]);
+  const hasHistory = Boolean(data?.total_days);
 
   return (
-    <div className="page tree-page">
-      <MenuIcon />
-      <main className="tree-shell">
-        <header className="tree-header">
-          <div>
-            <p className="study-eyebrow">Your daily growth</p>
-            <h1>Your Tree</h1>
-          </div>
-          <div className="tree-scoreboard">
-            <span><Flame size={18} /> {progress.current_streak} day streak</span>
-            <strong>{progress.points} points</strong>
-          </div>
-        </header>
+    <PageLayout title="Streaks" subtitle="One completed task a day keeps the tree growing.">
+      <AsyncBoundary
+        loading={loading}
+        error={error}
+        onRetry={load}
+        loadingLabel="Loading your streak"
+      >
+        {data && (
+          <div className="streaks-layout">
+            <section className="card streaks-tree-card">
+              <StreakTree streak={data.current_count} userId={session?.user?.id} />
+              {/* Only shown when it is actionable — there is no point
+                  nagging somebody who has already logged today. */}
+              {data.at_risk && (
+                <p className="streaks-warning" role="status">
+                  Your streak is still alive, but today is not logged yet.
+                </p>
+              )}
+            </section>
 
-        <section className="tree-art-stage">
-          <img className="tree-stage-background" src="/assets/background-for-tree.png" alt="Night garden background" />
-          <img
-            className={`tree-main-art ${watered ? "is-watered" : ""}`}
-            src={`/assets/transparent-tree-${level}.png`}
-            alt={`Tree growth level ${level}`}
-          />
-          {watered && <span className="tree-water-sparkles" aria-hidden="true">✦ ✧ ✦</span>}
-
-          <aside className="tree-progress-card">
-            <p className="study-eyebrow">Next growth</p>
-            <img src={`/assets/icon-tree-${previewLevel}.png`} alt={`Preview of tree level ${Math.min(level + 1, 7)}`} />
-            <h2>{atMaxLevel ? "Your tree is fully grown" : `${progress.points_remaining} points to level ${level + 1}`}</h2>
-            <div className="tree-progress-track" aria-label={`${Math.round(progressPercent)} percent to next level`}>
-              <span style={{ width: `${progressPercent}%` }} />
+            <div className="streaks-stats">
+              <StatCard
+                icon={Flame}
+                label="Current streak"
+                value={data.current_count}
+                unit={data.current_count === 1 ? "day" : "days"}
+              />
+              <StatCard
+                icon={TrendingUp}
+                label="Longest streak"
+                value={data.longest_count}
+                unit={data.longest_count === 1 ? "day" : "days"}
+              />
+              <StatCard icon={Sprout} label="Active days" value={data.total_days} unit="total" />
+              <StatCard
+                icon={Sprout}
+                label="Tasks completed"
+                value={data.tasks_completed}
+                unit="all time"
+              />
             </div>
-            <small>Each completed task adds 1 point. Complete a task each day to continue your streak.</small>
-          </aside>
 
-          <aside className="tree-water-card">
-            <Droplets size={28} />
-            <p className="study-eyebrow">Today</p>
-            <h2>Water your tree!</h2>
-            <p>Finish this task to earn another point:</p>
-            <strong>{nextTask.title}</strong>
-            <button onClick={() => setWatered(true)} disabled={watered}>
-              {watered ? "Tree watered" : "Water the tree"}
-            </button>
-            <Link to="/tasks">Open tasks</Link>
-          </aside>
-
-          <div className="tree-level-badge">
-            <Sprout size={18} /> Tree level {level}
+            <section className="card streaks-history-card">
+              <h2 className="card-title">The last 13 weeks</h2>
+              {hasHistory ? (
+                <StreakHeatmap history={data.history} />
+              ) : (
+                <EmptyState
+                  title="No activity recorded yet"
+                  hint="Complete a task on the Tasks page and this fills in."
+                />
+              )}
+            </section>
           </div>
-        </section>
-      </main>
+        )}
+      </AsyncBoundary>
+    </PageLayout>
+  );
+}
+
+function StatCard({ icon: Icon, label, value, unit }) {
+  return (
+    <div className="card streaks-stat">
+      <Icon size={20} aria-hidden="true" />
+      <span className="streaks-stat-value">{value}</span>
+      <span className="streaks-stat-label">{label}</span>
+      <span className="streaks-stat-unit">{unit}</span>
     </div>
   );
 }

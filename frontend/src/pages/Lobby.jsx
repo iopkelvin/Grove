@@ -1,420 +1,148 @@
-import { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { ChevronRight, Music, MessageCircle, Plus, X } from "lucide-react";
-import MenuIcon from "../components/MenuIcon";
-import { useUser } from "../context/UserContext";
-import { getFriends } from "../api/friends";
-import { getTasks } from "../api/tasks";
-import { createRoom, getRooms } from "../api/rooms";
-import { capitalize } from "../lib/format";
+// The global study room.
+//
+// This file was zero bytes and there was no /lobby route. On the backend,
+// GET /api/rooms answered 500 because the view had a `pass` body — so there
+// was nothing to build a page against either.
+//
+// Presence is polled rather than pushed. Websockets would be better, and
+// are not worth a second process type and a broker for a room that changes
+// every few minutes; the poll interval is well under the five-minute window
+// the backend uses to decide who counts as online.
 
-// PLACEHOLDER ROOMS: remove these once the database has seeded public rooms
-// and finished artwork for every map. These keep the lobby usable in a fresh DB.
-// to be removed for production
-const PLACEHOLDER_ROOMS = [
-  {
-    id: "campsite-61c",
-    name: "61C Study Room",
-    course: "CS 61C",
-    setting: "campsite",
-    image: "/assets/Study-Room.png",
-    music_enabled: true,
-    chat_enabled: true,
-    focus_minutes: 50,
-    members: [
-      { id: "placeholder-jose", display_name: "Jose" },
-      { id: "placeholder-jack", display_name: "Jack" },
-      { id: "placeholder-jeff", display_name: "Jeff" },
-      { id: "placeholder-john", display_name: "John" },
-    ],
-  },
-  {
-    id: "mars-160",
-    name: "CS 160 Mars Lab",
-    course: "CS 160",
-    setting: "mars",
-    image: "/assets/mars-placeholder.svg",
-    music_enabled: false,
-    chat_enabled: true,
-    focus_minutes: 25,
-    members: [
-      { id: "placeholder-amy", display_name: "Amy" },
-      { id: "placeholder-kelvin", display_name: "Kelvin" },
-    ],
-  },
-  {
-    id: "library-89",
-    name: "Physics 89 Library",
-    course: "PHYS 89",
-    setting: "library",
-    image: "/assets/library-placeholder.svg",
-    music_enabled: true,
-    chat_enabled: false,
-    focus_minutes: 50,
-    members: [{ id: "placeholder-mia", display_name: "Mia" }],
-  },
-];
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { LogIn, LogOut, Users } from "lucide-react";
 
-// PLACEHOLDER FRIENDS: shown only when the signed-in account does not yet have
-// accepted friends in the database. Replace naturally as friend data arrives.
-// to be removed for production
-const PLACEHOLDER_FRIENDS = [
-  { id: "placeholder-friend-1", display_name: "Jeff", username: "jeff", is_online: true },
-  { id: "placeholder-friend-2", display_name: "John", username: "john", is_online: false },
-  { id: "placeholder-friend-3", display_name: "Jack", username: "jack", is_online: true },
-  { id: "placeholder-friend-4", display_name: "Julia", username: "julia", is_online: false },
-];
+import { getLobby, joinLobby, leaveLobby } from "../api/rooms";
+import PageLayout from "../components/PageLayout";
+import PresenceGrove from "../components/PresenceGrove";
+import { AsyncBoundary } from "../components/states";
+import { messageFor } from "../lib/apiClient";
 
-// PLACEHOLDER TASKS: used only while the API is unavailable or before a user
-// creates their first task. They are intentionally marked as placeholders.
-// to be removed for production
-const PLACEHOLDER_TASKS = [
-  { id: "placeholder-task-1", title: "Finish your first Grove task", completed: false },
-  { id: "placeholder-task-2", title: "Invite a friend to study", completed: false },
-  { id: "placeholder-task-3", title: "Water your tree", completed: false },
-];
-
-
-// Create Room Modal
-// use state variables store the room name, map, friend search, selected friends, music/chat chache toggles, and timer lenght cache.
-// DOCUMENTATION for USE STATE
-// [React useState](https://react.dev/reference/react/useState)
-// [React input state](https://react.dev/reference/react-dom/components/input)
-// use memo derived the filtered friend list.
-// DOCUMENTATION for USE_STATE
-// https://react.dev/reference/react/useMemo
-// Added toggle for the checkboxes to updaed the room array.
-// form submission to update the room.
-// Added overlay click to close.
-// form controls like label, input, select, fieldset, and legent to add functionality to the form.
-
-function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
-  const [name, setName] = useState("My Study Room");
-  const [setting, setSetting] = useState("campsite");
-  const [friendSearch, setFriendSearch] = useState("");
-  const [selectedFriendIds, setSelectedFriendIds] = useState([]);
-  const [musicEnabled, setMusicEnabled] = useState(true);
-  const [chatEnabled, setChatEnabled] = useState(true);
-  const [focusMinutes, setFocusMinutes] = useState(50);
-
-  const filteredFriends = useMemo(() => {
-    const query = friendSearch.trim().toLowerCase();
-    if (!query) return friends;
-    return friends.filter((friend) =>
-      `${friend.display_name || ""} ${friend.username || ""}`.toLowerCase().includes(query)
-    );
-  }, [friendSearch, friends]);
-
-  function toggleFriend(friendId) {
-    setSelectedFriendIds((current) =>
-      current.includes(friendId)
-        ? current.filter((id) => id !== friendId)
-        : [...current, friendId]
-    );
-  }
-
-  function submit(e) {
-    e.preventDefault();
-    onCreate({
-      name,
-      setting,
-      music_enabled: musicEnabled,
-      chat_enabled: chatEnabled,
-      focus_minutes: focusMinutes,
-      invite_user_ids: selectedFriendIds.filter((id) => Number.isInteger(id)),
-      selected_placeholder_friends: friends.filter((friend) =>
-        selectedFriendIds.includes(friend.id)
-      ),
-    });
-  }
-
-  return (
-    <div className="study-modal-backdrop" role="presentation" onMouseDown={onClose}>
-      <div
-        className="study-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="create-room-title"
-        onMouseDown={(event) => event.stopPropagation()}
-      >
-        <button className="study-modal-close" onClick={onClose} aria-label="Close">
-          <X size={20} />
-        </button>
-        <p className="study-eyebrow">New room</p>
-        <h2 id="create-room-title">Create your own study room</h2>
-
-        <form className="study-room-form" onSubmit={submit}>
-          <label>
-            Room name
-            <input value={name} onChange={(event) => setName(event.target.value)} required />
-          </label>
-
-          <div className="study-form-row">
-            <label>
-              Map
-              <select value={setting} onChange={(event) => setSetting(event.target.value)}>
-                <option value="campsite">Campsite</option>
-                <option value="mars">Mars</option>
-                <option value="library">Library</option>
-              </select>
-            </label>
-            <label>
-              Focus timer
-              <select
-                value={focusMinutes}
-                onChange={(event) => setFocusMinutes(Number(event.target.value))}
-              >
-                <option value={25}>25 minutes</option>
-                <option value={50}>50 minutes</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </label>
-          </div>
-
-          <fieldset className="study-friend-picker">
-            <legend>Invite friends</legend>
-            <input
-              type="search"
-              placeholder="Search friends"
-              value={friendSearch}
-              onChange={(event) => setFriendSearch(event.target.value)}
-            />
-            <div className="study-friend-options">
-              {filteredFriends.map((friend) => (
-                <label className="study-friend-option" key={friend.id}>
-                  <input
-                    type="checkbox"
-                    checked={selectedFriendIds.includes(friend.id)}
-                    onChange={() => toggleFriend(friend.id)}
-                  />
-                  <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                  <span>{friend.display_name || friend.username}</span>
-                </label>
-              ))}
-            </div>
-          </fieldset>
-
-          <div className="study-toggle-grid">
-            <label className="study-toggle-row">
-              <span><Music size={18} /> Music</span>
-              <input
-                type="checkbox"
-                checked={musicEnabled}
-                onChange={(event) => setMusicEnabled(event.target.checked)}
-              />
-            </label>
-            <label className="study-toggle-row">
-              <span><MessageCircle size={18} /> Chat</span>
-              <input
-                type="checkbox"
-                checked={chatEnabled}
-                onChange={(event) => setChatEnabled(event.target.checked)}
-              />
-            </label>
-          </div>
-
-          {error && <p className="study-form-error">{error}</p>}
-          <button className="study-primary-button" type="submit" disabled={creating}>
-            {creating ? "Creating…" : "Create room"}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-}
-//Lobby 
-// every thing loads at the same time for all the users for their session storages.
-// session documentation:
-// https://developer.mozilla.org/en-US/docs/Web/API/Window/sessionStorage
+const POLL_INTERVAL_MS = 30000;
 
 export default function Lobby() {
-  const navigate = useNavigate();
-  const { session, profile } = useUser();
-  const [rooms, setRooms] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [friends, setFriends] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const [createError, setCreateError] = useState("");
+  const [state, setState] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const mounted = useRef(true);
 
   useEffect(() => {
-    const supabaseId = session?.user?.id;
-    if (!supabaseId) return;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
-    Promise.allSettled([
-      getRooms(supabaseId),
-      getTasks(supabaseId),
-      getFriends(supabaseId),
-    ]).then(([roomResult, taskResult, friendResult]) => {
-      if (roomResult.status === "fulfilled") setRooms(roomResult.value);
-      if (taskResult.status === "fulfilled") setTasks(taskResult.value);
-      if (friendResult.status === "fulfilled") {
-        setFriends(friendResult.value.map((entry) => entry.user));
-      }
-    });
-  }, [session?.user?.id]);
-
-  const displayedRooms = rooms.length ? rooms : PLACEHOLDER_ROOMS;
-  const displayedTasks = tasks.length ? tasks : PLACEHOLDER_TASKS;
-  const displayedFriends = friends.length ? friends : PLACEHOLDER_FRIENDS;
-  const firstName = capitalize(profile?.first_name) || "there";
-
-  function openRoom(room) {
-    sessionStorage.setItem(`grove-room-${room.id}`, JSON.stringify(room));
-    navigate(`/rooms/${room.id}`, { state: { room } });
-  }
-
-
-// create room
-//  checks errors
-//  detects loaded friends
-//  calls backend when user exists
-//  checks time and user
-//  adds user to the room
-// async doc: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/async_function
-// error catching: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/try...catch
-// date now doc: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Date/now
-  async function handleCreateRoom(formValues) {
-    setCreating(true);
-    setCreateError("");
-
+  const load = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setLoading(true);
     try {
-      let room;
-      const hasOnlyPlaceholderFriends = formValues.selected_placeholder_friends.every(
-        (friend) => typeof friend.id !== "number"
-      );
-
-      if (session?.user?.id) {
-        room = await createRoom({
-          host_supabase_id: session.user.id,
-          name: formValues.name,
-          setting: formValues.setting,
-          music_enabled: formValues.music_enabled,
-          chat_enabled: formValues.chat_enabled,
-          focus_minutes: formValues.focus_minutes,
-          invite_user_ids: formValues.invite_user_ids,
-        });
-      }
-
-      // PLACEHOLDER MEMBERS: only included in the local preview when a fresh
-      // account has no database friends yet. Real room members come from the API.
-      if (!room || (hasOnlyPlaceholderFriends && room.members?.length <= 1)) {
-        room = {
-          ...formValues,
-          id: room?.id ?? `preview-${Date.now()}`,
-          members: [
-            { id: profile?.id || "current-user", display_name: profile?.display_name || firstName },
-            ...formValues.selected_placeholder_friends,
-          ],
-        };
-      }
-
-      setShowModal(false);
-      openRoom(room);
-    } catch (error) {
-      setCreateError(error.message);
+      const next = await getLobby();
+      if (!mounted.current) return;
+      setState(next);
+      setError(null);
+    } catch (err) {
+      // A failed background refresh must not replace a room the user is
+      // looking at with an error screen; only the first load can do that.
+      if (!mounted.current) return;
+      if (!silent) setError(err);
     } finally {
-      setCreating(false);
+      if (mounted.current && !silent) setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const timer = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  async function toggleMembership() {
+    setBusy(true);
+    setActionError("");
+    try {
+      setState(state?.joined ? await leaveLobby() : await joinLobby());
+    } catch (err) {
+      setActionError(messageFor(err));
+    } finally {
+      setBusy(false);
     }
   }
 
+  const room = state?.room;
+
   return (
-    <div className="page study-lobby-page">
-      <MenuIcon />
-      <main className="study-lobby-shell">
-        <header className="study-lobby-header">
-          <p className="study-eyebrow">Study rooms</p>
-          <h1>Hi {firstName}, welcome to the study room!</h1>
-          <p>Choose a room, invite friends, and make a little progress together.</p>
-        </header>
+    <PageLayout
+      title="The Grove"
+      subtitle="One shared room. Everyone studying right now is in it."
+      actions={
+        state && (
+          <button
+            type="button"
+            className="primary-button"
+            onClick={toggleMembership}
+            disabled={busy}
+          >
+            {state.joined ? <LogOut size={16} /> : <LogIn size={16} />}
+            {busy ? "Working…" : state.joined ? "Leave" : "Join the grove"}
+          </button>
+        )
+      }
+    >
+      <AsyncBoundary
+        loading={loading}
+        error={error}
+        onRetry={load}
+        loadingLabel="Opening the grove"
+      >
+        {room && (
+          <>
+            {actionError && (
+              <p className="auth-error" role="alert">
+                {actionError}
+              </p>
+            )}
 
-        <section className="study-lobby-grid">
-          <div className="study-room-section">
-            <div className="study-section-heading">
-              <div>
-                <p className="study-eyebrow">Now studying</p>
-                <h2>Current study rooms</h2>
-              </div>
-              <span>Scroll to explore</span>
+            <div className="room-population">
+              <Users size={18} aria-hidden="true" />
+              <span>
+                <strong>{room.population}</strong>{" "}
+                {room.population === 1 ? "person is" : "people are"} here
+              </span>
             </div>
 
-            <div className="study-room-wheel" aria-label="Available study rooms">
-              {displayedRooms.map((room) => {
-                const image = room.image || (
-                  room.setting === "mars"
-                    ? "/assets/mars-placeholder.svg"
-                    : room.setting === "library"
-                      ? "/assets/library-placeholder.svg"
-                      : "/assets/Study-Room.png"
-                );
-                return (
-                  <button className="study-room-card" key={room.id} onClick={() => openRoom(room)}>
-                    <img src={image} alt="" />
-                    <span className="study-room-card-overlay">
-                      <strong>{room.name}</strong>
-                      <small>{room.population ?? room.members?.length ?? 0} studying</small>
-                    </span>
-                    <ChevronRight className="study-room-arrow" size={22} />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            <PresenceGrove members={room.members} theme={room.theme} />
 
-          <aside className="study-task-section">
-            <div className="study-section-heading">
-              <div>
-                <p className="study-eyebrow">Your list</p>
-                <h2>Upcoming tasks</h2>
-              </div>
-              <span>{displayedTasks.filter((task) => !task.completed).length} remaining</span>
-            </div>
-            <div className="study-task-scroll">
-              {displayedTasks.map((task) => (
-                <div className={`study-task-row ${task.completed ? "is-complete" : ""}`} key={task.id}>
-                  <span className="study-task-dot" />
-                  <span>{task.title}</span>
-                  <strong>{task.completed ? "Done" : "1 point"}</strong>
-                </div>
-              ))}
-            </div>
-          </aside>
-
-          <section className="study-create-section">
-            <div className="study-section-heading">
-              <div>
-                <p className="study-eyebrow">Make it yours</p>
-                <h2>Create your own study room</h2>
-              </div>
-            </div>
-            <p className="study-create-copy">Invite friends and choose a map, focus timer, music, and chat.</p>
-            <div className="study-friend-preview" aria-label="Friends available to invite">
-              {displayedFriends.map((friend) => (
-                <div className="study-friend-preview-row" key={friend.id}>
-                  <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                  <div>
-                    <strong>{friend.display_name || friend.username}</strong>
-                    <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
-              <Plus size={20} /> Create a room
-            </button>
-          </section>
-        </section>
-      </main>
-
-      {showModal && (
-        <CreateRoomModal
-          friends={displayedFriends}
-          onClose={() => setShowModal(false)}
-          onCreate={handleCreateRoom}
-          creating={creating}
-          error={createError}
-        />
-      )}
-    </div>
+            <section className="card room-roster">
+              <h2 className="card-title">Who is here</h2>
+              {room.members.length === 0 ? (
+                <p className="state-hint">
+                  Nobody yet. Join and your tree will be the first one growing.
+                </p>
+              ) : (
+                <ul className="room-roster-list">
+                  {room.members.map((member) => (
+                    <li key={member.id}>
+                      <Link to={`/user/${member.username}`}>
+                        {member.display_name || member.username}
+                      </Link>
+                      <span className="room-roster-streak">
+                        {member.current_streak} day
+                        {member.current_streak === 1 ? "" : "s"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          </>
+        )}
+      </AsyncBoundary>
+    </PageLayout>
   );
 }

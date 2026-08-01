@@ -1,38 +1,46 @@
-const API_URL = import.meta.env.VITE_API_URL;
-// added CRUD FUNCTIONS to tasks page.
-export async function getTasks(supabaseId, { completed } = {}) {
-  const params = new URLSearchParams({ supabase_id: supabaseId });
-  if (typeof completed === "boolean") params.set("completed", String(completed));
+// Task endpoints.
+//
+// Identity is no longer a parameter. It travels in the Authorization header
+// that apiClient attaches, so none of these functions can be called on
+// somebody else's behalf by passing a different id.
 
-  const res = await fetch(`${API_URL}/api/tasks?${params}`);
-  if (!res.ok) throw new Error("Could not load tasks");
-  return res.json();
+import { api } from "../lib/apiClient";
+
+/**
+ * A page of the signed-in user's tasks.
+ * @returns {Promise<{items: object[], total: number, limit: number, offset: number}>}
+ */
+export function getTasks({ completed, tag, q, sort, order, limit, offset } = {}) {
+  return api.get("/api/tasks", {
+    params: { completed, tag, q, sort, order, limit, offset },
+  });
 }
 
-export async function createTask(supabaseId, title, tags = []) {
-  const res = await fetch(`${API_URL}/api/tasks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, title, tags }),
-  });
-  if (!res.ok) throw new Error("Could not create task");
-  return res.json();
+export function createTask({ title, description, tags, due_date }) {
+  return api.post("/api/tasks", { title, description, tags, due_date });
 }
 
-export async function updateTask(supabaseId, taskId, updates) {
-  const res = await fetch(`${API_URL}/api/tasks/${taskId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, ...updates }),
-  });
-  if (!res.ok) throw new Error("Could not update task");
-  return res.json();
+export function updateTask(taskId, updates) {
+  return api.patch(`/api/tasks/${taskId}`, updates);
 }
 
-export async function deleteTask(supabaseId, taskId) {
-  const params = new URLSearchParams({ supabase_id: supabaseId });
-  const res = await fetch(`${API_URL}/api/tasks/${taskId}?${params}`, {
-    method: "DELETE",
-  });
-  if (!res.ok) throw new Error("Could not delete task");
+export function deleteTask(taskId) {
+  return api.delete(`/api/tasks/${taskId}`);
+}
+
+export function clearCompletedTasks() {
+  return api.post("/api/tasks/clear-completed");
+}
+
+/** The few tasks the Home page's "Up Next" card shows. */
+export function getUpNext() {
+  return api.get("/api/tasks/up-next");
+}
+
+export function getTaskStats() {
+  return api.get("/api/tasks/stats");
+}
+
+export function getTags() {
+  return api.get("/api/tasks/tags");
 }

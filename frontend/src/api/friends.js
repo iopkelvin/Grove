@@ -1,46 +1,29 @@
-const API_URL = import.meta.env.VITE_API_URL;
+// Friendship endpoints.
 
-export async function searchUsers(query, excludeSupabaseId) {
-  const params = new URLSearchParams({ q: query });
-  if (excludeSupabaseId) params.set("exclude_supabase_id", excludeSupabaseId);
+import { api } from "../lib/apiClient";
 
-  const res = await fetch(`${API_URL}/api/users/search?${params}`);
-  return res.ok ? res.json() : [];
+/**
+ * @param {object} [options]
+ * @param {"accepted"|"pending"|"declined"} [options.status]
+ * @param {"incoming"|"sent"} [options.direction] only meaningful for pending
+ */
+export function getFriends({ status = "accepted", direction } = {}) {
+  return api.get("/api/friends", { params: { status, direction } });
 }
 
-export async function getFriends(supabaseId, { status = "accepted", direction } = {}) {
-  const params = new URLSearchParams({ supabase_id: supabaseId, status });
-  if (direction) params.set("direction", direction);
-
-  const res = await fetch(`${API_URL}/api/friends?${params}`);
-  return res.ok ? res.json() : [];
+/** Counts for the Home page's Friends card, in one request. */
+export function getFriendsSummary() {
+  return api.get("/api/friends/summary");
 }
 
-export async function sendFriendRequest(requesterSupabaseId, targetUserId) {
-  const res = await fetch(`${API_URL}/api/friends`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      requester_supabase_id: requesterSupabaseId,
-      target_user_id: targetUserId,
-    }),
-  });
-  return res;
+export function sendFriendRequest(targetUserId) {
+  return api.post("/api/friends", { target_user_id: targetUserId });
 }
 
-export async function respondToFriendRequest(friendshipId, supabaseId, status) {
-  const res = await fetch(`${API_URL}/api/friends/${friendshipId}`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ supabase_id: supabaseId, status }),
-  });
-  return res;
+export function respondToFriendRequest(friendshipId, status) {
+  return api.patch(`/api/friends/${friendshipId}`, { status });
 }
 
-export async function removeFriend(friendshipId, supabaseId) {
-  const params = new URLSearchParams({ supabase_id: supabaseId });
-  const res = await fetch(`${API_URL}/api/friends/${friendshipId}?${params}`, {
-    method: "DELETE",
-  });
-  return res;
+export function removeFriend(friendshipId) {
+  return api.delete(`/api/friends/${friendshipId}`);
 }

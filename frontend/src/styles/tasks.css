@@ -1,36 +1,43 @@
-/* frontend/src/styles/tasks.css */
+/* Tasks page, task rows, and the Up Next card. */
 
-/* Narrower than the 960px page-content default — a task list reads better
-   as a single focused column. */
-.task-page-content {
-  max-width: 640px;
+/* ── Add-task form ── */
+.task-add {
+  display: grid;
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
 }
 
-/* ── Add-task row ── */
-.task-add {
+.task-add-row {
   display: flex;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: var(--space-sm);
 }
 
 /* Mirrors .auth-form input so form controls feel the same app-wide. */
 .task-add-input {
   flex: 1;
   padding: 12px 14px;
-  border: 1px solid var(--color-card-border);
-  border-radius: 8px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-sm);
   font-family: var(--font-family-base);
   font-size: var(--font-size-body);
-  background-color: var(--color-page-background);
+  background-color: var(--color-card-background);
   color: var(--color-text-primary);
-  box-sizing: border-box;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  transition: border-color 0.15s ease;
 }
 
 .task-add-input:focus {
-  outline: none;
   border-color: var(--color-button-background);
-  box-shadow: 0 0 0 3px rgba(94, 122, 97, 0.2);
+}
+
+.task-add-details {
+  padding: 0 14px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-card-background);
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
 }
 
 .task-add-button {
@@ -39,42 +46,105 @@
   justify-content: center;
   width: 48px;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-sm);
   background-color: var(--color-button-background);
   color: var(--color-button-text);
   cursor: pointer;
-  transition: opacity 0.15s ease;
+  transition: background-color 0.15s ease;
 }
 
-.task-add-button:hover {
-  opacity: 0.9;
+.task-add-button:hover:not(:disabled) {
+  background-color: var(--color-button-background-hover);
+}
+
+.task-add-button:disabled {
+  background-color: var(--color-button-disabled);
+  cursor: not-allowed;
+}
+
+.task-add-extra {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+
+.task-add-extra label {
+  display: grid;
+  gap: var(--space-xs);
+  font-size: var(--font-size-small);
+}
+
+.task-add-extra input {
+  padding: 10px 12px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+}
+
+/* ── Filters ── */
+.task-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.task-filter {
+  padding: 6px 14px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-pill);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.task-filter-active {
+  background-color: var(--color-button-background);
+  border-color: var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.task-clear {
+  margin-left: auto;
+  padding: 6px 12px;
+  border: none;
+  background-color: transparent;
+  color: var(--color-text-muted);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 /* ── Task list ── */
-/* Reuses the shared .card box; this just lays the rows out vertically. */
 .task-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.task-empty {
+  gap: var(--space-xs);
+  list-style: none;
   margin: 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-body);
 }
 
-/* ── Task row ── */
 .task-item {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 8px;
-  border-bottom: 1px solid rgba(26, 26, 26, 0.08);
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: 12px var(--space-sm);
+  border-bottom: 1px solid var(--color-card-border-subtle);
 }
 
 .task-item:last-child {
   border-bottom: none;
+}
+
+.task-item-pending {
+  opacity: 0.6;
 }
 
 .task-checkbox {
@@ -88,19 +158,31 @@
   color: var(--color-text-primary);
 }
 
+.task-checkbox:disabled {
+  cursor: progress;
+}
+
 .task-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-xs);
   flex: 1;
+  min-width: 0;
 }
 
 .task-title {
   font-size: var(--font-size-body);
   color: var(--color-text-primary);
+  overflow-wrap: anywhere;
 }
 
-/* Completed: muted + struck through, checkbox picks up the green accent. */
+.task-description {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* Completed: muted and struck through, checkbox takes the green accent. */
 .task-item-done .task-title {
   color: var(--color-text-secondary);
   text-decoration: line-through;
@@ -110,22 +192,38 @@
   color: var(--color-button-background);
 }
 
-/* ── Tag badges ── */
-.task-tags {
+/* ── Row metadata: due date and tags ── */
+.task-meta {
   display: flex;
+  align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
-.task-tag {
+.task-due {
   padding: 2px 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   background-color: var(--color-badge-background);
   color: var(--color-text-secondary);
   font-size: var(--font-size-small);
 }
 
-/* ── Delete ── */
-/* Kept out of the way until you hover the row. */
+.task-due-late {
+  background-color: var(--color-streak-accent);
+  color: var(--color-button-text);
+}
+
+.task-tag {
+  padding: 2px 10px;
+  border-radius: var(--radius-pill);
+  background-color: var(--color-badge-background);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+/* ── Delete, with confirmation ── */
+/* Kept out of the way until the row is hovered or focused within, so the
+   list stays calm — but always reachable by keyboard. */
 .task-delete {
   display: flex;
   align-items: center;
@@ -139,7 +237,8 @@
   transition: opacity 0.15s ease;
 }
 
-.task-item:hover .task-delete {
+.task-item:hover .task-delete,
+.task-item:focus-within .task-delete {
   opacity: 1;
 }
 
@@ -147,8 +246,73 @@
   color: var(--color-error-text);
 }
 
+.task-confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.task-confirm button {
+  padding: 4px 10px;
+  border: 1px solid var(--color-card-border-subtle);
+  border-radius: var(--radius-sm);
+  background-color: transparent;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.task-confirm-yes {
+  color: var(--color-error-text);
+  border-color: var(--color-error-text);
+}
+
+/* ── Up Next card ── */
+.upnext-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.upnext-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-small);
+}
+
+.upnext-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upnext-due {
+  flex-shrink: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-muted);
+}
+
+.upnext-overdue .upnext-due {
+  color: var(--color-streak-accent);
+}
+
+/* The Up Next card's empty state sits inside an already-padded card. */
+.upnext-card .state,
+.friends-card .state {
+  padding: var(--space-md) 0;
+}
+
+/* ── From `development`: Turner and Kyle's task-page additions ── */
 .task-api-error {
   margin: 12px 0;
   color: var(--color-error-text);
   text-align: center;
 }
+

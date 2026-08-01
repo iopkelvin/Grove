@@ -1,170 +1,181 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { MessageCircle, Music, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
-import MenuIcon from "../components/MenuIcon";
-import { getRoom } from "../api/rooms";
+// A single study room.
+//
+// This file was zero bytes. GET /api/rooms/<id> was a `pass`-bodied stub.
 
-// PLACEHOLDER MEMBERS: these positions and names demonstrate where future
-// character sprites/name tags will live. Database members replace the names.
-// to be removed for production
-const PLACEHOLDER_MEMBERS = [
-  { id: "jose", display_name: "Jose" },
-  { id: "jack", display_name: "Jack" },
-  { id: "jeff", display_name: "Jeff" },
-  { id: "john", display_name: "John" },
-];
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { LogIn, LogOut, Trash2, Users } from "lucide-react";
 
-// percentages so it is toggleable for different resolutions.
-const MEMBER_POSITIONS = [
-  { left: "29%", top: "50%" },
-  { left: "48%", top: "38%" },
-  { left: "67%", top: "47%" },
-  { left: "60%", top: "68%" },
-  { left: "39%", top: "67%" },
-  { left: "76%", top: "61%" },
-];
+import { closeRoom, getRoom, joinRoom, leaveRoom } from "../api/rooms";
+import PageLayout from "../components/PageLayout";
+import PresenceGrove from "../components/PresenceGrove";
+import { AsyncBoundary } from "../components/states";
+import { messageFor } from "../lib/apiClient";
 
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
-}
+const POLL_INTERVAL_MS = 30000;
 
-
-// Room
-// firstly, it runs through the different user states and initializes them.
-// secondly, it tries the sessions to see if there is existing information regarding the users.
-// added music and timer to the room.
-// lastly, memoizes the member list, caches it to the database.
 export default function Room() {
   const { roomId } = useParams();
-  const location = useLocation();
-  const [room, setRoom] = useState(location.state?.room || null);
-  const [running, setRunning] = useState(true);
-  const [musicEnabled, setMusicEnabled] = useState(location.state?.room?.music_enabled ?? true);
+  const navigate = useNavigate();
 
-  const initialMinutes = room?.focus_minutes || 50;
-  const [secondsRemaining, setSecondsRemaining] = useState(initialMinutes * 60);
+  const [state, setState] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState("");
+  const [confirmingClose, setConfirmingClose] = useState(false);
+  const mounted = useRef(true);
 
   useEffect(() => {
-    if (room) return;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
 
-    const saved = sessionStorage.getItem(`grove-room-${roomId}`);
-    if (saved) {
+  const load = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!silent) setLoading(true);
       try {
-        setRoom(JSON.parse(saved));
-        return;
-      } catch {
-        sessionStorage.removeItem(`grove-room-${roomId}`);
+        const next = await getRoom(roomId);
+        if (!mounted.current) return;
+        setState(next);
+        setError(null);
+      } catch (err) {
+        if (!mounted.current || silent) return;
+        setError(err);
+      } finally {
+        if (mounted.current && !silent) setLoading(false);
       }
-    }
-
-    if (/^\d+$/.test(roomId)) {
-      getRoom(roomId).then(setRoom).catch(() => setRoom(null));
-    }
-  }, [room, roomId]);
-
-  useEffect(() => {
-    if (!room) return;
-    setMusicEnabled(room.music_enabled ?? true);
-    setSecondsRemaining((room.focus_minutes || 50) * 60);
-  }, [room?.id]);
-
-  useEffect(() => {
-    if (!running || secondsRemaining <= 0) return undefined;
-    const timer = window.setInterval(() => {
-      setSecondsRemaining((current) => Math.max(0, current - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [running, secondsRemaining]);
-
-  const resolvedRoom = room || {
-    id: roomId,
-    name: roomId?.includes("mars") ? "CS 160 Mars Lab" : "61C Cozy Study Room",
-    setting: roomId?.includes("mars") ? "mars" : "campsite",
-    music_enabled: true,
-    chat_enabled: true,
-    focus_minutes: 50,
-    members: PLACEHOLDER_MEMBERS,
-  };
-
-  const members = useMemo(
-    () => (resolvedRoom.members?.length ? resolvedRoom.members : PLACEHOLDER_MEMBERS),
-    [resolvedRoom.members]
+    },
+    [roomId]
   );
 
-  const settingLabel = resolvedRoom.setting
-    ? resolvedRoom.setting.charAt(0).toUpperCase() + resolvedRoom.setting.slice(1)
-    : "Campsite";
+  useEffect(() => {
+    load();
+  }, [load]);
+
+  useEffect(() => {
+    const timer = setInterval(() => load({ silent: true }), POLL_INTERVAL_MS);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  async function toggleMembership() {
+    setBusy(true);
+    setActionError("");
+    try {
+      const next = state?.joined ? await leaveRoom(roomId) : await joinRoom(roomId);
+      setState((previous) => ({ ...previous, ...next }));
+    } catch (err) {
+      setActionError(messageFor(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleClose() {
+    setBusy(true);
+    setActionError("");
+    try {
+      await closeRoom(roomId);
+      navigate("/rooms", { replace: true });
+    } catch (err) {
+      setActionError(messageFor(err));
+      setBusy(false);
+    }
+  }
+
+  const room = state?.room;
 
   return (
-    <div className="page study-room-page">
-      <MenuIcon />
-      <main className="study-room-shell">
-        <header className="study-room-header">
-          <div>
-            <p className="study-eyebrow">{settingLabel}</p>
-            <h1>{resolvedRoom.name} — {settingLabel}</h1>
-          </div>
-          <div className="study-room-controls">
-            {resolvedRoom.chat_enabled && (
-              <span className="study-room-status" title="Chat enabled">
-                <MessageCircle size={18} /> Chat on
-              </span>
+    <PageLayout
+      title={room?.name || "Study room"}
+      subtitle={room?.host_username ? `Hosted by ${room.host_username}` : undefined}
+      actions={
+        state && (
+          <button
+            type="button"
+            className="primary-button"
+            onClick={toggleMembership}
+            disabled={busy || (!state.joined && room?.is_full)}
+          >
+            {state.joined ? <LogOut size={16} /> : <LogIn size={16} />}
+            {state.joined ? "Leave" : room?.is_full ? "Room is full" : "Join"}
+          </button>
+        )
+      }
+    >
+      <AsyncBoundary loading={loading} error={error} onRetry={load} loadingLabel="Opening the room">
+        {room && (
+          <>
+            {actionError && (
+              <p className="auth-error" role="alert">
+                {actionError}
+              </p>
             )}
-            <button
-              className={`study-music-toggle ${musicEnabled ? "is-on" : ""}`}
-              onClick={() => setMusicEnabled((value) => !value)}
-              aria-label={musicEnabled ? "Mute room music" : "Play room music"}
-            >
-              {musicEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
-              <span>{musicEnabled ? "Music on" : "Music off"}</span>
-            </button>
-          </div>
-        </header>
 
-        <section className="study-room-scene" aria-label={`${settingLabel} study room`}>
-          <img className="study-room-background" src="/assets/Study-Room.png" alt="Pixel art campsite study room" />
-
-          <div className="study-member-layer">
-            {members.slice(0, MEMBER_POSITIONS.length).map((member, index) => (
-              <div
-                className="study-member-marker"
-                key={member.id || `${member.display_name}-${index}`}
-                style={MEMBER_POSITIONS[index]}
-              >
-                <span className="study-member-name">{member.display_name || member.username || "Friend"}</span>
-                <span className="study-member-avatar" aria-hidden="true">
-                  {(member.display_name || member.username || "F").charAt(0)}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          <div className="study-timer-card">
-            <div>
-              <small>Focus timer</small>
-              <strong>{formatTime(secondsRemaining)}</strong>
+            <div className="room-population">
+              <Users size={18} aria-hidden="true" />
+              <span>
+                <strong>{room.population}</strong>
+                {room.capacity ? ` of ${room.capacity}` : ""}{" "}
+                {room.population === 1 ? "person is" : "people are"} here
+              </span>
             </div>
-            <button onClick={() => setRunning((value) => !value)} aria-label={running ? "Pause timer" : "Start timer"}>
-              {running ? <Pause size={18} /> : <Play size={18} />}
-            </button>
-            <button
-              onClick={() => {
-                setSecondsRemaining((resolvedRoom.focus_minutes || 50) * 60);
-                setRunning(false);
-              }}
-              aria-label="Reset timer"
-            >
-              <RotateCcw size={17} />
-            </button>
-          </div>
 
-          <div className="study-room-music-note" aria-hidden="true">
-            <Music size={18} /> {musicEnabled ? "ambient campfire" : "quiet mode"}
-          </div>
-        </section>
-      </main>
-    </div>
+            <PresenceGrove
+              members={room.members}
+              theme={room.theme}
+              emptyMessage="This room is quiet. Join to start it off."
+            />
+
+            <section className="card room-roster">
+              <h2 className="card-title">Who is here</h2>
+              {room.members.length === 0 ? (
+                <p className="state-hint">Nobody is in this room right now.</p>
+              ) : (
+                <ul className="room-roster-list">
+                  {room.members.map((member) => (
+                    <li key={member.id}>
+                      <Link to={`/user/${member.username}`}>
+                        {member.display_name || member.username}
+                      </Link>
+                      <span className="room-roster-streak">
+                        {member.current_streak} day{member.current_streak === 1 ? "" : "s"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Closing a room removes it for everyone in it, so it asks
+                first rather than acting on a single click. */}
+            {state.is_host && (
+              <div className="room-danger">
+                {confirmingClose ? (
+                  <>
+                    <p>Close this room? Everyone in it will be removed.</p>
+                    <div className="room-danger-actions">
+                      <button type="button" onClick={handleClose} disabled={busy}>
+                        Yes, close it
+                      </button>
+                      <button type="button" onClick={() => setConfirmingClose(false)}>
+                        Keep it open
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <button type="button" onClick={() => setConfirmingClose(true)}>
+                    <Trash2 size={16} aria-hidden="true" />
+                    Close room
+                  </button>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </AsyncBoundary>
+    </PageLayout>
   );
 }

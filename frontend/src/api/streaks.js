@@ -1,7 +1,19 @@
-const API_URL = import.meta.env.VITE_API_URL;
-// fetches tree progress from database.
-export async function getTreeProgress(supabaseId) {
-  const res = await fetch(`${API_URL}/api/streaks/${supabaseId}`);
-  if (!res.ok) throw new Error("Could not load tree progress");
-  return res.json();
+// Streak endpoints.
+
+import { api } from "../lib/apiClient";
+
+/**
+ * Everything the Streaks page draws: current run, longest run, day-by-day
+ * history and task totals, in one request.
+ *
+ * @param {object} [options]
+ * @param {number} [options.days] history window, 7-366
+ */
+export function getMyStreak({ days } = {}) {
+  return api.get("/api/streaks/me", { params: { days } });
+}
+
+/** Another user's headline numbers, for their profile. No history. */
+export function getUserStreak(username) {
+  return api.get(`/api/streaks/user/${encodeURIComponent(username)}`);
 }
