@@ -62,20 +62,59 @@
 .friends-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 12px;
   padding: 16px;
   font-size: var(--font-size-body);
   color: var(--color-text-primary);
 }
 
+/* the name link grows to fill the row, which pushes the tree/button to
+   the right — works the same whether the row has 2 items (search
+   results) or 4 (avatar + name + tree + remove button) */
 .friends-row a {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--color-text-primary);
   text-decoration: none;
 }
 
 .friends-row a:hover {
   text-decoration: underline;
+}
+
+.friends-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background-color: var(--color-picture-placeholder);
+  background-size: cover;
+  background-position: center;
+}
+
+.friends-avatar-placeholder-icon {
+  width: 55%;
+  height: 55%;
+  color: var(--color-text-secondary);
+}
+
+/* just the tree graphic, sized to sit inline in a row without making
+   the card taller than it already is. Compound selector (not just
+   .streak-tree-svg-compact) so this reliably beats components.css's
+   .streak-tree-svg width regardless of stylesheet import order. */
+.streak-tree-svg.streak-tree-svg-compact {
+  width: 36px;
+  max-width: 36px;
+  height: auto;
+  flex-shrink: 0;
+  margin-top: 0;
+  margin-right: 10px;
 }
 
 .friends-row button {
@@ -124,4 +163,83 @@
 .friends-decline-button {
   background-color: var(--color-card-background);
   color: var(--color-text-primary);
+}
+
+/* ── Friends tab: list + A-Z quick filter ── */
+.friends-panel {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.friends-panel .friends-list {
+  flex: 1;
+  min-width: 0;
+}
+
+.friends-alphabet {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex-shrink: 0;
+  padding: 4px;
+}
+
+.friends-letter {
+  width: 20px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 4px;
+  font-family: var(--font-family-base);
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.friends-letter:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
+.friends-letter-all {
+  width: auto;
+  padding: 0 4px;
+  margin-bottom: 6px;
+  font-size: var(--font-size-small);
+}
+
+.friends-letter-active {
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+}
+
+.friends-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: -12px;
+  margin-bottom: 24px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.friends-pagination button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-small);
+  cursor: pointer;
+}
+
+.friends-pagination button:disabled {
+  opacity: 0.4;
+  cursor: default;
 }

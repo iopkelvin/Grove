@@ -4,6 +4,7 @@ import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Friends from "./pages/Friends";
+import Calendar from "./pages/Calendar";
 import Tasks from "./pages/Tasks";
 import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
@@ -23,6 +24,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/friends" element={<Friends />} />
         <Route path="/tasks" element={<Tasks />} />
+        <Route path="/calendar" element={<Calendar />} />
         <Route path="/rooms" element={<Lobby />} />
         <Route path="/rooms/:roomId" element={<Room />} />
         <Route path="/streaks" element={<Streaks />} />

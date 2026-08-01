@@ -24,7 +24,10 @@ export default function TaskList({ tasks = [], onToggle, onDelete }) {
           key={task.id}
           className={`task-item ${task.done ? "task-item-done" : ""}`}
         >
-          {/* Checkbox: swaps between an empty and a checked square icon */}
+          {/* Checkbox: swaps between an empty and a checked square icon.
+              Note: the API's Task.to_dict() deliberately serializes the
+              `completed` column as "done" in the response — see the
+              comment there. Requests still send { completed: ... }. */}
           <button
             className="task-checkbox"
             onClick={() => onToggle?.(task.id)}

@@ -19,7 +19,6 @@ import "./styles/settings.css";
 import "./styles/study-rooms.css";
 import "./styles/tree.css";
 
-
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <UserProvider>

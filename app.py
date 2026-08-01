@@ -4,17 +4,19 @@
 # Entry point for the Flask backend. 
 # Serves the app as a pure JSON API for the React frontend to consume.
 
+from datetime import date, timedelta
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
+from sqlalchemy.orm import selectinload
 from api.config.database import db, SQLALCHEMY_DATABASE_URI # added by Kyle
 from api import models  # added by Kyle -- noqa: F401 — registers all models so tables get created
 from api.models.user import User  # Kelvin — needed for the sync route
 from api.models.friend import Friendship
+from api.services import task as task_service # added by Kyle -- tasks service
 from api.models.room import Room, RoomMembership
 from api.models.streak import Streak
-from api.models.task import Tag, Task
-from datetime import date, timedelta
+from api.models.task import Task
 
 # App setup
 app = Flask(__name__)
@@ -39,6 +41,42 @@ if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
 
 def find_user_by_supabase_id(supabase_id):
     return User.query.filter_by(supabase_id=supabase_id).first()
+
+
+def get_friendship_status(viewer, other_user):
+    """None if no relationship exists yet, otherwise the row's status
+    ("pending"/"accepted"/"declined"). Used so the frontend can disable
+    "Add Friend" up front instead of letting a click hit a 409."""
+    if not viewer or not other_user or viewer.id == other_user.id:
+        return None
+    friendship = Friendship.query.filter(
+        db.or_(
+            db.and_(Friendship.user_id == viewer.id, Friendship.friend_id == other_user.id),
+            db.and_(Friendship.user_id == other_user.id, Friendship.friend_id == viewer.id),
+        )
+    ).first()
+    return friendship.status if friendship else None
+
+
+def bump_streak_for_completion(user):
+    """Completing a task bumps the streak at most once per calendar day
+    (see api/models/streak.py). Same day as last activity -> no change,
+    yesterday -> streak continues (+1), anything older -> streak restarts
+    at 1. Creates the Streak row on first use rather than at signup, so
+    existing users don't need a backfill."""
+    streak = user.streak
+    if streak is None:
+        streak = Streak(user_id=user.id, current_count=0, last_activity_date=None)
+        db.session.add(streak)
+
+    today = date.today()
+    if streak.last_activity_date == today:
+        return
+    if streak.last_activity_date == today - timedelta(days=1):
+        streak.current_count += 1
+    else:
+        streak.current_count = 1
+    streak.last_activity_date = today
 
 
 def generate_unique_username(base):
@@ -110,17 +148,9 @@ def get_user_by_username(username):
     data = user.to_dict()
     data.pop("email", None)
 
-    # Lets the frontend disable "Add Friend" up front instead of letting the
-    # user click it and hit a "friendship already exists" error.
     viewer = find_user_by_supabase_id(request.args.get("viewer_supabase_id"))
-    if viewer and viewer.id != user.id:
-        friendship = Friendship.query.filter(
-            db.or_(
-                db.and_(Friendship.user_id == viewer.id, Friendship.friend_id == user.id),
-                db.and_(Friendship.user_id == user.id, Friendship.friend_id == viewer.id),
-            )
-        ).first()
-        data["friendship_status"] = friendship.status if friendship else None
+    if viewer:
+        data["friendship_status"] = get_friendship_status(viewer, user)
 
     return jsonify(data), 200
 
@@ -165,19 +195,29 @@ def update_user(supabase_id):
     return jsonify(user.to_dict()), 200
 
 
-# Looked up by username — the public, searchable handle (unlike supabase_id,
-# which is an opaque UUID nobody would type in a search box).
+# Matches username, first name, or last name — the public, searchable
+# fields (unlike supabase_id, which is an opaque UUID nobody would type
+# in a search box, or email, which is never exposed to other users).
 @app.route("/api/users/search", methods=["GET"])
 def search_users():
     query = (request.args.get("q") or "").strip()
     if not query:
         return jsonify([]), 200
 
-    search = User.query.filter(User.username.ilike(f"%{query}%"))
+    like = f"%{query}%"
+    search = User.query.filter(
+        db.or_(
+            User.username.ilike(like),
+            User.first_name.ilike(like),
+            User.last_name.ilike(like),
+        )
+    )
 
     exclude_supabase_id = request.args.get("exclude_supabase_id")
+    viewer = None
     if exclude_supabase_id:
         search = search.filter(User.supabase_id != exclude_supabase_id)
+        viewer = find_user_by_supabase_id(exclude_supabase_id)
 
     results = search.limit(20).all()
     return jsonify([
@@ -186,6 +226,7 @@ def search_users():
             "username": u.username,
             "display_name": u.display_name,
             "avatar_url": u.avatar_url,
+            "friendship_status": get_friendship_status(viewer, u) if viewer else None,
         }
         for u in results
     ]), 200
@@ -276,28 +317,24 @@ def get_room(room_id):
     return jsonify(room.to_dict()), 200
 
 
-
-# Task routes 
-# get tasks just sends out hte get request ot the database to retrieve the list of rooms, also checks for errors and save errors.
-# create task creates a task and adds it to the database.
-# record_daily_streak allows the user to have their streak saved in the database.
-# update_task just creates a patch request to the databse.
-# delete task deletes the requested task
-# documentation: https://docs.sqlalchemy.org/en/20/orm/queryguide/query.html
-# documentation: https://docs.sqlalchemy.org/en/20/orm/session.html
+# Task routes
+# Thin routes — everything that touches the database lives in
+# api/services/task.py (ownership checks included). The one thing that
+# lives here instead is the streak bump: it's a cross-cutting side effect
+# of completion, not really a "task" concern, and it needs the full User
+# object that bump_streak_for_completion() (above) already expects.
 @app.route("/api/tasks", methods=["GET"])
 def get_tasks():
     user = find_user_by_supabase_id(request.args.get("supabase_id"))
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    query = Task.query.filter_by(user_id=user.id)
+    tasks = task_service.list_tasks(user.id)
     completed = request.args.get("completed")
     if completed in ("true", "false"):
-        query = query.filter_by(completed=completed == "true")
-
-    tasks = query.order_by(Task.completed.asc(), Task.created_at.desc()).all()
-    return jsonify([task.to_dict() for task in tasks]), 200
+        want_completed = completed == "true"
+        tasks = [t for t in tasks if t["completed"] == want_completed]
+    return jsonify(tasks), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
@@ -311,91 +348,45 @@ def create_task():
     if not title:
         return jsonify({"error": "Task title is required"}), 400
 
-    task = Task(
+    created = task_service.create_task(
+        user.id,
         title=title,
-        description=(data.get("description") or "").strip() or None,
-        user_id=user.id,
+        description=(data.get("description") or None),
+        tag_names=data.get("tags"),
     )
-
-    tag_names = []
-    for tag_name in data.get("tags", []):
-        cleaned = str(tag_name).strip()[:40]
-        if cleaned and cleaned.lower() not in {t.lower() for t in tag_names}:
-            tag_names.append(cleaned)
-
-    for name in tag_names:
-        tag = Tag.query.filter(
-            Tag.user_id == user.id,
-            db.func.lower(Tag.name) == name.lower(),
-        ).first()
-        if not tag:
-            tag = Tag(user_id=user.id, name=name)
-        task.tags.append(tag)
-
-    db.session.add(task)
-    db.session.commit()
-    return jsonify(task.to_dict()), 201
-
-
-def record_daily_streak(user):
-    """Record one active day. Multiple tasks on the same day still count once."""
-    today = date.today()
-    streak = user.streak
-    if not streak:
-        streak = Streak(user_id=user.id, current_count=0)
-        db.session.add(streak)
-
-    if streak.last_activity_date == today:
-        return
-    if streak.last_activity_date == today - timedelta(days=1):
-        streak.current_count += 1
-    else:
-        streak.current_count = 1
-    streak.last_activity_date = today
+    return jsonify(created), 201
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
 def update_task(task_id):
-    task = db.session.get(Task, task_id)
-    if not task:
-        return jsonify({"error": "Task not found"}), 404
-
     data = request.json or {}
     user = find_user_by_supabase_id(data.get("supabase_id"))
-    if not user or task.user_id != user.id:
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    fields = {k: data[k] for k in ("title", "description", "completed", "tags") if k in data}
+    # commit=False: `user` was fetched above and hasn't been touched by a
+    # commit yet, so bump_streak_for_completion below can still read
+    # user.streak without SQLAlchemy silently re-fetching it — then this
+    # route does the one commit that covers both changes together.
+    updated, became_completed = task_service.update_task(user.id, task_id, fields, commit=False)
+    if updated is None:
         return jsonify({"error": "Task not found"}), 404
 
-    if "title" in data:
-        title = (data.get("title") or "").strip()
-        if not title:
-            return jsonify({"error": "Task title cannot be empty"}), 400
-        task.title = title
-
-    if "description" in data:
-        task.description = (data.get("description") or "").strip() or None
-
-    was_completed = task.completed
-    if "completed" in data:
-        task.completed = bool(data.get("completed"))
-        if task.completed and not was_completed:
-            record_daily_streak(user)
+    if became_completed:
+        bump_streak_for_completion(user)
 
     db.session.commit()
-    return jsonify(task.to_dict()), 200
+    return jsonify(updated), 200
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
 def delete_task(task_id):
-    task = db.session.get(Task, task_id)
-    if not task:
-        return jsonify({"error": "Task not found"}), 404
-
     user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user or task.user_id != user.id:
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if not task_service.delete_task(user.id, task_id):
         return jsonify({"error": "Task not found"}), 404
-
-    db.session.delete(task)
-    db.session.commit()
     return "", 204
 # end of task routes
 
@@ -444,16 +435,23 @@ def get_friends():
 
     status = request.args.get("status", "accepted")
 
+    # Eager-load both sides of the friendship plus each side's streak in a
+    # handful of batched queries — without this, accessing row.friend/
+    # row.user and other.streak below lazy-loads one query PER friend,
+    # which turns a 24-friend list into ~50 round trips to the database.
+    eager = (selectinload(Friendship.user).selectinload(User.streak),
+             selectinload(Friendship.friend).selectinload(User.streak))
+
     if status == "pending":
         direction = request.args.get("direction", "incoming")
         if direction == "sent":
-            rows = Friendship.query.filter_by(user_id=me.id, status="pending").all()
+            rows = Friendship.query.options(*eager).filter_by(user_id=me.id, status="pending").all()
             pairs = [(row, row.friend) for row in rows]
         else:
-            rows = Friendship.query.filter_by(friend_id=me.id, status="pending").all()
+            rows = Friendship.query.options(*eager).filter_by(friend_id=me.id, status="pending").all()
             pairs = [(row, row.user) for row in rows]
     else:
-        rows = Friendship.query.filter(
+        rows = Friendship.query.options(*eager).filter(
             db.or_(Friendship.user_id == me.id, Friendship.friend_id == me.id),
             Friendship.status == status,
         ).all()
@@ -466,10 +464,14 @@ def get_friends():
             "created_at": row.created_at.isoformat() if row.created_at else None,
             "user": {
                 "id": other.id,
+                "supabase_id": other.supabase_id,
                 "username": other.username,
+                "first_name": other.first_name,
+                "last_name": other.last_name,
                 "display_name": other.display_name,
                 "avatar_url": other.avatar_url,
                 "is_online": other.is_online,
+                "current_streak": other.streak.current_count if other.streak else 0,
             },
         }
         for row, other in pairs

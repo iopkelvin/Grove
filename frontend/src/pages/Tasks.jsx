@@ -1,119 +1,81 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. For now it owns its task list in local state seeded with mock
-// data, because the Flask /api/tasks endpoints are still stubs (they `pass`).
-// When they're implemented, swap INITIAL_TASKS + the three handlers for fetch
-// calls — the rest of the UI won't change. If/when a task needs to be tied to
-// the signed-in user, identity comes from useUser().session.user.
+// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount
+// and keeps them in local state; add/toggle/delete call the backend, then
+// update state from the server's response. Identity is the supabase_id from
+// useUser().session.user.id — the same id the API resolves against. Task
+// shape matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
 
 import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
+import { useUser } from "../context/UserContext";
+import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
 import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
-import { useUser } from "../context/UserContext";
-import { createTask, deleteTask, getTasks, updateTask } from "../api/tasks";
-
-// Stand-in for the backend. Shape mirrors the Task model: id, title, done, tags.
-const INITIAL_TASKS = [
-  { id: 1, title: "Finish CS 160 hi-fi prototype", done: false, tags: ["Today", "School"] },
-  { id: 2, title: "Model Janss House roof in Rhino", done: false, tags: ["School"] },
-  { id: 3, title: "Reply to Kelvin about app.py", done: true, tags: ["Today"] },
-];
 
 export default function Tasks() {
-  const [newTitle, setNewTitle] = useState("");
+  const { session, loading: authLoading } = useUser();
+  const supabaseId = session?.user?.id;
 
-  // added caching/sessions/errors
-  const { session } = useUser();
-  const [loading, setLoading] = useState(true);
-  // DOCUMENTATION: https://react.dev/reference/react/useState
+  const [newTitle, setNewTitle] = useState("");
+  const [tasksLoading, setTasksLoading] = useState(true);
   const [tasks, setTasks] = useState([]);
   const [error, setError] = useState("");
 
-  // ADDED CRUD AND API CALLS
-  // check session and user ID
-  // loads supabase data
-  // https://react.dev/reference/react/useEffect
   useEffect(() => {
-    const supabaseId = session?.user?.id;
     if (!supabaseId) return;
 
-    setLoading(true);
+    setTasksLoading(true);
     getTasks(supabaseId)
-      .then((data) => setTasks(data.map((task) => ({ ...task, done: task.completed }))))
+      .then(setTasks)
       .catch(() => setError("Tasks could not be loaded. Check that the Flask API is running."))
-      .finally(() => setLoading(false));
-  }, [session?.user?.id]);
+      .finally(() => setTasksLoading(false));
+  }, [supabaseId]);
 
-
-// added CRUD AND API CALL, along with error check, everything else is the same.
-// CRUD: CREATE TASK using session and caches, instead of set task
-// added error check
-// changed Date.now() to an async API call.
   async function addTask() {
     const title = newTitle.trim();
-
-    // check session id, add if true
-    const supabaseId = session?.user?.id;
-    if (!title|| !supabaseId) return;
-
+    if (!title || !supabaseId) return;
 
     try {
       const task = await createTask(supabaseId, title, ["Today"]);
-      setTasks((current) => [{ ...task, done: task.completed }, ...current]);
+      setTasks((current) => [task, ...current]);
       setNewTitle("");
       setError("");
     } catch {
       setError("The task could not be created.");
     }
-    // setTasks((prev) => [
-    //   ...prev,
-    //   { id: Date.now(), title, done: false, tags: [] },
-    // ]);
-    // setNewTitle("");
   }
 
-// changed toggle task to call api and update database.
   async function toggleTask(id) {
-    // add task to current session
-    const supabaseId = session?.user?.id;
     const currentTask = tasks.find((task) => task.id === id);
     if (!supabaseId || !currentTask) return;
 
-    // CRUD - Update tasks, adding update functionality to the tasks
-    // added catching and error debugging. 
     try {
       const updated = await updateTask(supabaseId, id, { completed: !currentTask.done });
-      setTasks((current) =>
-        current.map((t) => t.id === id ? { ...updated, done: updated.completed } : t)
-      );
+      setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
       setError("");
     } catch {
       setError("The task could not be updated.");
     }
-
-    // commented out previous update functionality.
-    // setTasks((prev) =>
-    //   prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
-    // );
   }
 
+  // Named removeTask (not deleteTask) so it doesn't shadow the imported deleteTask.
   async function removeTask(id) {
-    const supabaseId = session?.user?.id;
     if (!supabaseId) return;
     try {
       await deleteTask(supabaseId, id);
       setTasks((current) => current.filter((task) => task.id !== id));
       setError("");
     } catch {
-      setError("Task can't be updated.");
+      setError("Task can't be deleted.");
     }
   }
-  // added CRUD and API functionality to the delte task function.
-  // function deleteTask(id) {
-  //   setTasks((prev) => prev.filter((t) => t.id !== id));
-  // }
+
+  // Wait for auth to resolve before deciding what to show.
+  if (authLoading) {
+    return <div className="page">Loading...</div>;
+  }
 
   return (
     <div className="page">
@@ -136,12 +98,12 @@ export default function Tasks() {
           </button>
         </div>
 
-        {/* added error check for the api call.*/}
         {error && <p className="task-api-error">{error}</p>}
-        {loading ? (
-          <div className="card task-list"><p className="task-empty">Loading tasks…</p></div>
+        {tasksLoading ? (
+          <div className="card task-list">
+            <p className="task-empty">Loading tasks…</p>
+          </div>
         ) : (
-          // same as before
           <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
         )}
       </div>
