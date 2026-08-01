@@ -52,6 +52,7 @@
 .study-room-section,
 .study-task-section,
 .study-create-section {
+  padding: 26px;
   border: 1px solid var(--color-study-line);
   border-radius: 24px;
   background-color: var(--color-surface-white);
@@ -60,14 +61,12 @@
 
 .study-room-section {
   min-width: 0;
-  padding: 26px;
 }
 
 .study-task-section {
   grid-row: span 2;
   display: flex;
   min-height: 600px;
-  padding: 26px;
   flex-direction: column;
 }
 
@@ -75,7 +74,6 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(220px, 0.8fr);
   gap: 18px 28px;
-  padding: 26px;
 }
 
 .study-create-section > .study-section-heading {

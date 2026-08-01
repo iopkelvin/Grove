@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "../lib/supabaseClient";
+import { apiFetch } from "../api/client";
 import { getFriends } from "../api/friends";
 
 const UserContext = createContext(null);
@@ -16,7 +17,7 @@ export function UserProvider({ children }) {
       return;
     }
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`);
+      const res = await apiFetch(`/api/users/${supabaseId}`);
       setProfile(res.ok ? await res.json() : null);
     } catch (err) {
       console.error("Failed to load profile:", err);
@@ -36,18 +37,29 @@ export function UserProvider({ children }) {
     }
   }, []);
 
+  const lastUserId = useRef(undefined);
+
   useEffect(() => {
+    // Supabase also fires this listener on silent token refreshes, which
+    // happen periodically for a still-signed-in user. Only refetch profile
+    // and pending requests when the signed-in user actually changes (sign
+    // in, sign out, switch account) — not on every token refresh.
+    function handleSession(newSession) {
+      setSession(newSession);
+      const userId = newSession?.user?.id;
+      if (userId === lastUserId.current) return;
+      lastUserId.current = userId;
+      fetchProfile(userId);
+      refreshPendingRequestCount(userId);
+    }
+
     supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      handleSession(data.session);
       setLoading(false);
-      fetchProfile(data.session?.user?.id);
-      refreshPendingRequestCount(data.session?.user?.id);
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession);
-      fetchProfile(newSession?.user?.id);
-      refreshPendingRequestCount(newSession?.user?.id);
+      handleSession(newSession);
     });
 
     return () => listener.subscription.unsubscribe();
@@ -61,9 +73,8 @@ export function UserProvider({ children }) {
     const supabaseId = session?.user?.id;
     if (!supabaseId) return { ok: false };
 
-    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/users/${supabaseId}`, {
+    const res = await apiFetch(`/api/users/${supabaseId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(updates),
     });
 

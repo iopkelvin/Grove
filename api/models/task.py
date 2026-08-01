@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — Task model (+ Tag).
 
@@ -8,21 +6,18 @@ Backs the Tasks page: each task has a title, a done/not-done state, a body
 labels a user defines (College, Home, ...), so Task<->Tag is many-to-many,
 joined through the task_tags table below.
 
-The "Today" tag: it's just a Tag named "Today". The home page shows tasks
-that carry it. If we'd rather guarantee it can't be renamed/deleted, a
-boolean is_today column on Task is the alternative. 
+Tags have no special-cased names — "due today" is computed from
+Task.due_date/recurring (see is_done_today below and TodayEvents.jsx on
+the frontend), not from any particular tag.
 
 Tag lives here (not its own file) because it's part of the tasks feature. 
 Split into api/models/tag.py later if we prefer one-per-file.
 """
 
-from datetime import date, datetime, timezone
+from datetime import date
 
 from api.config.database import db
-
-
-def utcnow():
-    return datetime.now(timezone.utc)
+from api.utils import utcnow
 
 
 # Join table for the Task <-> Tag many-to-many. Pure link table, no model.

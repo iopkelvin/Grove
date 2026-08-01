@@ -1,4 +1,3 @@
-// Kelvin
 // patterns for raw values we want to block
 const hexColorPattern = /^#/;
 const rgbColorPattern = /^rgb/;
@@ -9,7 +8,7 @@ const fontTokenPattern = /^var\(--font-family/;
 
 module.exports = {
   rules: {
-    // block raw hex/rgb — use tokens.css instead
+    // block raw hex/rgb — use theme.css instead
     "declaration-property-value-disallowed-list": {
       color: [hexColorPattern, rgbColorPattern],
       "background-color": [hexColorPattern, rgbColorPattern],

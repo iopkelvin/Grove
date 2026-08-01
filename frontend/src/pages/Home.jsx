@@ -52,7 +52,7 @@ function Home() {
       <h1 className="page-title">{greeting}, {firstName}</h1>
 
       <div className="grid">
-        <StreakTree streak={streak} userId={session?.user?.id} layout="overlay" />
+        <StreakTree streak={streak} userId={supabaseId} layout="overlay" />
 
         <div className="grid-column">
           <FriendsCard friendsOnline={friendsOnline} />

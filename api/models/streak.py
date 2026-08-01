@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — Streak model.
 
@@ -9,8 +7,6 @@ the next completion continues the streak (yesterday) or restarts it (older).
 
 highest/longest streak is intentionally left out for now (stretch goal);
 it's a one-line column to add if you want it.
-
-NOTE: NEW file — api/models/ has had no streak.py before
 """
 
 from api.config.database import db

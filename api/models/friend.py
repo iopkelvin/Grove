@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — Friendship model.
 
@@ -15,13 +13,8 @@ Querying "my incoming requests" only checks friend_id = me, since only the
 recipient can act on a pending request.
 """
 
-from datetime import datetime, timezone
-
 from api.config.database import db
-
-
-def utcnow():
-    return datetime.now(timezone.utc)
+from api.utils import utcnow
 
 
 class Friendship(db.Model):
