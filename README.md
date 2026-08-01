@@ -16,7 +16,7 @@ Grove/
 │
 ├── frontend/                         # React app
 │   ├── src/
-│   │   ├── pages/                    # one component per screen (Home, Lobby, Room, Tasks, Friends, Calendar, Streaks, Profile, Settings)
+│   │   ├── pages/                    # one component per screen (Home, Lobby, Room, Tasks, Friends, Calendar, Streaks, Profile)
 │   │   ├── components/               # shared UI pieces
 │   │   ├── context/                  # app-wide state (auth)
 │   │   ├── api/                      # calls to Flask API
@@ -26,14 +26,11 @@ Grove/
 │   │   └── img/
 │   ├── index.html                    # React's HTML shell
 │   ├── package.json                  # JS dependencies
-│   ├── vite.config.js                # dev server + proxy
-│   └── Dockerfile                    # frontend container
+│   └── vite.config.js                # dev server + proxy
 │
 ├── tests/
 ├── .env.example
 ├── .gitignore                        # ignores node_modules/, dist/
 ├── app.py                            # routes return JSON
-├── docker-compose.yml                # backend + frontend services
-├── Dockerfile                        # backend container
 └── requirements.txt
 ```
