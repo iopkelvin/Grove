@@ -48,3 +48,38 @@ def test_an_ordinary_search_still_matches(client):
     sync_user(client, "sb-2", "bob")
 
     assert [u["username"] for u in search(client, "ali")] == ["alice"]
+
+
+# ── Oversized fields ─────────────────────────────────────────────────
+
+def test_a_huge_task_title_is_refused(client):
+    sync_user(client, "sb-1", "alice")
+
+    res = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "x" * 200_000}
+    )
+
+    assert res.status_code == 400
+    assert client.get("/api/tasks?supabase_id=sb-1").get_json() == []
+
+
+def test_a_title_right_on_the_limit_is_accepted(client):
+    sync_user(client, "sb-1", "alice")
+
+    at_limit = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "x" * 200}
+    )
+    over = client.post(
+        "/api/tasks", json={"supabase_id": "sb-1", "title": "x" * 201}
+    )
+
+    assert at_limit.status_code == 201
+    assert over.status_code == 400
+
+
+def test_a_huge_display_name_is_refused(client):
+    sync_user(client, "sb-1", "alice")
+
+    res = client.patch("/api/users/sb-1", json={"display_name": "x" * 5000})
+
+    assert res.status_code == 400

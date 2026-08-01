@@ -95,6 +95,34 @@ def bump_streak_for_completion(user):
     streak.last_activity_date = today
 
 
+# Column widths from api/models. Local SQLite ignores them, so anything
+# too long for its column only blows up once it reaches Supabase's
+# Postgres — as a 500, from input that looked fine in development.
+FIELD_LIMITS = {
+    "title": 200,
+    "name": 120,
+    "first_name": 50,
+    "last_name": 50,
+    "display_name": 80,
+    "avatar_url": 500,
+    "banner_url": 500,
+}
+TAG_LIMIT = 40
+
+
+def over_length(data):
+    """The first field that won't fit its column, or None."""
+    for field, limit in FIELD_LIMITS.items():
+        value = data.get(field)
+        if isinstance(value, str) and len(value.strip()) > limit:
+            return f"{field} must be {limit} characters or fewer"
+
+    for tag in data.get("tags") or []:
+        if isinstance(tag, str) and len(tag.strip()) > TAG_LIMIT:
+            return f"tags must be {TAG_LIMIT} characters or fewer"
+    return None
+
+
 def escape_like(term):
     """% and _ are wildcards in LIKE, and a search box shouldn't reach them
     — searching "%" would otherwise match every user in the table."""
@@ -132,6 +160,10 @@ def sync_user():
 
     if not first_name or not last_name:
         return jsonify({"error": "first_name and last_name are required"}), 400
+
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
     existing = User.query.filter_by(supabase_id=supabase_id).first()
     if existing:
@@ -198,6 +230,10 @@ def update_user(supabase_id):
 
     user = g.user
     data = request.json or {}
+
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
     if "first_name" in data:
         first_name = (data.get("first_name") or "").strip().lower()
@@ -302,6 +338,10 @@ def create_room():
     if not name:
         return jsonify({"error": "Room name is required"}), 400
 
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
+
     allowed_settings = {"campsite", "mars", "library"}
     setting = data.get("setting", "campsite")
     if setting not in allowed_settings:
@@ -379,6 +419,10 @@ def create_task():
     if not title:
         return jsonify({"error": "Task title is required"}), 400
 
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
+
     created = task_service.create_task(
         g.user.id,
         title=title,
@@ -395,6 +439,10 @@ def create_task():
 def update_task(task_id):
     data = request.json or {}
     user = g.user
+
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
     fields = {
         k: data[k]
