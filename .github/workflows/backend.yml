@@ -9,8 +9,11 @@ name: Backend
 on:
   push:
     branches: [main, development]
+  # Deliberately unfiltered by base branch. Restricting this to
+  # [main, development] meant a stacked pull request — one whose base is
+  # another feature branch — got no checks at all and showed an empty status
+  # box, which reads as "nothing to run" rather than "nothing ran".
   pull_request:
-    branches: [main, development]
 
 # A new push supersedes the run already in flight for the same branch.
 # Without this, pushing three times in a minute queues three full runs.
