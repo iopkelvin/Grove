@@ -4,6 +4,8 @@
 # Entry point for the Flask backend. 
 # Serves the app as a pure JSON API for the React frontend to consume.
 
+import os
+import warnings
 from datetime import date, timedelta
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
@@ -40,6 +42,18 @@ migrate = Migrate(app, db)
 if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
     with app.app_context():
         db.create_all()
+
+# Trusted-client mode keeps a fresh clone runnable with no setup. It is not
+# a deployment option: without the secret, anyone can act as anyone.
+if auth.trusted_client_mode():
+    if os.environ.get("FLASK_ENV") == "production":
+        raise RuntimeError("SUPABASE_JWT_SECRET must be set when FLASK_ENV=production")
+    warnings.warn(
+        "SUPABASE_JWT_SECRET is unset — identity is taken from each request "
+        "on trust. Fine locally, never in production.",
+        stacklevel=2,
+    )
+
 
 def find_user_by_supabase_id(supabase_id):
     return User.query.filter_by(supabase_id=supabase_id).first()
