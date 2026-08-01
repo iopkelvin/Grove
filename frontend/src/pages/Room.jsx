@@ -4,9 +4,7 @@ import { MessageCircle, Music, Pause, Play, RotateCcw, Volume2, VolumeX } from "
 import MenuIcon from "../components/MenuIcon";
 import { getRoom } from "../api/rooms";
 
-// PLACEHOLDER MEMBERS: these positions and names demonstrate where future
-// character sprites/name tags will live. Database members replace the names.
-// to be removed for production
+// Shown in place of real members until a room has database-backed ones.
 const PLACEHOLDER_MEMBERS = [
   { id: "jose", display_name: "Jose" },
   { id: "jack", display_name: "Jack" },
@@ -14,7 +12,7 @@ const PLACEHOLDER_MEMBERS = [
   { id: "john", display_name: "John" },
 ];
 
-// percentages so it is toggleable for different resolutions.
+// Percentage-based so marker placement holds up across screen resolutions.
 const MEMBER_POSITIONS = [
   { left: "29%", top: "50%" },
   { left: "48%", top: "38%" },
@@ -31,11 +29,6 @@ function formatTime(totalSeconds) {
 }
 
 
-// Room
-// firstly, it runs through the different user states and initializes them.
-// secondly, it tries the sessions to see if there is existing information regarding the users.
-// added music and timer to the room.
-// lastly, memoizes the member list, caches it to the database.
 export default function Room() {
   const { roomId } = useParams();
   const location = useLocation();

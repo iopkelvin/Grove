@@ -96,29 +96,37 @@ function Profile() {
     e.preventDefault();
     setError("");
 
-    const res = await updateProfile({
-      first_name: firstName,
-      last_name: lastName,
-      display_name: displayName,
-      bio,
-    });
+    try {
+      const res = await updateProfile({
+        first_name: firstName,
+        last_name: lastName,
+        display_name: displayName,
+        bio,
+      });
 
-    if (!res.ok) {
+      if (!res.ok) {
+        setError("Failed to save changes. Please try again.");
+        return;
+      }
+
+      setIsEditing(false);
+    } catch {
       setError("Failed to save changes. Please try again.");
-      return;
     }
-
-    setIsEditing(false);
   }
 
   async function handleAddFriend() {
     setError("");
-    const res = await sendFriendRequest(session.user.id, viewedProfile.id);
-    if (res.ok) {
-      setRequestSent(true);
-    } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Failed to send friend request.");
+    try {
+      const res = await sendFriendRequest(session.user.id, viewedProfile.id);
+      if (res.ok) {
+        setRequestSent(true);
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Failed to send friend request.");
+      }
+    } catch {
+      setError("Failed to send friend request. Please try again.");
     }
   }
 
@@ -146,8 +154,8 @@ function Profile() {
               avatarUrl={profile?.avatar_url}
               onChange={isOwnProfile ? (e) => handleImageChange("avatar", e) : undefined}
             />
-            <div className="card profile-streak-card">
-              <StreakTree streak={streak} />
+            <div className="profile-streak-card">
+              <StreakTree streak={streak} userId={profile?.id} layout="overlay" />
             </div>
           </div>
           <div className="card profile-info-card">

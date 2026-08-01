@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — models package.
 
@@ -7,8 +5,6 @@ Importing every model here (1) registers each table so db.create_all()
 builds all of them, and (2) lets other code do `from api.models import User`.
 
 Calendar is intentionally excluded for now (group said later).
-
->>> This file's contents go in api/models/__init__.py <<<
 """
 
 from api.models.user import User

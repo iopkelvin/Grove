@@ -221,7 +221,7 @@ export default function HomeTutorial({ onComplete, onClose }) {
 
           <a
             className="home-tour-manual-link"
-            href="/manual.html"
+            href={`${import.meta.env.BASE_URL}manual.pdf`}
             target="_blank"
             rel="noreferrer"
           >

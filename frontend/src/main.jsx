@@ -14,16 +14,19 @@ import './styles/profile.css'
 import './styles/auth.css'
 import './styles/friends.css'
 import './styles/tasks.css'
-import "./styles/home-tutorial.css";
-import "./styles/settings.css";
-import "./styles/study-rooms.css";
-import "./styles/tree.css";
-
+import './styles/calendar.css'
+import './styles/home-tutorial.css'
+import './styles/settings.css'
+import './styles/study-rooms.css'
+import './styles/tree.css'
+import { ThemeProvider } from './context/ThemeContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <UserProvider>
-      <App />
-    </UserProvider>
+    <ThemeProvider>
+      <UserProvider>
+        <App />
+      </UserProvider>
+    </ThemeProvider>
   </React.StrictMode>
 )

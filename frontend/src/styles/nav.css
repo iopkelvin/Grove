@@ -1,8 +1,8 @@
 /* ── Menu icon (hamburger) ── */
 .menu-icon {
   position: fixed;
-  top: 40px;
-  left: 48px;
+  top: 32px;
+  left: 40px;
   z-index: 5;
   display: flex;
   flex-direction: column;
@@ -14,6 +14,16 @@
   border: none;
   cursor: pointer;
   padding: 0;
+}
+
+/* .page's own padding drops to 20px on mobile (see layout.css), but this
+   was staying at the desktop offset — sitting disproportionately far
+   right/down and colliding with the centered page title. */
+@media (max-width: 640px) {
+  .menu-icon {
+    top: 20px;
+    left: 20px;
+  }
 }
 
 .menu-icon span {
@@ -125,4 +135,40 @@
   width: 100%;
   text-align: left;
   cursor: pointer;
+}
+
+/* ── Theme toggle (moon/sun) ── */
+.theme-toggle {
+  position: fixed;
+  top: 32px;
+  right: 40px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--color-text-primary);
+  transition: opacity 0.2s ease;
+}
+
+/* On the study-room page, the scene is dark in both modes, so pin the
+   toggle to the always-light scene color instead of --color-text-primary. */
+body:has(.study-room-page) .theme-toggle {
+  color: var(--color-scene-foreground);
+}
+
+.theme-toggle:hover {
+  opacity: 0.6;
+}
+
+@media (max-width: 640px) {
+  .theme-toggle {
+    top: 20px;
+    right: 20px;
+  }
 }
