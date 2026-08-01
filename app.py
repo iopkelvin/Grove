@@ -2,6 +2,8 @@
 # Entry point for the Flask backend.
 # Serves the app as a pure JSON API for the React frontend to consume.
 
+import re
+
 from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
@@ -37,13 +39,50 @@ if SQLALCHEMY_DATABASE_URI.startswith("sqlite://"):
     with app.app_context():
         db.create_all()
 
+# Column widths from api/models. Local SQLite ignores them, so anything
+# too long for its column only blows up once it reaches Supabase's
+# Postgres — as a 500, from input that looked fine in development.
+FIELD_LIMITS = {
+    "title": 200,
+    "name": 120,
+    "first_name": 50,
+    "last_name": 50,
+    "display_name": 80,
+    "avatar_url": 500,
+    "banner_url": 500,
+}
+TAG_LIMIT = 40
+
+
+def over_length(data):
+    """The first field that won't fit its column, or None."""
+    for field, limit in FIELD_LIMITS.items():
+        value = data.get(field)
+        if isinstance(value, str) and len(value.strip()) > limit:
+            return f"{field} must be {limit} characters or fewer"
+
+    for tag in data.get("tags") or []:
+        if isinstance(tag, str) and len(tag.strip()) > TAG_LIMIT:
+            return f"tags must be {TAG_LIMIT} characters or fewer"
+    return None
+
+
+def username_seed(requested, email):
+    """What to build a handle out of. The client usually sends a username,
+    but not always — fall back to the email prefix, then to something
+    usable, rather than letting None reach a NOT NULL column."""
+    seed = (requested or "").strip() or (email or "").split("@")[0]
+    seed = re.sub(r"[^a-z0-9._-]", "", seed.lower())
+    return seed[:40] or "grove"
+
+
 
 # Auth routes
 # Note: Supabase Auth handles actual login/signup/session.
 # This route just creates our own `users` row after Supabase signs someone up.
 @app.route("/api/users/sync", methods=["POST"])
 def sync_user():
-    data = request.json
+    data = request.json or {}
     first_name = data.get("first_name", "").strip().lower()
     last_name = data.get("last_name", "").strip().lower()
     if not first_name or not last_name:
@@ -57,12 +96,16 @@ def sync_user():
     if not supabase_id:
         return jsonify({"error": "supabase_id is required"}), 400
 
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
+
     user, created = user_service.get_or_create(
         supabase_id=supabase_id,
         email=data.get("email"),
         first_name=first_name,
         last_name=last_name,
-        username=data.get("username"),
+        username=username_seed(data.get("username"), data.get("email")),
     )
     return jsonify(user), 201 if created else 200
 
@@ -116,7 +159,12 @@ def update_user(supabase_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    updated, error = user_service.update_profile(user, request.json or {})
+    data = request.json or {}
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
+
+    updated, error = user_service.update_profile(user, data)
     if error:
         return jsonify({"error": error}), 400
     return jsonify(updated), 200
@@ -169,6 +217,10 @@ def create_room():
     name = (data.get("name") or "").strip()
     if not name:
         return jsonify({"error": "Room name is required"}), 400
+
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
     allowed_settings = {"campsite", "mars", "library"}
     setting = data.get("setting", "campsite")
@@ -241,6 +293,10 @@ def create_task():
     if not title:
         return jsonify({"error": "Task title is required"}), 400
 
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
+
     created = task_service.create_task(
         user.id,
         title=title,
@@ -259,6 +315,10 @@ def update_task(task_id):
     user = user_service.find_by_supabase_id(g.supabase_id)
     if not user:
         return jsonify({"error": "User not found"}), 404
+
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
     fields = {
         k: data[k]

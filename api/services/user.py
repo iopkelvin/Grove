@@ -88,16 +88,24 @@ def update_profile(user, data):
     return user.to_dict(), None
 
 
+def _escape_like(term):
+    """% and _ are wildcards in LIKE, and a search box shouldn't reach them
+    — searching "%" would otherwise match every user in the table."""
+    for char in ("\\", "%", "_"):
+        term = term.replace(char, f"\\{char}")
+    return term
+
+
 def search(query, exclude_supabase_id=None, limit=20):
     """Matches username, first name, or last name — the public, searchable
     fields (unlike supabase_id, an opaque UUID nobody would type in a search
     box, or email, which is never exposed to other users)."""
-    like = f"%{query}%"
+    like = f"%{_escape_like(query)}%"
     results = User.query.filter(
         db.or_(
-            User.username.ilike(like),
-            User.first_name.ilike(like),
-            User.last_name.ilike(like),
+            User.username.ilike(like, escape="\\"),
+            User.first_name.ilike(like, escape="\\"),
+            User.last_name.ilike(like, escape="\\"),
         )
     )
     if exclude_supabase_id:
