@@ -11,10 +11,12 @@ import Lobby from "./pages/Lobby";
 import Room from "./pages/Room";
 import Streaks from "./pages/Streaks";
 import AuthGate from "./components/RequireAuth";
+import ThemeToggle from "./components/ThemeToggle";
 
 function App() {
   return (
     <BrowserRouter>
+          <ThemeToggle />
       <Routes>
         <Route path="/" element={<AuthGate />} />
         <Route path="/home" element={<Home />} />
