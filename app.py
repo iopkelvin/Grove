@@ -5,6 +5,7 @@
 # Serves the app as a pure JSON API for the React frontend to consume.
 
 import os
+import re
 import warnings
 from datetime import date, timedelta
 from flask import Flask, g, jsonify, request
@@ -133,6 +134,15 @@ def escape_like(term):
     return term
 
 
+def username_seed(requested, email):
+    """What to build a handle out of. The client usually sends a username,
+    but not always — fall back to the email prefix, then to something
+    usable, rather than letting None reach a NOT NULL column."""
+    seed = (requested or "").strip() or (email or "").split("@")[0]
+    seed = re.sub(r"[^a-z0-9._-]", "", seed.lower())
+    return seed[:40] or "grove"
+
+
 def generate_unique_username(base):
     """base is the email prefix picked at signup; two people can easily
     share one (john@gmail.com vs john@yahoo.com), and username is now a
@@ -171,7 +181,7 @@ def sync_user():
     if existing:
         return jsonify(existing.to_dict()), 200
 
-    username = generate_unique_username(data.get("username"))
+    username = generate_unique_username(username_seed(data.get("username"), email))
 
     new_user = User(
         supabase_id=supabase_id,

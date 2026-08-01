@@ -50,6 +50,47 @@ def test_an_ordinary_search_still_matches(client):
     assert [u["username"] for u in search(client, "ali")] == ["alice"]
 
 
+# ── Signing up without a username ────────────────────────────────────
+
+def test_a_signup_with_no_username_gets_one_from_the_email(client):
+    res = client.post(
+        "/api/users/sync",
+        json={
+            "supabase_id": "sb-1",
+            "email": "ada@berkeley.edu",
+            "first_name": "ada",
+            "last_name": "lovelace",
+        },
+    )
+
+    assert res.status_code == 201
+    assert res.get_json()["username"] == "ada"
+
+
+def test_two_people_sharing_an_email_prefix_both_get_a_username(client):
+    first = client.post(
+        "/api/users/sync",
+        json={"supabase_id": "sb-1", "email": "john@gmail.com", "first_name": "j", "last_name": "j"},
+    )
+    second = client.post(
+        "/api/users/sync",
+        json={"supabase_id": "sb-2", "email": "john@yahoo.com", "first_name": "j", "last_name": "j"},
+    )
+
+    assert first.get_json()["username"] == "john"
+    assert second.get_json()["username"] == "john2"
+
+
+def test_an_email_with_nothing_usable_still_produces_a_username(client):
+    res = client.post(
+        "/api/users/sync",
+        json={"supabase_id": "sb-1", "email": "!!!@example.com", "first_name": "a", "last_name": "a"},
+    )
+
+    assert res.status_code == 201
+    assert res.get_json()["username"] == "grove"
+
+
 # ── Oversized fields ─────────────────────────────────────────────────
 
 def test_a_huge_task_title_is_refused(client):
