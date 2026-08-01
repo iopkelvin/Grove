@@ -89,7 +89,7 @@ export default function StreakTree({ streak = 0, userId = "guest", showLabel = t
 
         {showLabel && (
           <div className="streak-frame-label">
-            <p>Your Streak:</p>
+            <p>Tree Level:</p>
             <span className="streak-number">{streak}</span>
           </div>
         )}
