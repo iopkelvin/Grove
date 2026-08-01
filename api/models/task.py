@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — Task model (+ Tag).
 
@@ -16,13 +14,10 @@ Tag lives here (not its own file) because it's part of the tasks feature.
 Split into api/models/tag.py later if we prefer one-per-file.
 """
 
-from datetime import date, datetime, timezone
+from datetime import date
 
 from api.config.database import db
-
-
-def utcnow():
-    return datetime.now(timezone.utc)
+from api.utils import utcnow
 
 
 # Join table for the Task <-> Tag many-to-many. Pure link table, no model.

@@ -1,5 +1,3 @@
-# Kyle
-
 """
 Grove — User model.
 
@@ -7,12 +5,8 @@ Backs the Profile and Friends pages: name, avatar, bio,
 current streak (via Streak), online status, and friends (via Friendship).
 """
 
-from datetime import datetime, timezone
 from api.config.database import db
-
-
-def utcnow():
-    return datetime.now(timezone.utc)
+from api.utils import utcnow
 
 
 class User(db.Model):
