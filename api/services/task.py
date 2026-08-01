@@ -34,7 +34,7 @@ def _get_or_create_tag(user_id, name):
     """Return this user's Tag with `name`, creating it if they don't have one.
 
     Tags are per-user (the model has a unique constraint on user_id+name), so
-    two people can both have a "Today" tag and they're different rows. We flush
+    two people can both have a "School" tag and they're different rows. We flush
     (not commit) so a brand-new tag gets an id but the whole create/update stays
     a single transaction the caller commits.
     """
@@ -67,7 +67,7 @@ def list_tasks(user_id):
 
 def create_task(user_id, title, description=None, tag_names=None, due_date=None, recurring=False):
     """Create one task for this user. `tag_names` is a list of strings like
-    ["Today", "School"]; each is resolved to (or created as) one of the user's
+    ["Work", "School"]; each is resolved to (or created as) one of the user's
     tags. `due_date` is an ISO "YYYY-MM-DD" string or None. Returns the new
     task as a dict."""
     task = Task(
