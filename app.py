@@ -95,6 +95,14 @@ def bump_streak_for_completion(user):
     streak.last_activity_date = today
 
 
+def escape_like(term):
+    """% and _ are wildcards in LIKE, and a search box shouldn't reach them
+    — searching "%" would otherwise match every user in the table."""
+    for char in ("\\", "%", "_"):
+        term = term.replace(char, f"\\{char}")
+    return term
+
+
 def generate_unique_username(base):
     """base is the email prefix picked at signup; two people can easily
     share one (john@gmail.com vs john@yahoo.com), and username is now a
@@ -230,12 +238,12 @@ def search_users():
     if not query:
         return jsonify([]), 200
 
-    like = f"%{query}%"
+    like = f"%{escape_like(query)}%"
     search = User.query.filter(
         db.or_(
-            User.username.ilike(like),
-            User.first_name.ilike(like),
-            User.last_name.ilike(like),
+            User.username.ilike(like, escape="\\"),
+            User.first_name.ilike(like, escape="\\"),
+            User.last_name.ilike(like, escape="\\"),
         )
     )
 
