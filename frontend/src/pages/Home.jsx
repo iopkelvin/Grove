@@ -2,13 +2,22 @@ import { useState, useEffect, useCallback } from "react";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
 import { getFriends } from "../api/friends";
-import { getTasks, updateTask, deleteTask } from "../api/tasks";
+import { useTasks } from "../hooks/useTasks";
 import MenuIcon from "../components/MenuIcon";
 import StreakTree from "../components/StreakTree";
 import FriendsCard from "../components/FriendsCard";
 import MiniCalendar from "../components/MiniCalendar";
 import UpNextCard from "../components/UpNextCard";
 import TaskList from "../components/TaskList";
+import UndoToast from "../components/UndoToast";
+
+// Prefer the soonest-due incomplete task; if nothing has a due date, fall
+// back to the oldest incomplete one (tasks arrive oldest-first already).
+function pickNextTask(tasks) {
+  const incomplete = tasks.filter((task) => !task.done);
+  const dated = incomplete.filter((task) => task.due_date).sort((a, b) => a.due_date.localeCompare(b.due_date));
+  return dated[0] || incomplete[0];
+}
 
 function Home() {
   const { session, loading, profile } = useUser();
@@ -17,47 +26,16 @@ function Home() {
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
   const [friends, setFriends] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  const { tasks, toggleTask, editTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
   const loadFriends = useCallback(async () => {
     if (!supabaseId) return;
     setFriends(await getFriends(supabaseId, { status: "accepted" }));
   }, [supabaseId]);
 
-  const loadTasks = useCallback(async () => {
-    if (!supabaseId) return;
-    try {
-      setTasks(await getTasks(supabaseId));
-    } catch (err) {
-      console.error("Failed to load tasks:", err);
-    }
-  }, [supabaseId]);
-
   useEffect(() => {
     loadFriends();
-    loadTasks();
-  }, [loadFriends, loadTasks]);
-
-  async function toggleTask(id) {
-    const currentTask = tasks.find((task) => task.id === id);
-    if (!supabaseId || !currentTask) return;
-    try {
-      const updated = await updateTask(supabaseId, id, { completed: !currentTask.done });
-      setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
-    } catch (err) {
-      console.error("Failed to update task:", err);
-    }
-  }
-
-  async function removeTask(id) {
-    if (!supabaseId) return;
-    try {
-      await deleteTask(supabaseId, id);
-      setTasks((current) => current.filter((task) => task.id !== id));
-    } catch (err) {
-      console.error("Failed to delete task:", err);
-    }
-  }
+  }, [loadFriends]);
 
   if (loading) {
     return <div className="page">Loading...</div>;
@@ -66,7 +44,7 @@ function Home() {
   const firstName = capitalize(profile?.first_name) || "there";
   const streak = profile?.current_streak ?? 0;
   const friendsOnline = friends.filter(({ user }) => user.is_online).length;
-  const nextTask = tasks.find((task) => !task.done);
+  const nextTask = pickNextTask(tasks);
 
   return (
     <div className="page">
@@ -83,7 +61,8 @@ function Home() {
 
         <div className="grid-column">
           <UpNextCard task={nextTask} />
-          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+          <UndoToast task={pendingDelete} onUndo={undoDelete} />
+          <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} onEdit={editTask} />
         </div>
       </div>
     </div>
