@@ -7,7 +7,7 @@ permission / bad-status checks and their status codes); everything that
 touches the database lives here, same split as api/services/task.py.
 """
 
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload
 
 from api.config.database import db
 from api.models.friend import Friendship
@@ -50,13 +50,21 @@ def list_for_user(me_id, status="accepted", direction="incoming"):
     """Rows involving this user, plus the "other" user on each row, as
     (friendship, other_user) pairs.
 
-    Eager-loads both sides of the friendship plus each side's streak in a
-    handful of batched queries — without this, accessing row.friend/row.user
-    and other.streak lazy-loads one query PER friend, which turns a
-    24-friend list into ~50 round trips to the database."""
+    Each Friendship has two relationships, `.user` and `.friend`, and each
+    User has a `.streak`. Left alone, SQLAlchemy loads these lazily: the
+    first time code touches e.g. `row.friend.streak`, it fires a brand-new
+    SELECT just for that one value. Do that inside a loop over N rows and
+    you get 1 query for the row list plus up to 4*N more — a 24-friend list
+    turns into ~50 round trips.
+
+    `joinedload` avoids that with a single query (one LEFT OUTER JOIN per
+    relationship below) instead of one per row. This is safe from the usual
+    joinedload pitfall — duplicated parent rows when a joined relationship
+    is one-to-many — because every relationship here is scalar: .user and
+    .friend are many-to-one, and .streak is one-to-one (uselist=False)."""
     eager = (
-        selectinload(Friendship.user).selectinload(User.streak),
-        selectinload(Friendship.friend).selectinload(User.streak),
+        joinedload(Friendship.user).joinedload(User.streak),
+        joinedload(Friendship.friend).joinedload(User.streak),
     )
 
     if status == "pending":
