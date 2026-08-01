@@ -1,13 +1,13 @@
 // Kyle
 // pages/Tasks.jsx
 //
-// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount and
-// keeps them in local state; add/toggle/delete call the backend, then update
-// state from the server's response. Identity is the supabase_id from
-// useUser().session.user.id — the same id the API resolves against. Task shape
-// matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
+// The Tasks page. Loads the signed-in user's tasks from /api/tasks on mount
+// and keeps them in local state; add/toggle/delete call the backend, then
+// update state from the server's response. Identity is the supabase_id from
+// useUser().session.user.id — the same id the API resolves against. Task
+// shape matches the API's Task.to_dict(): { id, title, completed, tags, ... }.
 
-import { useState, useEffect, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
@@ -15,59 +15,65 @@ import MenuIcon from "../components/MenuIcon";
 import TaskList from "../components/TaskList";
 
 export default function Tasks() {
-  const { session, loading } = useUser();
+  const { session, loading: authLoading } = useUser();
   const supabaseId = session?.user?.id;
 
-  const [tasks, setTasks] = useState([]);
-  const [tasksLoading, setTasksLoading] = useState(true);
   const [newTitle, setNewTitle] = useState("");
-
-const loadTasks = useCallback(async () => {
-  if (!supabaseId) {
-    setTasks([]);
-    setTasksLoading(false);
-    return;
-  }
-  setTasksLoading(true);
-  setTasks(await getTasks(supabaseId));
-  setTasksLoading(false);
-}, [supabaseId]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasks, setTasks] = useState([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    if (!supabaseId) return;
+
+    setTasksLoading(true);
+    getTasks(supabaseId)
+      .then(setTasks)
+      .catch(() => setError("Tasks could not be loaded. Check that the Flask API is running."))
+      .finally(() => setTasksLoading(false));
+  }, [supabaseId]);
 
   async function addTask() {
     const title = newTitle.trim();
     if (!title || !supabaseId) return;
-    const res = await createTask(supabaseId, { title });
-    if (res.ok) {
-      const created = await res.json();
-      setTasks((prev) => [...prev, created]);
+
+    try {
+      const task = await createTask(supabaseId, title, ["Today"]);
+      setTasks((current) => [task, ...current]);
       setNewTitle("");
+      setError("");
+    } catch {
+      setError("The task could not be created.");
     }
   }
 
   async function toggleTask(id) {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    const res = await updateTask(id, supabaseId, { completed: !task.completed });
-    if (res.ok) {
-      const updated = await res.json();
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+    const currentTask = tasks.find((task) => task.id === id);
+    if (!supabaseId || !currentTask) return;
+
+    try {
+      const updated = await updateTask(supabaseId, id, { completed: !currentTask.completed });
+      setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
+      setError("");
+    } catch {
+      setError("The task could not be updated.");
     }
   }
 
   // Named removeTask (not deleteTask) so it doesn't shadow the imported deleteTask.
   async function removeTask(id) {
-    const res = await deleteTask(id, supabaseId);
-    if (res.ok) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
+    if (!supabaseId) return;
+    try {
+      await deleteTask(supabaseId, id);
+      setTasks((current) => current.filter((task) => task.id !== id));
+      setError("");
+    } catch {
+      setError("Task can't be deleted.");
     }
   }
 
   // Wait for auth to resolve before deciding what to show.
-  if (loading) {
+  if (authLoading) {
     return <div className="page">Loading...</div>;
   }
 
@@ -92,6 +98,7 @@ const loadTasks = useCallback(async () => {
           </button>
         </div>
 
+        {error && <p className="task-api-error">{error}</p>}
         {tasksLoading ? (
           <div className="card task-list">
             <p className="task-empty">Loading tasks…</p>

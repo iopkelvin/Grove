@@ -60,12 +60,16 @@ def create_task(user_id, title, description=None, tag_names=None):
 def update_task(user_id, task_id, fields):
     """Partial update. `fields` only contains the keys the client actually sent
     (title / description / completed / tags), so an omitted key is left alone —
-    same pattern as the update_user route. Returns the updated task dict, or
-    None if no task with that id belongs to this user (route turns that into a
-    404)."""
+    same pattern as the update_user route. Returns (task_dict, became_completed),
+    or (None, False) if no task with that id belongs to this user (route turns
+    that into a 404). became_completed is True only on the false -> true edge —
+    the caller uses it to decide whether to bump the streak, since re-saving an
+    already-completed task shouldn't count as completing it again."""
     task = Task.query.filter_by(id=task_id, user_id=user_id).first()
     if task is None:
-        return None
+        return None, False
+
+    was_completed = task.completed
 
     if "title" in fields:
         task.title = fields["title"]
@@ -76,8 +80,10 @@ def update_task(user_id, task_id, fields):
     if "tags" in fields:
         task.tags = [_get_or_create_tag(user_id, n) for n in (fields["tags"] or [])]
 
+    became_completed = task.completed and not was_completed
+
     db.session.commit()
-    return task.to_dict()
+    return task.to_dict(), became_completed
 
 
 def delete_task(user_id, task_id):
