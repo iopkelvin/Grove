@@ -147,7 +147,7 @@ function Profile() {
               onChange={isOwnProfile ? (e) => handleImageChange("avatar", e) : undefined}
             />
             <div className="profile-streak-card">
-              <StreakTree streak={streak} userId={profile?.supabase_id} layout="overlay" />
+              <StreakTree streak={streak} userId={profile?.id} layout="overlay" />
             </div>
           </div>
           <div className="card profile-info-card">

@@ -7,7 +7,7 @@ from flask_cors import CORS
 from flask_migrate import Migrate
 
 from api.config.database import db, SQLALCHEMY_DATABASE_URI
-from api import models  # noqa: F401 — registers all models so tables get created
+from api import models
 from api.models.room import Room
 from api.models.user import User
 from api.services import friend as friend_service
@@ -69,8 +69,10 @@ def get_user(supabase_id):
 
 # Public profile lookup by username (the /user/<username> page). Unlike
 # get_user above, this can be hit by anyone viewing anyone's profile, so
-# email is deliberately left out — your own view already gets your email
-# straight from the Supabase session, not from this endpoint.
+# email and supabase_id are deliberately left out — your own view already
+# gets your email straight from the Supabase session, not from this
+# endpoint, and supabase_id would let anyone pivot to get_user (by
+# supabase_id) for the full profile, email included.
 @app.route("/api/users/by-username/<username>", methods=["GET"])
 def get_user_by_username(username):
     user = user_service.find_by_username(username)
@@ -78,6 +80,7 @@ def get_user_by_username(username):
         return jsonify({"error": "User not found"}), 404
     data = user.to_dict()
     data.pop("email", None)
+    data.pop("supabase_id", None)
 
     viewer = user_service.find_by_supabase_id(request.args.get("viewer_supabase_id"))
     if viewer:
