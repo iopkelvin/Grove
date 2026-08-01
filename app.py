@@ -5,7 +5,7 @@
 # Serves the app as a pure JSON API for the React frontend to consume.
 
 from datetime import date, timedelta
-from flask import Flask, jsonify, request
+from flask import Flask, g, jsonify, request
 from flask_cors import CORS
 from flask_migrate import Migrate
 from sqlalchemy.orm import selectinload
@@ -17,6 +17,8 @@ from api.services import task as task_service # added by Kyle -- tasks service
 from api.models.room import Room, RoomMembership
 from api.models.streak import Streak
 from api.models.task import Task
+from api.utils import auth
+from api.utils.auth import caller, login_required
 
 # App setup
 app = Flask(__name__)
@@ -97,8 +99,11 @@ def generate_unique_username(base):
 # This route just creates our own `users` row after Supabase signs someone up.
 @app.route("/api/users/sync", methods=["POST"])
 def sync_user():
-    data = request.json
-    supabase_id = data.get("supabase_id")
+    data = request.json or {}
+    supabase_id = auth.resolve_supabase_id()
+    if not supabase_id:
+        return jsonify({"error": "Sign in to do that"}), 401
+
     email = data.get("email")
     first_name = data.get("first_name", "").strip().lower()
     last_name = data.get("last_name", "").strip().lower()
@@ -148,7 +153,7 @@ def get_user_by_username(username):
     data = user.to_dict()
     data.pop("email", None)
 
-    viewer = find_user_by_supabase_id(request.args.get("viewer_supabase_id"))
+    viewer = caller("viewer_supabase_id")
     if viewer:
         data["friendship_status"] = get_friendship_status(viewer, user)
 
@@ -158,11 +163,12 @@ def get_user_by_username(username):
 # Only first_name, last_name, display_name, bio, avatar_url, and banner_url
 # are editable here. Email and streak are intentionally never read from the body.
 @app.route("/api/users/<supabase_id>", methods=["PATCH"])
+@login_required()
 def update_user(supabase_id):
-    user = User.query.filter_by(supabase_id=supabase_id).first()
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    if g.user.supabase_id != supabase_id:
+        return jsonify({"error": "You can only edit your own profile"}), 403
 
+    user = g.user
     data = request.json or {}
 
     if "first_name" in data:
@@ -213,11 +219,9 @@ def search_users():
         )
     )
 
-    exclude_supabase_id = request.args.get("exclude_supabase_id")
-    viewer = None
-    if exclude_supabase_id:
-        search = search.filter(User.supabase_id != exclude_supabase_id)
-        viewer = find_user_by_supabase_id(exclude_supabase_id)
+    viewer = caller("exclude_supabase_id")
+    if viewer:
+        search = search.filter(User.supabase_id != viewer.supabase_id)
 
     results = search.limit(20).all()
     return jsonify([
@@ -244,8 +248,7 @@ def get_rooms():
     The lobby also has clearly-commented frontend placeholder rooms so a fresh
     database still has something useful to display during design work.
     """
-    supabase_id = request.args.get("supabase_id")
-    user = find_user_by_supabase_id(supabase_id) if supabase_id else None
+    user = caller()
 
     query = Room.query
     if user:
@@ -262,11 +265,10 @@ def get_rooms():
 
 
 @app.route("/api/rooms", methods=["POST"])
+@login_required("host_supabase_id")
 def create_room():
     data = request.json or {}
-    host = find_user_by_supabase_id(data.get("host_supabase_id"))
-    if not host:
-        return jsonify({"error": "User not found"}), 404
+    host = g.user
 
     name = (data.get("name") or "").strip()
     if not name:
@@ -324,12 +326,9 @@ def get_room(room_id):
 # of completion, not really a "task" concern, and it needs the full User
 # object that bump_streak_for_completion() (above) already expects.
 @app.route("/api/tasks", methods=["GET"])
+@login_required()
 def get_tasks():
-    user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-
-    tasks = task_service.list_tasks(user.id)
+    tasks = task_service.list_tasks(g.user.id)
     completed = request.args.get("completed")
     if completed in ("true", "false"):
         want_completed = completed == "true"
@@ -338,26 +337,22 @@ def get_tasks():
 
 
 @app.route("/api/tags", methods=["GET"])
+@login_required()
 def get_tags():
-    user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    return jsonify(task_service.list_tags(user.id)), 200
+    return jsonify(task_service.list_tags(g.user.id)), 200
 
 
 @app.route("/api/tasks", methods=["POST"])
+@login_required()
 def create_task():
     data = request.json or {}
-    user = find_user_by_supabase_id(data.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
 
     title = (data.get("title") or "").strip()
     if not title:
         return jsonify({"error": "Task title is required"}), 400
 
     created = task_service.create_task(
-        user.id,
+        g.user.id,
         title=title,
         description=(data.get("description") or None),
         tag_names=data.get("tags"),
@@ -368,11 +363,10 @@ def create_task():
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["PUT"])
+@login_required()
 def update_task(task_id):
     data = request.json or {}
-    user = find_user_by_supabase_id(data.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    user = g.user
 
     fields = {
         k: data[k]
@@ -395,11 +389,9 @@ def update_task(task_id):
 
 
 @app.route("/api/tasks/<int:task_id>", methods=["DELETE"])
+@login_required()
 def delete_task(task_id):
-    user = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    if not task_service.delete_task(user.id, task_id):
+    if not task_service.delete_task(g.user.id, task_id):
         return jsonify({"error": "Task not found"}), 404
     return "", 204
 # end of task routes
@@ -410,11 +402,10 @@ def delete_task(task_id):
 # is the recipient, and status starts "pending" until the recipient
 # accepts or declines. Nothing here is instant — see api/models/friend.py.
 @app.route("/api/friends", methods=["POST"])
+@login_required("requester_supabase_id")
 def send_friend_request():
     data = request.json or {}
-    requester = find_user_by_supabase_id(data.get("requester_supabase_id"))
-    if not requester:
-        return jsonify({"error": "User not found"}), 404
+    requester = g.user
 
     target = User.query.get(data.get("target_user_id"))
     if not target:
@@ -442,11 +433,9 @@ def send_friend_request():
 # defaults to "incoming" (requests waiting on me to respond) — pass
 # direction=sent to see requests I sent that are still waiting on someone else.
 @app.route("/api/friends", methods=["GET"])
+@login_required()
 def get_friends():
-    me = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not me:
-        return jsonify({"error": "User not found"}), 404
-
+    me = g.user
     status = request.args.get("status", "accepted")
 
     # Eager-load both sides of the friendship plus each side's streak in a
@@ -494,11 +483,10 @@ def get_friends():
 
 # Only the recipient (friend_id) can accept or decline.
 @app.route("/api/friends/<int:friendship_id>", methods=["PATCH"])
+@login_required()
 def respond_to_friend_request(friendship_id):
     data = request.json or {}
-    me = find_user_by_supabase_id(data.get("supabase_id"))
-    if not me:
-        return jsonify({"error": "User not found"}), 404
+    me = g.user
 
     friendship = Friendship.query.get(friendship_id)
     if not friendship:
@@ -518,11 +506,9 @@ def respond_to_friend_request(friendship_id):
 
 # Either side can remove an accepted friendship, or cancel a pending one.
 @app.route("/api/friends/<int:friendship_id>", methods=["DELETE"])
+@login_required()
 def remove_friend(friendship_id):
-    me = find_user_by_supabase_id(request.args.get("supabase_id"))
-    if not me:
-        return jsonify({"error": "User not found"}), 404
-
+    me = g.user
     friendship = Friendship.query.get(friendship_id)
     if not friendship:
         return jsonify({"error": "Friendship not found"}), 404

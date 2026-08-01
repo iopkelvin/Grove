@@ -10,9 +10,10 @@ clone runnable with no setup, and is not safe anywhere near real data.
 """
 
 import os
+from functools import wraps
 
 import jwt
-from flask import request
+from flask import g, jsonify, request
 
 from api.models.user import User
 
@@ -54,15 +55,44 @@ def claimed_supabase_id(keys):
     return None
 
 
-def caller(*keys):
-    """The signed-in user, or None.
+def resolve_supabase_id(keys=(), fallback=None):
+    """Who this request is from, token first.
 
-    `keys` are the request fields the frontend uses to name itself. They
-    only count in trusted-client mode.
+    `keys` are the request fields the frontend uses to name itself, and
+    `fallback` a URL parameter carrying the same thing. Both only count in
+    trusted-client mode.
     """
     supabase_id = verified_supabase_id()
     if not supabase_id and trusted_client_mode():
-        supabase_id = claimed_supabase_id(keys or ("supabase_id",))
+        supabase_id = claimed_supabase_id(keys or ("supabase_id",)) or fallback
+    return supabase_id
+
+
+def caller(*keys):
+    """The signed-in user, or None. For routes where that is allowed."""
+    supabase_id = resolve_supabase_id(keys)
     if not supabase_id:
         return None
     return User.query.filter_by(supabase_id=supabase_id).first()
+
+
+def login_required(*keys):
+    """Put the caller on `g.user`, or refuse the request."""
+
+    def decorator(view):
+        @wraps(view)
+        def wrapper(*args, **kwargs):
+            supabase_id = resolve_supabase_id(keys, kwargs.get("supabase_id"))
+            if not supabase_id:
+                return jsonify({"error": "Sign in to do that"}), 401
+
+            user = User.query.filter_by(supabase_id=supabase_id).first()
+            if not user:
+                return jsonify({"error": "User not found"}), 404
+
+            g.user = user
+            return view(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
