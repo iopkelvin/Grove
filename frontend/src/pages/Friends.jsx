@@ -185,14 +185,14 @@ function Friends() {
         <div className="friends-tabs">
           <button
             type="button"
-            className={tab === "friends" ? "friends-tab friends-tab-active" : "friends-tab"}
+            className={`friends-tab${tab === "friends" ? " friends-tab-active" : ""}`}
             onClick={() => setTab("friends")}
           >
             Friends ({friends.length})
           </button>
           <button
             type="button"
-            className={tab === "requests" ? "friends-tab friends-tab-active" : "friends-tab"}
+            className={`friends-tab${tab === "requests" ? " friends-tab-active" : ""}`}
             onClick={() => setTab("requests")}
           >
             Requests{requests.length > 0 ? ` (${requests.length})` : ""}
@@ -228,11 +228,7 @@ function Friends() {
                 <div className="friends-alphabet">
                   <button
                     type="button"
-                    className={
-                      activeLetter === null
-                        ? "friends-letter friends-letter-all friends-letter-active"
-                        : "friends-letter friends-letter-all"
-                    }
+                    className={`friends-letter friends-letter-all${activeLetter === null ? " friends-letter-active" : ""}`}
                     onClick={() => handleLetterClick(null)}
                   >
                     All
@@ -241,9 +237,7 @@ function Friends() {
                     <button
                       key={letter}
                       type="button"
-                      className={
-                        activeLetter === letter ? "friends-letter friends-letter-active" : "friends-letter"
-                      }
+                      className={`friends-letter${activeLetter === letter ? " friends-letter-active" : ""}`}
                       disabled={!availableLetters.has(letter)}
                       onClick={() => handleLetterClick(letter)}
                     >
