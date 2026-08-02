@@ -30,10 +30,14 @@
 }
 
 /* ── Status filter ── */
+/* Scrolls horizontally instead of wrapping/shrinking on narrow screens. */
 .task-status-tabs {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+  padding-bottom: 4px;
 }
 
 .task-status-tab {
@@ -45,6 +49,8 @@
   font-family: var(--font-family-base);
   font-size: var(--font-size-body);
   cursor: pointer;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .task-status-tab-active {
@@ -62,11 +68,13 @@
   gap: 6px;
   margin-bottom: 16px;
   overflow-x: auto;
+  flex-wrap: nowrap;
   padding-bottom: 4px;
 }
 
 .task-filter-scroll .task-tag-option {
   flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* ── Create-task modal ── */
@@ -198,11 +206,19 @@
 
 .task-tag-new {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
 .task-tag-new input {
-  flex: 1;
+  /* min-width:0 lets a flex item shrink below its default content width —
+     without it, the input refused to shrink and pushed this row (and the
+     whole modal) wider than it should be, forcing it to scroll sideways.
+     flex-basis keeps it comfortably readable; if there's truly no room
+     left, flex-wrap above drops the button to its own line instead of
+     ever widening the modal. */
+  flex: 1 1 140px;
+  min-width: 0;
   padding: 8px 10px;
   border: 1px solid var(--color-card-border);
   border-radius: 8px;
@@ -213,6 +229,7 @@
 }
 
 .task-tag-new button {
+  flex-shrink: 0;
   padding: 8px 14px;
   border: none;
   border-radius: 8px;
