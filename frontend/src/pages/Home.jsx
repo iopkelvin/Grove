@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
-import { getRoom, getRooms, createRoom } from "../api/rooms";
+import { getRoom, createRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
 import { getTreeSeason } from "../utils/treeGenerator";
 import MenuIcon from "../components/MenuIcon";
@@ -47,7 +47,6 @@ function Home() {
   const season = getTreeSeason(streak);
 
   const [lastRoom, setLastRoom] = useState(null);
-  const [rooms, setRooms] = useState([]);
   const [creatingRoom, setCreatingRoom] = useState(false);
   const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
@@ -60,20 +59,6 @@ function Home() {
       .then(setLastRoom)
       .catch(() => setLastRoom(null));
   }, [profile?.last_room_id]);
-
-  const loadRooms = useCallback(async () => {
-    if (!supabaseId) return;
-    setRooms(await getRooms(supabaseId));
-  }, [supabaseId]);
-
-  useEffect(() => {
-    loadRooms();
-  }, [loadRooms]);
-
-  // list_visible (api/services/room.py) already orders every visible room
-  // by created_at descending, so filtering to ones this user hosts keeps
-  // that order — the first match is the most recently created one.
-  const lastCreatedRoom = rooms.find((room) => room.host_id === profile?.id) ?? null;
 
   async function handleCreateRoom() {
     setCreatingRoom(true);
@@ -109,36 +94,32 @@ function Home() {
       <h1 className="page-title">{greeting}, {firstName}</h1>
 
       <div className="grid">
-        <div data-home-tour="streak">
+        <div className="grid-item-tree" data-home-tour="streak">
           <StreakTree streak={streak} userId={supabaseId} layout="overlay" glow={streakLeveledUp} />
         </div>
 
-        <div className="grid-column">
-          <div data-home-tour="calendar">
-            <MiniCalendar tasks={tasks} season={season} />
-          </div>
-
-          <ContinueRoomCard room={lastRoom} />
-
-          <StudyRoomsCard
-            lastCreatedRoom={lastCreatedRoom}
-            onCreate={handleCreateRoom}
-            creating={creatingRoom}
-          />
+        <div className="grid-item-calendar" data-home-tour="calendar">
+          <MiniCalendar tasks={tasks} season={season} />
         </div>
 
-        <div className="grid-column">
-          <div data-home-tour="up-next">
-            <p className="up-next-title">Up Next</p>
-            <TaskList
-              tasks={upNext}
-              onToggle={toggleTask}
-              onDelete={removeTask}
-              emptyMessage="All caught up!"
-            />
-          </div>
+        <StudyRoomsCard
+          className="grid-item-rooms"
+          onCreate={handleCreateRoom}
+          creating={creatingRoom}
+        />
+
+        <div className="grid-item-upnext" data-home-tour="up-next">
+          <TaskList
+            title="Up Next"
+            tasks={upNext}
+            onToggle={toggleTask}
+            onDelete={removeTask}
+            emptyMessage="All caught up!"
+          />
           <UndoToast task={pendingDelete} onUndo={undoDelete} />
         </div>
+
+        <ContinueRoomCard className="grid-item-continue" room={lastRoom} />
       </div>
 
       {showTutorial && (

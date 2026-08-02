@@ -25,13 +25,18 @@
 }
 
 /* ── Grid layout ── */
-/* main 3-column layout — first column is wider for the streak tree, and
-   no align-items here means the default (stretch): the tree's column
-   fills the full row height to match the other two stacked columns.
-   Those opt back out to their natural top-aligned height below. */
+/* main layout, named areas (not source order) so the single-column
+   breakpoint below can reorder widgets independently of the desktop
+   arrangement. No align-items here means the default (stretch): the
+   tree fills the full row height across everything it spans. The other
+   areas opt back out to their natural top-aligned height below. */
 .grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
+  grid-template-areas:
+    "tree calendar upnext"
+    "tree rooms    upnext"
+    "tree .        continue";
   gap: 24px;
 }
 
@@ -44,21 +49,44 @@
   min-width: 0;
 }
 
-/* stacks components vertically inside a grid column */
-.grid-column {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+.grid-item-tree {
+  grid-area: tree;
+}
+
+.grid-item-calendar {
+  grid-area: calendar;
+  align-self: start;
+}
+
+.grid-item-rooms {
+  grid-area: rooms;
+  align-self: start;
+}
+
+.grid-item-upnext {
+  grid-area: upnext;
+  align-self: start;
+}
+
+.grid-item-continue {
+  grid-area: continue;
   align-self: start;
 }
 
 /* ── Medium screens ── */
 /* a half-width desktop window (or a tablet) is much wider than a phone
    but still doesn't have room for 3 columns side by side — stack to one
-   column same as mobile, just at a higher threshold */
+   column same as mobile, just at a higher threshold. Reordered here too:
+   "New study room" moves below Up Next instead of sitting above it. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
+    grid-template-areas:
+      "tree"
+      "calendar"
+      "upnext"
+      "continue"
+      "rooms";
   }
 }
 
