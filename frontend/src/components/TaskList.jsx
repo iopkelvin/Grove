@@ -90,10 +90,12 @@ export default function TaskList({
   onDelete,
   onEditRequest,
   emptyMessage = "Nothing here yet — add your first task above.",
+  title,
 }) {
   if (tasks.length === 0) {
     return (
       <div className="card task-list">
+        {title && <p className="task-list-title">{title}</p>}
         <p className="task-empty">{emptyMessage}</p>
       </div>
     );
@@ -101,6 +103,7 @@ export default function TaskList({
 
   return (
     <div className="card task-list">
+      {title && <p className="task-list-title">{title}</p>}
       {tasks.map((task) => (
         <TaskItem
           key={task.id}

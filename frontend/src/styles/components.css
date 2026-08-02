@@ -203,7 +203,7 @@
 .continue-room-card {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   text-decoration: none;
   color: var(--color-text-primary);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
@@ -212,6 +212,16 @@
 .continue-room-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+/* same pixel-art scene used on the actual Room page — scaled down to a
+   thumbnail here, not so small it reads as a plain icon */
+.continue-room-image {
+  width: 104px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
 }
 
 .continue-room-label {
@@ -252,22 +262,3 @@
   cursor: default;
 }
 
-.study-rooms-last {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  text-decoration: none;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-small);
-}
-
-.study-rooms-last:hover {
-  color: var(--color-text-primary);
-}
-
-/* ── Up Next (Home) ── */
-.up-next-title {
-  margin: 0 0 8px 4px;
-  font-size: var(--font-size-small);
-  color: var(--color-text-secondary);
-}

@@ -1,10 +1,8 @@
-import { Link } from "react-router-dom";
-import { Plus, DoorOpen } from "lucide-react";
+import { Plus } from "lucide-react";
 
-// lastCreatedRoom is null until the user has hosted at least one room.
-export default function StudyRoomsCard({ lastCreatedRoom, onCreate, creating }) {
+export default function StudyRoomsCard({ onCreate, creating, className = "" }) {
   return (
-    <div className="card study-rooms-card">
+    <div className={`card study-rooms-card ${className}`.trim()}>
       <button
         type="button"
         className="study-rooms-create"
@@ -14,13 +12,6 @@ export default function StudyRoomsCard({ lastCreatedRoom, onCreate, creating }) 
         <Plus size={16} />
         {creating ? "Creating…" : "New study room"}
       </button>
-
-      {lastCreatedRoom && (
-        <Link to={`/rooms/${lastCreatedRoom.id}`} className="study-rooms-last">
-          <DoorOpen size={14} />
-          {lastCreatedRoom.name}
-        </Link>
-      )}
     </div>
   );
 }
