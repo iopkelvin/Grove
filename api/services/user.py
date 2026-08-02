@@ -61,10 +61,11 @@ def get_or_create(supabase_id, email, first_name, last_name, username):
 
 
 def update_profile(user, data):
-    """Partial update. Only first_name, last_name, display_name, bio,
-    avatar_url, and banner_url are editable here — email and streak are
-    intentionally never read from the body. Returns (user_dict, error);
-    error is set (and nothing is saved) if a required field was cleared."""
+    """Partial update. Only first_name, last_name, display_name, pronouns,
+    bio, avatar_url, banner_url, and banner_position_y are editable here —
+    email and streak are intentionally never read from the body. Returns
+    (user_dict, error); error is set (and nothing is saved) if a required
+    field was cleared."""
     if "first_name" in data:
         first_name = (data.get("first_name") or "").strip().lower()
         if not first_name:
@@ -77,12 +78,20 @@ def update_profile(user, data):
         user.last_name = last_name
     if "display_name" in data:
         user.display_name = (data.get("display_name") or "").strip() or None
+    if "pronouns" in data:
+        user.pronouns = (data.get("pronouns") or "").strip()[:30] or None
     if "bio" in data:
         user.bio = (data.get("bio") or "").strip() or None
     if "avatar_url" in data:
         user.avatar_url = (data.get("avatar_url") or "").strip() or None
     if "banner_url" in data:
         user.banner_url = (data.get("banner_url") or "").strip() or None
+    if "banner_position_y" in data:
+        try:
+            position = int(data.get("banner_position_y"))
+        except (TypeError, ValueError):
+            position = 50
+        user.banner_position_y = max(0, min(100, position))
 
     db.session.commit()
     return user.to_dict(), None

@@ -68,7 +68,7 @@ function TreeSvg({ tree, gradientId, className }) {
   );
 }
 
-export default function StreakTree({ streak = 0, userId = "guest", showLabel = true, compact = false }) {
+export default function StreakTree({ streak = 0, userId = "guest", showLabel = true, compact = false, glow = false }) {
   const tree = useMemo(() => generateTree(userId, streak), [userId, streak]);
 
   // Unique per user so multiple trees on one page (a friends list full
@@ -83,7 +83,7 @@ export default function StreakTree({ streak = 0, userId = "guest", showLabel = t
   }
 
   return (
-    <div className="streak-frame">
+    <div className={`streak-frame${glow ? " streak-frame-glow" : ""}`}>
       <div className="streak-tree-inner">
         <TreeSvg tree={tree} gradientId={gradientId} className="streak-tree-svg-large" />
 

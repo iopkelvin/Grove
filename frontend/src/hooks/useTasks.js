@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { getTasks, createTask, updateTask, deleteTask } from "../api/tasks";
+import { useUser } from "../context/UserContext";
 
 const UNDO_WINDOW_MS = 5000;
 
 // Shared by Home.jsx and Tasks.jsx so both pages behave identically
 // instead of maintaining two copies of the same fetch/mutate logic.
 export function useTasks(supabaseId) {
+  const { refreshProfile } = useUser();
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -63,6 +65,10 @@ export function useTasks(supabaseId) {
       const updated = await updateTask(supabaseId, id, { completed: !currentTask.done });
       setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
       setError("");
+      // Completing a task can bump the streak on the backend; refetch the
+      // profile so current_streak (and anything derived from it, like the
+      // tree and its level-up glow) picks up the change without a reload.
+      refreshProfile(supabaseId);
     } catch {
       setError("The task could not be updated.");
     }

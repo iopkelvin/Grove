@@ -4,12 +4,19 @@ import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
 import { uploadProfileImage } from "../lib/uploadImage";
 import { getUserByUsername } from "../api/users";
-import { sendFriendRequest } from "../api/friends";
+import { sendFriendRequest, getFriends } from "../api/friends";
+import { getTreeProgress } from "../api/streaks";
+import useStreakLevelUp from "../hooks/useStreakLevelUp";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
 import StreakTree from "../components/StreakTree";
-import { UserPlus, Mail, Bell, Pencil } from "lucide-react";
+import { UserPlus, Mail, Bell, Pencil, CheckSquare, Users } from "lucide-react";
+
+// Common presets, LinkedIn-style; "custom" reveals a free-text field capped
+// at PRONOUNS_MAX_LENGTH so it can't turn into a full sentence.
+const PRONOUN_PRESETS = ["she/her", "he/him", "they/them", "she/they", "he/they"];
+const PRONOUNS_MAX_LENGTH = 20;
 
 function Profile() {
   const { username } = useParams();
@@ -23,12 +30,18 @@ function Profile() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [pronounsPreset, setPronounsPreset] = useState("");
+  const [pronounsCustom, setPronounsCustom] = useState("");
   const [bio, setBio] = useState("");
   const [error, setError] = useState("");
   const [uploadingImage, setUploadingImage] = useState(null);
 
   const isOwnProfile =
     !username || (myProfile && username.toLowerCase() === myProfile.username.toLowerCase());
+  const profile = isOwnProfile ? myProfile : viewedProfile;
+  const streak = profile?.current_streak ?? 0;
+
+  const [stats, setStats] = useState({ points: 0, friends: 0 });
 
   const loadViewedProfile = useCallback(async () => {
     if (!username) return;
@@ -42,6 +55,24 @@ function Profile() {
       loadViewedProfile();
     }
   }, [username, loadViewedProfile]);
+
+  // Both /api/streaks/<id> and /api/friends only ever answer for the
+  // signed-in caller, so these stats can only be shown for your own
+  // profile — there's no way to fetch someone else's counts.
+  useEffect(() => {
+    if (!isOwnProfile || !session?.user?.id) return;
+    Promise.allSettled([
+      getTreeProgress(session.user.id),
+      getFriends(session.user.id, { status: "accepted" }),
+    ]).then(([pointsResult, friendsResult]) => {
+      setStats({
+        points: pointsResult.status === "fulfilled" ? pointsResult.value.points : 0,
+        friends: friendsResult.status === "fulfilled" ? friendsResult.value.length : 0,
+      });
+    });
+  }, [isOwnProfile, session?.user?.id]);
+
+  const streakLeveledUp = useStreakLevelUp(isOwnProfile ? session?.user?.id : null, streak);
 
   if (loading || (username && viewedProfileLoading)) {
     return <div className="page">Loading...</div>;
@@ -58,9 +89,10 @@ function Profile() {
     );
   }
 
-  const profile = isOwnProfile ? myProfile : viewedProfile;
   const email = isOwnProfile ? session?.user?.email || "" : null;
-  const streak = profile?.current_streak ?? 0;
+  const fullName = [capitalize(profile?.first_name), capitalize(profile?.last_name)]
+    .filter(Boolean)
+    .join(" ");
 
   async function handleImageChange(kind, e) {
     const file = e.target.files[0];
@@ -83,10 +115,28 @@ function Profile() {
     }
   }
 
+  async function handleBannerPositionChange(position) {
+    const res = await updateProfile({ banner_position_y: position });
+    if (!res.ok) {
+      setError("Failed to save the banner position. Please try again.");
+    }
+  }
+
   function startEditing() {
     setFirstName(myProfile?.first_name || "");
     setLastName(myProfile?.last_name || "");
     setDisplayName(myProfile?.display_name || "");
+    const currentPronouns = myProfile?.pronouns || "";
+    if (!currentPronouns) {
+      setPronounsPreset("");
+      setPronounsCustom("");
+    } else if (PRONOUN_PRESETS.includes(currentPronouns)) {
+      setPronounsPreset(currentPronouns);
+      setPronounsCustom("");
+    } else {
+      setPronounsPreset("custom");
+      setPronounsCustom(currentPronouns);
+    }
     setBio(myProfile?.bio || "");
     setError("");
     setIsEditing(true);
@@ -97,10 +147,12 @@ function Profile() {
     setError("");
 
     try {
+      const pronouns = pronounsPreset === "custom" ? pronounsCustom.trim() : pronounsPreset;
       const res = await updateProfile({
         first_name: firstName,
         last_name: lastName,
         display_name: displayName,
+        pronouns,
         bio,
       });
 
@@ -145,7 +197,9 @@ function Profile() {
       <div className="page-content">
         <Banner
           bannerUrl={profile?.banner_url}
+          positionY={profile?.banner_position_y ?? 50}
           onChange={isOwnProfile ? (e) => handleImageChange("banner", e) : undefined}
+          onPositionChange={isOwnProfile ? handleBannerPositionChange : undefined}
         />
         {uploadingImage && <p className="profile-upload-status">Uploading {uploadingImage}...</p>}
         <div className="profile-content">
@@ -154,95 +208,134 @@ function Profile() {
               avatarUrl={profile?.avatar_url}
               onChange={isOwnProfile ? (e) => handleImageChange("avatar", e) : undefined}
             />
-            <div className="profile-streak-card">
-              <StreakTree streak={streak} userId={profile?.id} layout="overlay" />
-            </div>
           </div>
-          <div className="card profile-info-card">
-            {isOwnProfile && !isEditing && (
-              <button
-                type="button"
-                className="profile-edit-icon-button"
-                onClick={startEditing}
-                aria-label="Edit profile"
-              >
-                <Pencil size={16} />
-              </button>
-            )}
-            {isEditing ? (
-              <form onSubmit={handleSave} className="profile-edit-form">
-                <div className="profile-edit-grid">
-                  <label>
-                    First Name
-                    <input
-                      type="text"
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Last Name
-                    <input
-                      type="text"
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      required
-                    />
-                  </label>
-                  <label>
-                    Display Name
-                    <input
-                      type="text"
-                      value={displayName}
-                      onChange={(e) => setDisplayName(e.target.value)}
-                    />
-                  </label>
-                </div>
-                <label>
-                  Bio
-                  <textarea
-                    rows={4}
-                    value={bio}
-                    onChange={(e) => setBio(e.target.value)}
-                  />
-                </label>
-                {error && <p className="auth-error">{error}</p>}
-                <div className="profile-edit-actions">
-                  <button type="submit">Save</button>
-                  <button type="button" onClick={() => setIsEditing(false)}>
-                    Cancel
-                  </button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <div className="profile-info-grid">
-                  <div>
-                    <h3>First Name:</h3>
-                    <p>{capitalize(profile?.first_name) || "—"}</p>
+          <div className="profile-streak-card">
+            <StreakTree streak={streak} userId={profile?.id} layout="overlay" glow={streakLeveledUp} />
+          </div>
+          <div className="profile-info-column">
+            <div className="card profile-info-card">
+              {isOwnProfile && !isEditing && (
+                <button
+                  type="button"
+                  className="profile-edit-icon-button"
+                  onClick={startEditing}
+                  aria-label="Edit profile"
+                >
+                  <Pencil size={16} />
+                </button>
+              )}
+              {isEditing ? (
+                <form onSubmit={handleSave} className="profile-edit-form">
+                  <div className="profile-edit-grid">
+                    <label>
+                      First Name
+                      <input
+                        type="text"
+                        value={firstName}
+                        onChange={(e) => setFirstName(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Last Name
+                      <input
+                        type="text"
+                        value={lastName}
+                        onChange={(e) => setLastName(e.target.value)}
+                        required
+                      />
+                    </label>
+                    <label>
+                      Display Name
+                      <input
+                        type="text"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      Pronouns
+                      <select
+                        value={pronounsPreset}
+                        onChange={(e) => setPronounsPreset(e.target.value)}
+                      >
+                        <option value="">Not specified</option>
+                        {PRONOUN_PRESETS.map((preset) => (
+                          <option key={preset} value={preset}>
+                            {preset}
+                          </option>
+                        ))}
+                        <option value="custom">Custom</option>
+                      </select>
+                    </label>
                   </div>
-                  <div>
-                    <h3>Last Name:</h3>
-                    <p>{capitalize(profile?.last_name) || "—"}</p>
+                  {pronounsPreset === "custom" && (
+                    <label>
+                      Custom pronouns
+                      <input
+                        type="text"
+                        value={pronounsCustom}
+                        onChange={(e) => setPronounsCustom(e.target.value)}
+                        maxLength={PRONOUNS_MAX_LENGTH}
+                        placeholder="e.g. xe/xem"
+                      />
+                    </label>
+                  )}
+                  <label>
+                    Bio
+                    <textarea
+                      rows={4}
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                    />
+                  </label>
+                  {error && <p className="auth-error">{error}</p>}
+                  <div className="profile-edit-actions">
+                    <button type="submit">Save</button>
+                    <button type="button" onClick={() => setIsEditing(false)}>
+                      Cancel
+                    </button>
                   </div>
-                  <div>
-                    <h3>Display Name:</h3>
-                    <p>{profile?.display_name || "—"}</p>
+                </form>
+              ) : (
+                <>
+                  <div className="profile-name-row">
+                    <h2 className="profile-full-name">{fullName || "—"}</h2>
+                    {profile?.pronouns && (
+                      <span className="profile-pronouns">{profile.pronouns}</span>
+                    )}
                   </div>
                   {isOwnProfile && (
-                    <div>
-                      <h3>Email:</h3>
-                      <p>{email}</p>
+                    <div className="profile-info-grid">
+                      <div>
+                        <h3>Email:</h3>
+                        <p>{email}</p>
+                      </div>
                     </div>
                   )}
+                  <div className="profile-info-bio">
+                    <h3>Bio:</h3>
+                    {profile?.bio ? (
+                      <p className="profile-bio-quote">{profile.bio}</p>
+                    ) : (
+                      <p>—</p>
+                    )}
+                  </div>
+                  {error && <p className="auth-error">{error}</p>}
+                </>
+              )}
+            </div>
+            {isOwnProfile && (
+              <div className="profile-stats">
+                <div className="profile-stat-chip">
+                  <CheckSquare size={16} />
+                  <span>{stats.points} tasks completed</span>
                 </div>
-                <div className="profile-info-bio">
-                  <h3>Bio:</h3>
-                  <p>{profile?.bio || "—"}</p>
+                <div className="profile-stat-chip">
+                  <Users size={16} />
+                  <span>{stats.friends} friends</span>
                 </div>
-                {error && <p className="auth-error">{error}</p>}
-              </>
+              </div>
             )}
           </div>
         </div>
