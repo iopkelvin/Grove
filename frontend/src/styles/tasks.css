@@ -277,12 +277,27 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .task-empty {
   margin: 0;
   color: var(--color-text-secondary);
   font-size: var(--font-size-body);
+}
+
+/* optional heading (e.g. Home's "Up Next") — a solid banner bleeding to
+   the card's own edges (same treatment as the mini calendar's header),
+   styled like the primary button so it reads as equally prominent. */
+.task-list-title {
+  margin: -24px -24px 12px;
+  padding: 14px 16px;
+  border-radius: 16px 16px 0 0;
+  text-align: center;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-title);
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
 }
 
 /* ── Task row ── */

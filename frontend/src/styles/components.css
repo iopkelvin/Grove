@@ -198,3 +198,67 @@
     font-size: 15px;
   }
 }
+
+/* ── Continue-room card (Home) ── */
+.continue-room-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  text-decoration: none;
+  color: var(--color-text-primary);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.continue-room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+/* same pixel-art scene used on the actual Room page — scaled down to a
+   thumbnail here, not so small it reads as a plain icon */
+.continue-room-image {
+  width: 104px;
+  height: 68px;
+  object-fit: cover;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.continue-room-label {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.continue-room-name {
+  margin: 0;
+  font-size: var(--font-size-body);
+}
+
+/* ── Study rooms card (Home) ── */
+.study-rooms-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-rooms-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.study-rooms-create:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+

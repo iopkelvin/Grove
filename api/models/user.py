@@ -34,6 +34,17 @@ class User(db.Model):
     banner_position_y = db.Column(db.Integer, nullable=False, default=50)
     bio = db.Column(db.Text, nullable=True)
 
+    # Study room the user last visited, for the Home page "continue where
+    # you left off" widget. Set on room mount (see /api/rooms/<id>/visit),
+    # not on every join — a stale value just means the widget quietly
+    # disappears if the room's since been deleted (SET NULL below).
+    last_room_id = db.Column(
+        db.Integer,
+        db.ForeignKey("rooms.id", ondelete="SET NULL", use_alter=True, name="fk_users_last_room_id_rooms"),
+        nullable=True,
+    )
+    last_room_visited_at = db.Column(db.DateTime, nullable=True)
+
     # "Online now" indicator. Simple boolean for now; if you later want
     # auto-timeout, swap this for a last_seen DateTime and compute online-ness.
     is_online = db.Column(db.Boolean, default=False, nullable=False)
@@ -62,6 +73,8 @@ class User(db.Model):
             "banner_url": self.banner_url,
             "banner_position_y": self.banner_position_y,
             "bio": self.bio,
+            "last_room_id": self.last_room_id,
+            "last_room_visited_at": self.last_room_visited_at.isoformat() if self.last_room_visited_at else None,
             "is_online": self.is_online,
             "current_streak": self.streak.current_count if self.streak else 0,
             "created_at": self.created_at.isoformat() if self.created_at else None,

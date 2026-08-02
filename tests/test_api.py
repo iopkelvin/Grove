@@ -49,6 +49,12 @@ def get_streak(client, supabase_id):
     return res.get_json()["current_streak"]
 
 
+def create_room(client, supabase_id, name="Study Room"):
+    return client.post(
+        "/api/rooms", json={"name": name}, headers=auth_headers(supabase_id)
+    )
+
+
 # ── Account creation ─────────────────────────────────────────────────
 
 def test_sync_creates_a_user(client):
@@ -111,6 +117,24 @@ def test_pronouns_are_truncated_to_30_chars(client):
         "/api/users/sb-1", json={"pronouns": "x" * 50}, headers=auth_headers("sb-1")
     ).get_json()
     assert updated["pronouns"] == "x" * 30
+
+
+def test_visiting_a_room_sets_last_room(client):
+    sync_user(client, "sb-1", "alice")
+    room = create_room(client, "sb-1").get_json()
+
+    res = client.post(f"/api/rooms/{room['id']}/visit", headers=auth_headers("sb-1"))
+
+    assert res.status_code == 200
+    assert res.get_json()["last_room_id"] == room["id"]
+
+
+def test_visiting_a_missing_room_404s(client):
+    sync_user(client, "sb-1", "alice")
+
+    res = client.post("/api/rooms/999999/visit", headers=auth_headers("sb-1"))
+
+    assert res.status_code == 404
 
 
 # ── Task + streak core loop ──────────────────────────────────────────

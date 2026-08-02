@@ -25,3 +25,7 @@ export async function createRoom(payload) {
   }
   return res.json();
 }
+
+export async function visitRoom(roomId) {
+  return apiFetch(`/api/rooms/${roomId}/visit`, { method: "POST" });
+}

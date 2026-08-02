@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { MessageCircle, Music, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
-import { getRoom } from "../api/rooms";
+import { getRoom, visitRoom } from "../api/rooms";
 
 // Shown in place of real members until a room has database-backed ones.
 const PLACEHOLDER_MEMBERS = [
@@ -56,6 +56,15 @@ export default function Room() {
       getRoom(roomId).then(setRoom).catch(() => setRoom(null));
     }
   }, [room, roomId]);
+
+  // Recorded for the Home page's "continue where you left off" widget.
+  // Independent of the room-resolution effect above so it still fires when
+  // the room came from the sessionStorage/location.state cache.
+  useEffect(() => {
+    if (/^\d+$/.test(roomId)) {
+      visitRoom(roomId).catch(() => {});
+    }
+  }, [roomId]);
 
   useEffect(() => {
     if (!room) return;

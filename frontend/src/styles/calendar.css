@@ -171,19 +171,42 @@
 .calendar-mini {
   background-color: var(--color-card-background);
   border-radius: 24px;
-  padding: 20px 22px 24px;
+  padding: 0 22px 24px;
+  overflow: hidden;
 }
 
+/* colored banner (tinted by the tree's current season) so the widget
+   reads as more than plain text on a gray box; bleeds to the card's own
+   edges via negative margin instead of a second nested box. Plain dark
+   green by default — seasons don't unlock until streak 21. */
 .calendar-mini-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin: 0 -22px 18px;
+  padding: 18px 22px;
+  background: linear-gradient(135deg, var(--color-button-background), color-mix(in srgb, var(--color-button-background) 55%, transparent));
+}
+
+.calendar-mini-header--spring {
+  background: linear-gradient(135deg, var(--color-season-spring), color-mix(in srgb, var(--color-season-spring) 55%, transparent));
+}
+
+.calendar-mini-header--summer {
+  background: linear-gradient(135deg, var(--color-season-summer), color-mix(in srgb, var(--color-season-summer) 55%, transparent));
+}
+
+.calendar-mini-header--fall {
+  background: linear-gradient(135deg, var(--color-season-fall), color-mix(in srgb, var(--color-season-fall) 55%, transparent));
+}
+
+.calendar-mini-header--winter {
+  background: linear-gradient(135deg, var(--color-season-winter), color-mix(in srgb, var(--color-season-winter) 55%, transparent));
 }
 
 .calendar-mini-title {
   font-size: var(--font-size-body);
-  color: var(--color-text-primary);
+  color: var(--color-scene-foreground);
 }
 
 .calendar-mini-button {
@@ -195,7 +218,7 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-text-secondary);
+  color: var(--color-scene-foreground);
   padding: 0;
 }
 
@@ -214,18 +237,92 @@
 }
 
 .calendar-mini-day {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
   height: 34px;
   font-size: var(--font-size-small);
   color: var(--color-text-primary);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-family: var(--font-family-base);
+  cursor: pointer;
 }
 
-.calendar-mini-day-today {
+.calendar-mini-day:not(.calendar-mini-day-empty):not(.calendar-mini-day-selected):hover {
+  background-color: var(--color-divider);
+}
+
+/* marks a day with an incomplete task due */
+.calendar-mini-day-dot {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
   background-color: var(--color-streak-accent);
+}
+
+.calendar-mini-day-empty {
+  cursor: default;
+}
+
+/* outline (not filled) so today stays visible even when a different day
+   is the one actually selected below */
+.calendar-mini-day-today {
+  box-shadow: inset 0 0 0 2px var(--color-streak-accent);
+}
+
+.calendar-mini-day-selected {
+  background-color: var(--color-streak-accent);
   color: var(--color-button-text);
+}
+
+.calendar-mini-day-selected--spring {
+  background-color: var(--color-season-spring);
+}
+
+.calendar-mini-day-selected--summer {
+  background-color: var(--color-season-summer);
+}
+
+.calendar-mini-day-selected--fall {
+  background-color: var(--color-season-fall);
+}
+
+.calendar-mini-day-selected--winter {
+  background-color: var(--color-season-winter);
+}
+
+.calendar-mini-day-tasks {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-divider);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.calendar-mini-day-tasks p {
+  margin: 0;
+}
+
+.calendar-mini-day-tasks ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-mini-day-tasks li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .today-events-title {

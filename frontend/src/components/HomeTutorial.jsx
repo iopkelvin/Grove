@@ -2,13 +2,11 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   CalendarDays,
-  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Clock3,
   Menu,
   Sprout,
-  Users,
   X,
 } from "lucide-react";
 
@@ -28,13 +26,6 @@ const STEPS = [
       "Finish tasks consistently to build your streak and grow your Grove tree.",
   },
   {
-    selector: '[data-home-tour="friends"]',
-    icon: Users,
-    title: "Friends",
-    description:
-      "See who is online and connect with classmates for shared study sessions.",
-  },
-  {
     selector: '[data-home-tour="calendar"]',
     icon: CalendarDays,
     title: "Calendar",
@@ -46,14 +37,7 @@ const STEPS = [
     icon: Clock3,
     title: "Up next",
     description:
-      "Check the next activity or event that needs your attention.",
-  },
-  {
-    selector: '[data-home-tour="tasks"]',
-    icon: CheckSquare,
-    title: "Tasks",
-    description:
-      "Review your current tasks and mark them complete as you finish your work.",
+      "Your next few tasks, soonest due first — mark them done right here.",
   },
 ];
 

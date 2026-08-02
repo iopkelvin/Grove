@@ -84,17 +84,26 @@ function TaskItem({ task, onToggle, onDelete, onEditRequest }) {
   );
 }
 
-export default function TaskList({ tasks = [], onToggle, onDelete, onEditRequest }) {
+export default function TaskList({
+  tasks = [],
+  onToggle,
+  onDelete,
+  onEditRequest,
+  emptyMessage = "Nothing here yet — add your first task above.",
+  title,
+}) {
   if (tasks.length === 0) {
     return (
       <div className="card task-list">
-        <p className="task-empty">Nothing here yet — add your first task above.</p>
+        {title && <p className="task-list-title">{title}</p>}
+        <p className="task-empty">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
     <div className="card task-list">
+      {title && <p className="task-list-title">{title}</p>}
       {tasks.map((task) => (
         <TaskItem
           key={task.id}
