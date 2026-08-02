@@ -16,7 +16,7 @@ import useStreakLevelUp from "../hooks/useStreakLevelUp";
 
 // Top few incomplete tasks, soonest due first (no due date sorts last);
 // same-day tasks are ordered by due time.
-function pickUpNext(tasks, count = 3) {
+function pickUpNext(tasks, count = 5) {
   const incomplete = tasks.filter((task) => !task.done);
   return [...incomplete]
     .sort((a, b) => {
@@ -61,7 +61,6 @@ function Home() {
   }
 
   const firstName = capitalize(profile?.first_name) || "there";
-  const activeTasks = tasks.filter((task) => !task.done);
   const upNext = pickUpNext(tasks);
 
   return (
@@ -94,9 +93,6 @@ function Home() {
             />
           </div>
           <UndoToast task={pendingDelete} onUndo={undoDelete} />
-          <div data-home-tour="tasks">
-            <TaskList tasks={activeTasks} onToggle={toggleTask} onDelete={removeTask} />
-          </div>
         </div>
       </div>
 

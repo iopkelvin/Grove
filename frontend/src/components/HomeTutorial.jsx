@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   CalendarDays,
-  CheckSquare,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -38,14 +37,7 @@ const STEPS = [
     icon: Clock3,
     title: "Up next",
     description:
-      "A quick look at your next few tasks, soonest due first.",
-  },
-  {
-    selector: '[data-home-tour="tasks"]',
-    icon: CheckSquare,
-    title: "Tasks",
-    description:
-      "Review your current tasks and mark them complete as you finish your work.",
+      "Your next few tasks, soonest due first — mark them done right here.",
   },
 ];
 
