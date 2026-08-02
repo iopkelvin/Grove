@@ -25,18 +25,19 @@
 }
 
 /* ── Grid layout ── */
-/* main layout, named areas (not source order) so the single-column
-   breakpoint below can reorder widgets independently of the desktop
-   arrangement. No align-items here means the default (stretch): the
-   tree fills the full row height across everything it spans. The other
-   areas opt back out to their natural top-aligned height below. */
+/* Desktop: tree, then a "columns" area holding the middle and right
+   columns side by side. This nesting is deliberate: "columns" only
+   stretches to fit its OWN two children (middle/right, matched to
+   whichever of them is naturally taller), not to the tree's height —
+   the tree is usually much taller (it's sized off viewport height, see
+   components.css), and stretching middle/right to match IT would leave
+   a huge dead gap above whatever came last in the shorter of the two.
+   align-self: start on "columns" opts it out of the outer grid's default
+   stretch, so it only ever grows to match itself. */
 .grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
-  grid-template-areas:
-    "tree calendar upnext"
-    "tree rooms    upnext"
-    "tree .        continue";
+  grid-template-areas: "tree columns columns";
   gap: 24px;
 }
 
@@ -49,35 +50,67 @@
   min-width: 0;
 }
 
+/* Every actual widget gets its own min-width:0, not just .grid > * /
+   .grid-item-columns > * above — once display:contents (below) flattens
+   middle/right out of the layout tree on narrow screens, those DOM
+   descendant selectors no longer reach them (a CSS combinator matches
+   real DOM parent/child pairs, not the flattened layout tree), so
+   without this, a mobile-width single column can still get forced wide
+   by one widget's intrinsic content. */
+.grid-item-tree,
+.grid-item-calendar,
+.grid-item-rooms,
+.grid-item-upnext,
+.grid-item-continue {
+  min-width: 0;
+}
+
 .grid-item-tree {
   grid-area: tree;
 }
 
-.grid-item-calendar {
-  grid-area: calendar;
+.grid-item-columns {
+  grid-area: columns;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
   align-self: start;
 }
 
-.grid-item-rooms {
-  grid-area: rooms;
-  align-self: start;
+/* same min-width:0 fix as .grid > * above, but for this nested grid —
+   without it, wide content (a long room name, a task title) can force
+   middle/right past their 1fr share and overflow off the right edge. */
+.grid-item-columns > * {
+  min-width: 0;
 }
 
-.grid-item-upnext {
-  grid-area: upnext;
-  align-self: start;
+/* middle and right stretch to match each other (the default for grid
+   children of .grid-item-columns) and each push their last widget — New
+   study room / Continue where you left off — to the bottom of that
+   shared height with justify-content: space-between, so the two land on
+   the same bottom edge no matter which column's other content is taller. */
+.grid-item-middle {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
 }
 
-.grid-item-continue {
-  grid-area: continue;
-  align-self: start;
+.grid-item-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 24px;
 }
 
 /* ── Medium screens ── */
 /* a half-width desktop window (or a tablet) is much wider than a phone
    but still doesn't have room for 3 columns side by side — stack to one
-   column same as mobile, just at a higher threshold. Reordered here too:
-   "New study room" moves below Up Next instead of sitting above it. */
+   column same as mobile, just at a higher threshold. "columns",
+   "middle", and "right" all turn into display:contents (no box of their
+   own), promoting each widget all the way up to a direct item of .grid
+   so it can be independently reordered — that's how "New study room"
+   moves below Up Next here without duplicating any markup. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
@@ -87,6 +120,28 @@
       "upnext"
       "continue"
       "rooms";
+  }
+
+  .grid-item-columns,
+  .grid-item-middle,
+  .grid-item-right {
+    display: contents;
+  }
+
+  .grid-item-calendar {
+    grid-area: calendar;
+  }
+
+  .grid-item-rooms {
+    grid-area: rooms;
+  }
+
+  .grid-item-upnext {
+    grid-area: upnext;
+  }
+
+  .grid-item-continue {
+    grid-area: continue;
   }
 }
 

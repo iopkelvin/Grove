@@ -98,28 +98,34 @@ function Home() {
           <StreakTree streak={streak} userId={supabaseId} layout="overlay" glow={streakLeveledUp} />
         </div>
 
-        <div className="grid-item-calendar" data-home-tour="calendar">
-          <MiniCalendar tasks={tasks} season={season} />
+        <div className="grid-item-columns">
+          <div className="grid-item-middle">
+            <div className="grid-item-calendar" data-home-tour="calendar">
+              <MiniCalendar tasks={tasks} season={season} />
+            </div>
+
+            <StudyRoomsCard
+              className="grid-item-rooms"
+              onCreate={handleCreateRoom}
+              creating={creatingRoom}
+            />
+          </div>
+
+          <div className="grid-item-right">
+            <div className="grid-item-upnext" data-home-tour="up-next">
+              <TaskList
+                title="Up Next"
+                tasks={upNext}
+                onToggle={toggleTask}
+                onDelete={removeTask}
+                emptyMessage="All caught up!"
+              />
+              <UndoToast task={pendingDelete} onUndo={undoDelete} />
+            </div>
+
+            <ContinueRoomCard className="grid-item-continue" room={lastRoom} />
+          </div>
         </div>
-
-        <StudyRoomsCard
-          className="grid-item-rooms"
-          onCreate={handleCreateRoom}
-          creating={creatingRoom}
-        />
-
-        <div className="grid-item-upnext" data-home-tour="up-next">
-          <TaskList
-            title="Up Next"
-            tasks={upNext}
-            onToggle={toggleTask}
-            onDelete={removeTask}
-            emptyMessage="All caught up!"
-          />
-          <UndoToast task={pendingDelete} onUndo={undoDelete} />
-        </div>
-
-        <ContinueRoomCard className="grid-item-continue" room={lastRoom} />
       </div>
 
       {showTutorial && (
