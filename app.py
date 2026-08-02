@@ -253,6 +253,17 @@ def get_room(room_id):
     return jsonify(room.to_dict()), 200
 
 
+@app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
+@require_auth
+def visit_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    room_service.record_visit(user, room)
+    return jsonify(user.to_dict()), 200
+
+
 # Task routes
 # Thin routes — DB work lives in api/services/task.py. The one exception is
 # the streak bump: a cross-cutting side effect of completion, not a "task"

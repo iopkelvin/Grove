@@ -11,6 +11,7 @@ from sqlalchemy.orm import selectinload
 from api.config.database import db
 from api.models.room import Room, RoomMembership
 from api.models.user import User
+from api.utils import utcnow
 
 
 def list_visible(user=None):
@@ -61,3 +62,12 @@ def create(host, name, setting, focus_minutes, music_enabled, chat_enabled, invi
 
     db.session.commit()
     return room
+
+
+def record_visit(user, room):
+    """Marks room as the user's most recently visited, for the Home page
+    "continue where you left off" widget. Doesn't touch RoomMembership —
+    visiting isn't the same as being a member (e.g. the global room)."""
+    user.last_room_id = room.id
+    user.last_room_visited_at = utcnow()
+    db.session.commit()
