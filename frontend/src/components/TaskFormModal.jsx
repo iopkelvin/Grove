@@ -2,13 +2,15 @@ import { useState, useEffect } from "react";
 import { X } from "lucide-react";
 import { getTags } from "../api/tasks";
 
-export default function TaskFormModal({ supabaseId, onClose, onCreate, creating, error }) {
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [recurring, setRecurring] = useState(false);
+export default function TaskFormModal({ supabaseId, task, onClose, onSubmit, creating, error }) {
+  const isEditing = Boolean(task);
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [dueDate, setDueDate] = useState(task?.due_date ?? "");
+  const [dueTime, setDueTime] = useState(task?.due_time ?? "");
+  const [recurring, setRecurring] = useState(task?.recurring ?? false);
   const [availableTags, setAvailableTags] = useState([]);
-  const [selectedTags, setSelectedTags] = useState([]);
+  const [selectedTags, setSelectedTags] = useState(task?.tags ?? []);
   const [newTagName, setNewTagName] = useState("");
 
   useEffect(() => {
@@ -32,11 +34,12 @@ export default function TaskFormModal({ supabaseId, onClose, onCreate, creating,
   function submit(e) {
     e.preventDefault();
     if (!title.trim()) return;
-    onCreate({
+    onSubmit({
       title,
       description: description.trim() || undefined,
       tags: selectedTags,
       dueDate: dueDate || undefined,
+      dueTime: dueTime || undefined,
       recurring,
     });
   }
@@ -53,7 +56,7 @@ export default function TaskFormModal({ supabaseId, onClose, onCreate, creating,
         <button className="task-modal-close" onClick={onClose} aria-label="Close">
           <X size={20} />
         </button>
-        <h2 id="create-task-title">Create task</h2>
+        <h2 id="create-task-title">{isEditing ? "Edit task" : "Create task"}</h2>
 
         <form className="task-form" onSubmit={submit}>
           <label>
@@ -71,15 +74,20 @@ export default function TaskFormModal({ supabaseId, onClose, onCreate, creating,
               Due date
               <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
             </label>
-            <label className="task-form-recurring">
-              <input
-                type="checkbox"
-                checked={recurring}
-                onChange={(e) => setRecurring(e.target.checked)}
-              />
-              Repeat daily
+            <label>
+              Due time
+              <input type="time" value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
             </label>
           </div>
+
+          <label className="task-form-recurring">
+            <input
+              type="checkbox"
+              checked={recurring}
+              onChange={(e) => setRecurring(e.target.checked)}
+            />
+            Repeat daily
+          </label>
 
           <fieldset className="task-tag-picker">
             <legend>Tags</legend>
@@ -134,7 +142,7 @@ export default function TaskFormModal({ supabaseId, onClose, onCreate, creating,
           {error && <p className="task-api-error">{error}</p>}
 
           <button className="task-form-submit" type="submit" disabled={creating || !title.trim()}>
-            {creating ? "Creating…" : "Create task"}
+            {isEditing ? (creating ? "Saving…" : "Save changes") : (creating ? "Creating…" : "Create task")}
           </button>
         </form>
       </div>

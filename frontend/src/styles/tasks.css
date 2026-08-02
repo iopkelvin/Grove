@@ -29,6 +29,46 @@
   opacity: 0.9;
 }
 
+/* ── Status filter ── */
+.task-status-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.task-status-tab {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-secondary);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.task-status-tab-active {
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-title);
+}
+
+/* ── Tag filter ── */
+/* Reuses .task-tag-option/-selected from the create/edit modal's tag
+   picker so both places look the same. Scrolls horizontally instead of
+   wrapping so a long tag list doesn't push the task list down the page. */
+.task-filter-scroll {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.task-filter-scroll .task-tag-option {
+  flex-shrink: 0;
+}
+
 /* ── Create-task modal ── */
 .task-modal-backdrop {
   position: fixed;
@@ -229,12 +269,18 @@
 }
 
 /* ── Task row ── */
+/* Nothing inside a row wraps or shrinks — if a row's content (a long
+   description, several tags, a due date + time) doesn't fit, the whole
+   row scrolls left-right as one piece instead of wrapping into a taller,
+   multi-line card. */
 .task-item {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 8px;
   border-bottom: 1px solid var(--color-divider);
+  overflow-x: auto;
+  flex-wrap: nowrap;
 }
 
 .task-item:last-child {
@@ -256,28 +302,20 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .task-title {
   font-size: var(--font-size-body);
   color: var(--color-text-primary);
-  cursor: text;
+  white-space: nowrap;
 }
 
-.task-edit-input {
-  width: 100%;
-  padding: 2px 0;
-  border: none;
-  border-bottom: 1px solid var(--color-button-background);
-  font-family: var(--font-family-base);
-  font-size: var(--font-size-body);
-  color: var(--color-text-primary);
-  background: none;
-}
-
-.task-edit-input:focus {
-  outline: none;
+.task-description {
+  margin: 0;
+  white-space: nowrap;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
 }
 
 /* Completed: muted + struck through, checkbox picks up the green accent. */
@@ -294,6 +332,7 @@
 .task-tags {
   display: flex;
   gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .task-tag {
@@ -305,14 +344,8 @@
   background-color: var(--color-badge-background);
   color: var(--color-text-secondary);
   font-size: var(--font-size-small);
-}
-
-.task-tag-recurring {
-  color: var(--color-button-background);
-}
-
-.task-tag-overdue {
-  color: var(--color-error-text);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* ── Undo-delete toast ── */
@@ -337,8 +370,9 @@
   cursor: pointer;
 }
 
-/* ── Delete ── */
+/* ── Edit / Delete ── */
 /* Kept out of the way until you hover the row. */
+.task-edit,
 .task-delete {
   display: flex;
   align-items: center;
@@ -352,8 +386,13 @@
   transition: opacity 0.15s ease;
 }
 
+.task-item:hover .task-edit,
 .task-item:hover .task-delete {
   opacity: 1;
+}
+
+.task-edit:hover {
+  color: var(--color-button-background);
 }
 
 .task-delete:hover {

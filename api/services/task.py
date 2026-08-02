@@ -26,6 +26,17 @@ def _parse_date(value):
         return None
 
 
+def _parse_time(value):
+    """"14:30" -> time, "" / None -> None. Bad input also -> None, same
+    reasoning as _parse_date."""
+    if not value:
+        return None
+    try:
+        return datetime.strptime(value, "%H:%M").time()
+    except ValueError:
+        return None
+
+
 def _get_or_create_tag(user_id, name):
     """Return this user's Tag named `name`, creating it if missing.
 
@@ -60,16 +71,17 @@ def list_tasks(user_id):
     return [t.to_dict() for t in tasks]
 
 
-def create_task(user_id, title, description=None, tag_names=None, due_date=None, recurring=False):
+def create_task(user_id, title, description=None, tag_names=None, due_date=None, due_time=None, recurring=False):
     """Create one task for this user. `tag_names` is a list of strings like
     ["Work", "School"]; each is resolved to (or created as) one of the user's
-    tags. `due_date` is an ISO "YYYY-MM-DD" string or None. Returns the new
-    task as a dict."""
+    tags. `due_date` is an ISO "YYYY-MM-DD" string or None, `due_time` an
+    "HH:MM" string or None. Returns the new task as a dict."""
     task = Task(
         title=title,
         description=description,
         user_id=user_id,
         due_date=_parse_date(due_date),
+        due_time=_parse_time(due_time),
         recurring=bool(recurring),
     )
     if tag_names:
@@ -103,6 +115,9 @@ def update_task(user_id, task_id, fields, commit=True):
         task.description = fields["description"] or None
     if "due_date" in fields:
         task.due_date = _parse_date(fields["due_date"])
+    if "due_time" in fields:
+        task.due_time = _parse_time(fields["due_time"])
+
     if "recurring" in fields:
         new_recurring = bool(fields["recurring"])
         # "done" is tracked differently for recurring vs one-off tasks (see

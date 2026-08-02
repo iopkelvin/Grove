@@ -9,7 +9,7 @@ export async function getTasks(supabaseId, { completed } = {}) {
   return res.json();
 }
 
-export async function createTask(supabaseId, title, { tags = [], description, dueDate, recurring } = {}) {
+export async function createTask(supabaseId, title, { tags = [], description, dueDate, dueTime, recurring } = {}) {
   const res = await apiFetch("/api/tasks", {
     method: "POST",
     body: JSON.stringify({
@@ -18,6 +18,7 @@ export async function createTask(supabaseId, title, { tags = [], description, du
       description,
       tags,
       due_date: dueDate,
+      due_time: dueTime,
       recurring,
     }),
   });

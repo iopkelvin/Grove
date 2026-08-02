@@ -120,6 +120,35 @@ def test_due_date_is_stored_and_returned(client):
     assert res.get_json()["due_date"] == "2026-08-15"
 
 
+def test_due_time_is_stored_and_returned(client):
+    sync_user(client, "sb-1", "alice")
+    res = client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Submit report", "due_time": "14:30"},
+        headers=auth_headers("sb-1"),
+    )
+    assert res.get_json()["due_time"] == "14:30"
+
+
+def test_due_time_can_be_updated_and_cleared(client):
+    sync_user(client, "sb-1", "alice")
+    task = create_task(client, "sb-1").get_json()
+
+    updated = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "due_time": "09:00"},
+        headers=auth_headers("sb-1"),
+    ).get_json()
+    assert updated["due_time"] == "09:00"
+
+    cleared = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "due_time": ""},
+        headers=auth_headers("sb-1"),
+    ).get_json()
+    assert cleared["due_time"] is None
+
+
 def test_completing_a_recurring_task_bumps_streak(client):
     sync_user(client, "sb-1", "alice")
     task = client.post(

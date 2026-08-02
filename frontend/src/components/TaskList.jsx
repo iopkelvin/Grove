@@ -1,41 +1,28 @@
-// Kyle
-// components/TaskList.jsx
-//
-// Presentational list of tasks. Holds NO state of its own except the
-// per-row edit-in-progress text — the parent passes `tasks` plus the
-// toggle/delete/edit handlers. The defaults (tasks = []) keep it safe to
-// render with no props.
+// Presentational list of tasks. Holds no state of its own — the parent
+// passes `tasks` plus the toggle/delete/edit-request handlers. The
+// defaults (tasks = []) keep it safe to render with no props.
 
-import { useState } from "react";
-import { Square, CheckSquare, X, Repeat } from "lucide-react";
+import { Square, CheckSquare, X, Pencil, Repeat } from "lucide-react";
 
-function dueDateInfo(dueDate, done) {
+function dueDateInfo(dueDate, dueTime, done) {
   if (!dueDate) return null;
   const due = new Date(`${dueDate}T00:00:00`);
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const dateLabel = due.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const timeLabel = dueTime
+    ? new Date(`2000-01-01T${dueTime}`).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })
+    : null;
+
   return {
-    label: due.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+    label: timeLabel ? `${dateLabel}, ${timeLabel}` : dateLabel,
     overdue: !done && due < today,
   };
 }
 
-function TaskItem({ task, onToggle, onDelete, onEdit }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(task.title);
-  const due = dueDateInfo(task.due_date, task.done);
-
-  function startEditing() {
-    setDraft(task.title);
-    setIsEditing(true);
-  }
-
-  function saveEdit() {
-    setIsEditing(false);
-    if (draft.trim() && draft.trim() !== task.title) {
-      onEdit?.(task.id, draft);
-    }
-  }
+function TaskItem({ task, onToggle, onDelete, onEditRequest }) {
+  const due = dueDateInfo(task.due_date, task.due_time, task.done);
 
   return (
     <div className={`task-item ${task.done ? "task-item-done" : ""}`}>
@@ -51,22 +38,10 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
       </button>
 
       <div className="task-body">
-        {isEditing ? (
-          <input
-            className="task-edit-input"
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={saveEdit}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") saveEdit();
-              if (e.key === "Escape") setIsEditing(false);
-            }}
-          />
-        ) : (
-          <span className="task-title" onClick={startEditing}>
-            {task.title}
-          </span>
+        <span className="task-title">{task.title}</span>
+
+        {task.description && (
+          <p className="task-description">{task.description}</p>
         )}
 
         {(task.recurring || due || task.tags?.length > 0) && (
@@ -88,7 +63,16 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
         )}
       </div>
 
-      {/* Delete: hidden until row hover (see tasks.css) */}
+      {/* Edit/delete: hidden until row hover (see tasks.css) */}
+      {onEditRequest && (
+        <button
+          className="task-edit"
+          onClick={() => onEditRequest(task)}
+          aria-label="Edit task"
+        >
+          <Pencil size={16} />
+        </button>
+      )}
       <button
         className="task-delete"
         onClick={() => onDelete?.(task.id)}
@@ -100,7 +84,7 @@ function TaskItem({ task, onToggle, onDelete, onEdit }) {
   );
 }
 
-export default function TaskList({ tasks = [], onToggle, onDelete, onEdit }) {
+export default function TaskList({ tasks = [], onToggle, onDelete, onEditRequest }) {
   if (tasks.length === 0) {
     return (
       <div className="card task-list">
@@ -112,7 +96,13 @@ export default function TaskList({ tasks = [], onToggle, onDelete, onEdit }) {
   return (
     <div className="card task-list">
       {tasks.map((task) => (
-        <TaskItem key={task.id} task={task} onToggle={onToggle} onDelete={onDelete} onEdit={onEdit} />
+        <TaskItem
+          key={task.id}
+          task={task}
+          onToggle={onToggle}
+          onDelete={onDelete}
+          onEditRequest={onEditRequest}
+        />
       ))}
     </div>
   );
