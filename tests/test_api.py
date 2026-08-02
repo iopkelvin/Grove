@@ -66,6 +66,25 @@ def test_sync_is_idempotent(client):
     assert first.get_json()["id"] == second.get_json()["id"]
 
 
+def test_banner_position_defaults_to_center(client):
+    user = sync_user(client, "sb-1", "alice").get_json()
+    assert user["banner_position_y"] == 50
+
+
+def test_banner_position_can_be_updated_and_is_clamped(client):
+    sync_user(client, "sb-1", "alice")
+
+    updated = client.patch(
+        "/api/users/sb-1", json={"banner_position_y": 80}, headers=auth_headers("sb-1")
+    ).get_json()
+    assert updated["banner_position_y"] == 80
+
+    clamped = client.patch(
+        "/api/users/sb-1", json={"banner_position_y": 500}, headers=auth_headers("sb-1")
+    ).get_json()
+    assert clamped["banner_position_y"] == 100
+
+
 # ── Task + streak core loop ──────────────────────────────────────────
 
 def test_completing_a_task_bumps_streak_to_one(client):
