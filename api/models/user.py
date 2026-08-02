@@ -25,6 +25,7 @@ class User(db.Model):
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     display_name = db.Column(db.String(80), nullable=True)   # "Kyle Gibson"
+    pronouns = db.Column(db.String(30), nullable=True)        # "she/her", or a custom value
     avatar_url = db.Column(db.String(500), nullable=True)
     banner_url = db.Column(db.String(500), nullable=True)
     # Vertical crop offset for the banner image, 0 (top) - 100 (bottom).
@@ -56,6 +57,7 @@ class User(db.Model):
             "first_name": self.first_name,
             "last_name": self.last_name,
             "display_name": self.display_name,
+            "pronouns": self.pronouns,
             "avatar_url": self.avatar_url,
             "banner_url": self.banner_url,
             "banner_position_y": self.banner_position_y,

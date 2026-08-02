@@ -85,6 +85,34 @@ def test_banner_position_can_be_updated_and_is_clamped(client):
     assert clamped["banner_position_y"] == 100
 
 
+def test_pronouns_default_to_unset(client):
+    user = sync_user(client, "sb-1", "alice").get_json()
+    assert user["pronouns"] is None
+
+
+def test_pronouns_can_be_set_and_cleared(client):
+    sync_user(client, "sb-1", "alice")
+
+    updated = client.patch(
+        "/api/users/sb-1", json={"pronouns": "she/her"}, headers=auth_headers("sb-1")
+    ).get_json()
+    assert updated["pronouns"] == "she/her"
+
+    cleared = client.patch(
+        "/api/users/sb-1", json={"pronouns": ""}, headers=auth_headers("sb-1")
+    ).get_json()
+    assert cleared["pronouns"] is None
+
+
+def test_pronouns_are_truncated_to_30_chars(client):
+    sync_user(client, "sb-1", "alice")
+
+    updated = client.patch(
+        "/api/users/sb-1", json={"pronouns": "x" * 50}, headers=auth_headers("sb-1")
+    ).get_json()
+    assert updated["pronouns"] == "x" * 30
+
+
 # ── Task + streak core loop ──────────────────────────────────────────
 
 def test_completing_a_task_bumps_streak_to_one(client):

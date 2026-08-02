@@ -61,9 +61,9 @@ def get_or_create(supabase_id, email, first_name, last_name, username):
 
 
 def update_profile(user, data):
-    """Partial update. Only first_name, last_name, display_name, bio,
-    avatar_url, banner_url, and banner_position_y are editable here — email
-    and streak are intentionally never read from the body. Returns
+    """Partial update. Only first_name, last_name, display_name, pronouns,
+    bio, avatar_url, banner_url, and banner_position_y are editable here —
+    email and streak are intentionally never read from the body. Returns
     (user_dict, error); error is set (and nothing is saved) if a required
     field was cleared."""
     if "first_name" in data:
@@ -78,6 +78,8 @@ def update_profile(user, data):
         user.last_name = last_name
     if "display_name" in data:
         user.display_name = (data.get("display_name") or "").strip() or None
+    if "pronouns" in data:
+        user.pronouns = (data.get("pronouns") or "").strip()[:30] or None
     if "bio" in data:
         user.bio = (data.get("bio") or "").strip() or None
     if "avatar_url" in data:
