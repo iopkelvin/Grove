@@ -65,9 +65,18 @@ export default function MiniCalendar({ tasks = [], season = "none" }) {
     ? tasks.filter((task) => task.due_date === selectedISO && !task.done)
     : [];
 
+  // Days (in the displayed month) with an incomplete task due — driving a
+  // small dot indicator, so the calendar shows useful info, not just filler.
+  const monthPrefix = `${year}-${String(month + 1).padStart(2, "0")}`;
+  const daysWithTasks = new Set(
+    tasks
+      .filter((task) => !task.done && task.due_date?.startsWith(monthPrefix))
+      .map((task) => Number(task.due_date.slice(-2)))
+  );
+
   return (
     <div className="calendar-mini">
-      <div className="calendar-mini-header">
+      <div className={`calendar-mini-header calendar-mini-header--${season}`}>
         <button
           type="button"
           className="calendar-mini-button"
@@ -112,6 +121,9 @@ export default function MiniCalendar({ tasks = [], season = "none" }) {
               onClick={() => setSelectedDay(isSelected ? null : dayNumber)}
             >
               {dayNumber}
+              {daysWithTasks.has(dayNumber) && !isSelected && (
+                <span className="calendar-mini-day-dot" />
+              )}
             </button>
           );
         })}
