@@ -1,13 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
-import { getRoom } from "../api/rooms";
+import { getRoom, getRooms, createRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
 import { getTreeSeason } from "../utils/treeGenerator";
 import MenuIcon from "../components/MenuIcon";
 import StreakTree from "../components/StreakTree";
 import MiniCalendar from "../components/MiniCalendar";
 import ContinueRoomCard from "../components/ContinueRoomCard";
+import StudyRoomsCard from "../components/StudyRoomsCard";
 import TaskList from "../components/TaskList";
 import UndoToast from "../components/UndoToast";
 import HomeTutorial from "../components/HomeTutorial";
@@ -31,6 +33,7 @@ function pickUpNext(tasks, count = 5) {
 }
 
 function Home() {
+  const navigate = useNavigate();
   const { session, loading, profile } = useUser();
   const supabaseId = session?.user?.id;
   const { showTutorial, completeTutorial, closeTutorial } = useHomeTutorial(
@@ -44,6 +47,8 @@ function Home() {
   const season = getTreeSeason(streak);
 
   const [lastRoom, setLastRoom] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [creatingRoom, setCreatingRoom] = useState(false);
   const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
   useEffect(() => {
@@ -55,6 +60,40 @@ function Home() {
       .then(setLastRoom)
       .catch(() => setLastRoom(null));
   }, [profile?.last_room_id]);
+
+  const loadRooms = useCallback(async () => {
+    if (!supabaseId) return;
+    setRooms(await getRooms(supabaseId));
+  }, [supabaseId]);
+
+  useEffect(() => {
+    loadRooms();
+  }, [loadRooms]);
+
+  // list_visible (api/services/room.py) already orders every visible room
+  // by created_at descending, so filtering to ones this user hosts keeps
+  // that order — the first match is the most recently created one.
+  const lastCreatedRoom = rooms.find((room) => room.host_id === profile?.id) ?? null;
+
+  async function handleCreateRoom() {
+    setCreatingRoom(true);
+    try {
+      const room = await createRoom({
+        name: `${firstName}'s Room`,
+        setting: "campsite",
+        music_enabled: true,
+        chat_enabled: true,
+        focus_minutes: 50,
+        invite_user_ids: [],
+      });
+      sessionStorage.setItem(`grove-room-${room.id}`, JSON.stringify(room));
+      navigate(`/rooms/${room.id}`, { state: { room } });
+    } catch (error) {
+      console.error("Failed to create room:", error);
+    } finally {
+      setCreatingRoom(false);
+    }
+  }
 
   if (loading) {
     return <div className="page">Loading...</div>;
@@ -80,6 +119,12 @@ function Home() {
           </div>
 
           <ContinueRoomCard room={lastRoom} />
+
+          <StudyRoomsCard
+            lastCreatedRoom={lastCreatedRoom}
+            onCreate={handleCreateRoom}
+            creating={creatingRoom}
+          />
         </div>
 
         <div className="grid-column">

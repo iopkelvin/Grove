@@ -225,6 +225,46 @@
   font-size: var(--font-size-body);
 }
 
+/* ── Study rooms card (Home) ── */
+.study-rooms-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-rooms-create {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+
+.study-rooms-create:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.study-rooms-last {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-small);
+}
+
+.study-rooms-last:hover {
+  color: var(--color-text-primary);
+}
+
 /* ── Up Next (Home) ── */
 .up-next-title {
   margin: 0 0 8px 4px;
