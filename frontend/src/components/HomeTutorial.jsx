@@ -8,7 +8,6 @@ import {
   Clock3,
   Menu,
   Sprout,
-  Users,
   X,
 } from "lucide-react";
 
@@ -28,13 +27,6 @@ const STEPS = [
       "Finish tasks consistently to build your streak and grow your Grove tree.",
   },
   {
-    selector: '[data-home-tour="friends"]',
-    icon: Users,
-    title: "Friends",
-    description:
-      "See who is online and connect with classmates for shared study sessions.",
-  },
-  {
     selector: '[data-home-tour="calendar"]',
     icon: CalendarDays,
     title: "Calendar",
@@ -46,7 +38,7 @@ const STEPS = [
     icon: Clock3,
     title: "Up next",
     description:
-      "Check the next activity or event that needs your attention.",
+      "A quick look at your next few tasks, soonest due first.",
   },
   {
     selector: '[data-home-tour="tasks"]',

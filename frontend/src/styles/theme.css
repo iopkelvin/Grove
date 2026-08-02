@@ -40,7 +40,14 @@ body {
   --color-badge-background: #c9cfc0;   /* small tag labels (e.g. "Home", "College") */
   --color-streak-accent: #d9622b;      /* highlighted calendar day, streak fire */
   --color-overlay-background: rgba(0, 0, 0, 0.25);  /* dimming overlay behind modals/menus */
-  --color-divider: rgba(26, 26, 26, 0.08); /* for light mode */  
+  --color-divider: rgba(26, 26, 26, 0.08); /* for light mode */
+
+  /* ── Tree seasons (mini calendar's selected-day fill, unlocked at streak
+     21+ — see getTreeSeason() in treeGenerator.js) ── */
+  --color-season-spring: #8FB86E;
+  --color-season-summer: #5E7A61;
+  --color-season-fall: #C44536;
+  --color-season-winter: #7EB9DE;
 
   /* ── Font family ── */
   --font-family-base: 'Newsreader', 'Georgia', serif;
@@ -109,6 +116,12 @@ body {
   --color-streak-accent: #E5733A;
   --color-overlay-background: rgba(0, 0, 0, 0.5);
   --color-divider: rgba(255, 255, 255, 0.10);
+
+  /* ── Tree seasons (dark) ── */
+  --color-season-spring: #A8CC8C;
+  --color-season-summer: #7EA383;
+  --color-season-fall: #E8A33D;
+  --color-season-winter: #8FC7E8;
 
   /* ── Study rooms / tree: surfaces → dark, ink → light ── */
   --color-surface-white:  #1F241F;

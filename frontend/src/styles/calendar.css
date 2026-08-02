@@ -220,12 +220,69 @@
   height: 34px;
   font-size: var(--font-size-small);
   color: var(--color-text-primary);
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-family: var(--font-family-base);
+  cursor: pointer;
 }
 
+.calendar-mini-day-empty {
+  cursor: default;
+}
+
+/* outline (not filled) so today stays visible even when a different day
+   is the one actually selected below */
 .calendar-mini-day-today {
-  border-radius: 50%;
+  box-shadow: inset 0 0 0 2px var(--color-streak-accent);
+}
+
+.calendar-mini-day-selected {
   background-color: var(--color-streak-accent);
   color: var(--color-button-text);
+}
+
+.calendar-mini-day-selected--spring {
+  background-color: var(--color-season-spring);
+}
+
+.calendar-mini-day-selected--summer {
+  background-color: var(--color-season-summer);
+}
+
+.calendar-mini-day-selected--fall {
+  background-color: var(--color-season-fall);
+}
+
+.calendar-mini-day-selected--winter {
+  background-color: var(--color-season-winter);
+}
+
+.calendar-mini-day-tasks {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-divider);
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.calendar-mini-day-tasks p {
+  margin: 0;
+}
+
+.calendar-mini-day-tasks ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.calendar-mini-day-tasks li {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .today-events-title {

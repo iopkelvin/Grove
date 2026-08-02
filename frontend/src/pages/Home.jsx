@@ -1,25 +1,33 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
-import { getFriends } from "../api/friends";
+import { getRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
+import { getTreeSeason } from "../utils/treeGenerator";
 import MenuIcon from "../components/MenuIcon";
 import StreakTree from "../components/StreakTree";
-import FriendsCard from "../components/FriendsCard";
 import MiniCalendar from "../components/MiniCalendar";
-import UpNextCard from "../components/UpNextCard";
+import ContinueRoomCard from "../components/ContinueRoomCard";
 import TaskList from "../components/TaskList";
 import UndoToast from "../components/UndoToast";
 import HomeTutorial from "../components/HomeTutorial";
 import useHomeTutorial from "../hooks/useHomeTutorial";
 import useStreakLevelUp from "../hooks/useStreakLevelUp";
 
-// Prefer the soonest-due incomplete task; if nothing has a due date, fall
-// back to the oldest incomplete one (tasks arrive oldest-first already).
-function pickNextTask(tasks) {
+// Top few incomplete tasks, soonest due first (no due date sorts last);
+// same-day tasks are ordered by due time.
+function pickUpNext(tasks, count = 3) {
   const incomplete = tasks.filter((task) => !task.done);
-  const dated = incomplete.filter((task) => task.due_date).sort((a, b) => a.due_date.localeCompare(b.due_date));
-  return dated[0] || incomplete[0];
+  return [...incomplete]
+    .sort((a, b) => {
+      const dateA = a.due_date || "9999-99-99";
+      const dateB = b.due_date || "9999-99-99";
+      if (dateA !== dateB) return dateA.localeCompare(dateB);
+      const timeA = a.due_time || "99:99";
+      const timeB = b.due_time || "99:99";
+      return timeA.localeCompare(timeB);
+    })
+    .slice(0, count);
 }
 
 function Home() {
@@ -33,26 +41,28 @@ function Home() {
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
   const streak = profile?.current_streak ?? 0;
   const streakLeveledUp = useStreakLevelUp(supabaseId, streak);
+  const season = getTreeSeason(streak);
 
-  const [friends, setFriends] = useState([]);
+  const [lastRoom, setLastRoom] = useState(null);
   const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
-  const loadFriends = useCallback(async () => {
-    if (!supabaseId) return;
-    setFriends(await getFriends(supabaseId, { status: "accepted" }));
-  }, [supabaseId]);
-
   useEffect(() => {
-    loadFriends();
-  }, [loadFriends]);
+    if (!profile?.last_room_id) {
+      setLastRoom(null);
+      return;
+    }
+    getRoom(profile.last_room_id)
+      .then(setLastRoom)
+      .catch(() => setLastRoom(null));
+  }, [profile?.last_room_id]);
 
   if (loading) {
     return <div className="page">Loading...</div>;
   }
 
   const firstName = capitalize(profile?.first_name) || "there";
-  const friendsOnline = friends.filter(({ user }) => user.is_online).length;
-  const nextTask = pickNextTask(tasks);
+  const activeTasks = tasks.filter((task) => !task.done);
+  const upNext = pickUpNext(tasks);
 
   return (
     <div className="page">
@@ -66,22 +76,26 @@ function Home() {
         </div>
 
         <div className="grid-column">
-          <div data-home-tour="friends">
-            <FriendsCard friendsOnline={friendsOnline} />
+          <div data-home-tour="calendar">
+            <MiniCalendar tasks={tasks} season={season} />
           </div>
 
-          <div data-home-tour="calendar">
-            <MiniCalendar />
-          </div>
+          <ContinueRoomCard room={lastRoom} />
         </div>
 
         <div className="grid-column">
           <div data-home-tour="up-next">
-            <UpNextCard task={nextTask} />
+            <p className="up-next-title">Up Next</p>
+            <TaskList
+              tasks={upNext}
+              onToggle={toggleTask}
+              onDelete={removeTask}
+              emptyMessage="All caught up!"
+            />
           </div>
           <UndoToast task={pendingDelete} onUndo={undoDelete} />
           <div data-home-tour="tasks">
-            <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
+            <TaskList tasks={activeTasks} onToggle={toggleTask} onDelete={removeTask} />
           </div>
         </div>
       </div>

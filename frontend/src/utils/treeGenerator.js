@@ -146,6 +146,13 @@ function getGrowthConfig(streak) {
   };
 }
 
+// Standalone export so callers that only need the season name (e.g. tinting
+// the mini calendar's selected day) don't have to run the full tree
+// generation for it.
+export function getTreeSeason(streak) {
+  return getSeasonState(streak).seasonName;
+}
+
 function getSeasonState(streak) {
   if (streak < 21) return { seasonIndex: -1, seasonName: "none", progressInSeason: 0 };
   const cycleStreak = streak - 21;

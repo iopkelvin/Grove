@@ -198,3 +198,36 @@
     font-size: 15px;
   }
 }
+
+/* ── Continue-room card (Home) ── */
+.continue-room-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: var(--color-text-primary);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.continue-room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.continue-room-label {
+  margin: 0;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
+
+.continue-room-name {
+  margin: 0;
+  font-size: var(--font-size-body);
+}
+
+/* ── Up Next (Home) ── */
+.up-next-title {
+  margin: 0 0 8px 4px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
+}
