@@ -12,6 +12,7 @@ import TaskList from "../components/TaskList";
 import UndoToast from "../components/UndoToast";
 import HomeTutorial from "../components/HomeTutorial";
 import useHomeTutorial from "../hooks/useHomeTutorial";
+import useStreakLevelUp from "../hooks/useStreakLevelUp";
 
 // Prefer the soonest-due incomplete task; if nothing has a due date, fall
 // back to the oldest incomplete one (tasks arrive oldest-first already).
@@ -30,6 +31,8 @@ function Home() {
   );
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
+  const streak = profile?.current_streak ?? 0;
+  const streakLeveledUp = useStreakLevelUp(supabaseId, streak);
 
   const [friends, setFriends] = useState([]);
   const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
@@ -48,7 +51,6 @@ function Home() {
   }
 
   const firstName = capitalize(profile?.first_name) || "there";
-  const streak = profile?.current_streak ?? 0;
   const friendsOnline = friends.filter(({ user }) => user.is_online).length;
   const nextTask = pickNextTask(tasks);
 
@@ -60,7 +62,7 @@ function Home() {
 
       <div className="grid">
         <div data-home-tour="streak">
-          <StreakTree streak={streak} userId={supabaseId} layout="overlay" />
+          <StreakTree streak={streak} userId={supabaseId} layout="overlay" glow={streakLeveledUp} />
         </div>
 
         <div className="grid-column">

@@ -25,10 +25,80 @@
    svg's rendered size exactly — that's what keeps the label's
    percentage-based position lined up with the tree artwork. */
 .streak-frame {
+  position: relative;
   height: 80vh;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+/* Plays once (not infinite) — the classes can stay applied indefinitely
+   without repeating, so callers don't need to remove them after.
+   Three layers stacked for a level-up that's hard to miss: a burst ring
+   expanding out from behind the tree, the tree itself briefly popping in
+   scale, and a strong multi-stop glow around its silhouette. */
+.streak-frame-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 55%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-streak-accent) 0%, transparent 72%);
+  opacity: 0;
+  pointer-events: none;
+  animation: tree-level-up-burst 1.4s ease-out;
+}
+
+.streak-frame-glow .streak-tree-svg-large {
+  animation: tree-level-up-glow 2.4s ease-out, tree-level-up-bounce 0.7s ease-out;
+  transform-origin: 50% 85%;
+}
+
+@keyframes tree-level-up-burst {
+  0% {
+    opacity: 0.85;
+    transform: scale(0.25);
+  }
+  70% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.4);
+  }
+}
+
+@keyframes tree-level-up-bounce {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.14);
+  }
+  65% {
+    transform: scale(0.96);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes tree-level-up-glow {
+  0% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  20% {
+    filter: drop-shadow(0 0 18px var(--color-streak-accent)) drop-shadow(0 0 48px var(--color-streak-accent));
+  }
+  55% {
+    filter: drop-shadow(0 0 18px var(--color-streak-accent)) drop-shadow(0 0 48px var(--color-streak-accent));
+  }
+  100% {
+    filter: drop-shadow(0 0 0 transparent);
+  }
 }
 
 .streak-tree-inner {
