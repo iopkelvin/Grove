@@ -7,6 +7,11 @@
    the page's content width gets large enough that 4/1 would otherwise
    render a very tall bar; phones stay comfortably under the cap and are
    governed purely by the ratio. */
+.banner-wrap {
+  position: relative;
+  margin-bottom: 12px;
+}
+
 .banner {
   display: block;
   position: relative;
@@ -14,12 +19,28 @@
   aspect-ratio: 4 / 1;
   max-height: 120px;
   margin-top: 0;
-  margin-bottom: 32px;
+  margin-bottom: 0;
   border-radius: 12px;
   background-color: var(--color-card-accent-background);
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
+  overflow: hidden;
+}
+
+/* soft scrim so the banner reads as an intentional treatment even with no
+   image set yet, using the existing accent token instead of a new asset */
+.banner::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--color-card-accent-background) 50%, transparent) 0%,
+    transparent 55%,
+    color-mix(in srgb, var(--color-card-accent-background) 40%, transparent) 100%
+  );
+  pointer-events: none;
 }
 
 .banner-editable {
@@ -31,7 +52,7 @@
 }
 
 .profile-upload-status {
-  margin: -24px 0 24px;
+  margin: -6px 0 24px;
   text-align: center;
   font-size: var(--font-size-small);
   color: var(--color-text-secondary);
@@ -53,30 +74,72 @@
   color: var(--color-button-background);
 }
 
-/* ── Profile content row ── */
-.profile-content {
+/* ── Banner reposition control ── */
+/* bottom-left, diagonally opposite the top-right upload icon — on a very
+   short (thin mobile) banner, two icons in the same corner can end up
+   close enough to overlap; opposite corners never do, regardless of
+   banner height. */
+.banner-reposition-toggle {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
   display: flex;
-  flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  gap: 32px;
+  width: 32px;
+  height: 32px;
+  background-color: var(--color-page-background);
+  border: 2px solid var(--color-button-background);
+  border-radius: 50%;
+  color: var(--color-button-background);
+  cursor: pointer;
+}
+
+.banner-reposition-slider {
+  position: absolute;
+  left: 52px;
+  right: 12px;
+  bottom: 12px;
+  width: auto;
+  accent-color: var(--color-button-background);
+}
+
+/* ── Profile content row ── */
+/* Grid (not flex) so picture/streak/info can be sequenced differently on
+   mobile than on desktop — picture and streak used to be nested together
+   so the tree could never reorder independently of the picture; as three
+   named areas they each just move to wherever their area sits per
+   breakpoint. */
+.profile-content {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-areas:
+    "picture info"
+    "streak  info";
+  align-items: start;
+  justify-content: center;
+  gap: 12px 32px;
   width: 100%;
   margin-bottom: 48px;
 }
 
 /* ── Profile picture ── */
+/* pulled up so the circle overlaps the banner's bottom edge, cover-photo
+   style — negative margin on the grid item only, so it reaches up into
+   the banner above without dragging the streak/info cards up with it */
 .profile-picture-wrap {
+  grid-area: picture;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  flex-shrink: 0;
+  margin-top: -64px;
 }
 
 .profile-streak-card {
+  grid-area: streak;
   width: 100%;
   box-sizing: border-box;
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -86,8 +149,8 @@
 /* overrides the Home-page sizing defaults on .streak-frame/.streak-tree-inner
    (Home sizes off viewport height and lets it overflow its column — too big
    and uncontained for this sidebar). Here the tree should stay
-   width-driven and contained: fill .profile-streak-card's flex:1 height,
-   capped to this column's width (set by the picture). */
+   width-driven and contained, capped to this column's width (set by the
+   picture, since both share the same grid column on desktop). */
 .profile-streak-card .streak-frame {
   height: 100%;
 }
@@ -112,6 +175,8 @@
   height: 240px;
   background-color: var(--color-picture-placeholder);
   border-radius: 50%;
+  border: 4px solid var(--color-page-background);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.18);
   flex-shrink: 0;
 }
 
@@ -143,14 +208,74 @@
   color: var(--color-button-background);
 }
 
-/* ── Profile info card ── */
-/* capped width so it doesn't stretch to fill the whole row */
+/* ── Profile info column ── */
+/* wraps the info card and the stat chips below it so both share the same
+   grid area/width — chips live outside the card, not inside it */
+.profile-info-column {
+  grid-area: info;
+  width: 100%;
+  max-width: 500px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
 .profile-info-card {
   position: relative;
-  flex: 0 1 500px;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-info-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Stat chips ── */
+.profile-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background-color: var(--color-badge-background);
+  border-radius: 999px;
+  font-size: var(--font-size-small);
+  color: var(--color-text-primary);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.profile-stat-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+/* ── Name + pronouns ── */
+.profile-name-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.profile-full-name {
+  margin: 0;
+  font-size: 28px;
+  font-weight: var(--font-weight-title);
+  color: var(--color-text-primary);
+}
+
+.profile-pronouns {
+  font-size: var(--font-size-small);
+  color: var(--color-text-secondary);
 }
 
 .profile-info-card h3 {
@@ -198,6 +323,35 @@
   white-space: pre-wrap;
 }
 
+/* only applied when there's an actual bio — an empty "—" placeholder
+   shouldn't get quote marks around it */
+.profile-bio-quote {
+  position: relative;
+  padding: 0 20px;
+  font-style: italic;
+}
+
+/* decorative quote marks; purely visual so they're not read by screen readers */
+.profile-bio-quote::before,
+.profile-bio-quote::after {
+  font-style: normal;
+  color: var(--color-streak-accent);
+  opacity: 0.6;
+}
+
+.profile-bio-quote::before {
+  content: "\201C";
+  position: absolute;
+  left: 0;
+  top: -4px;
+  font-size: 28px;
+}
+
+.profile-bio-quote::after {
+  content: "\201D";
+  font-size: 20px;
+}
+
 .profile-edit-icon-button {
   position: absolute;
   top: 0;
@@ -236,6 +390,7 @@
 }
 
 .profile-edit-form input,
+.profile-edit-form select,
 .profile-edit-form textarea {
   padding: 10px 12px;
   border: 1px solid var(--color-card-border);
@@ -312,27 +467,35 @@
 
 /* ── Small screens ── */
 @media (max-width: 640px) {
+  /* Picture, then info, then the tree last — practical info before the
+     decorative tree. */
   .profile-content {
-    flex-direction: column;
-    align-items: center;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "picture"
+      "info"
+      "streak";
+    justify-items: center;
   }
 
   .profile-picture-wrap {
     width: 100%;
     max-width: 160px;
+    margin-top: -40px;
   }
 
   .profile-picture {
     width: 160px;
     height: 160px;
+    border-width: 3px;
   }
 
-  .profile-streak-card {
-    flex: none;
+  .banner-reposition-slider {
+    left: 8px;
+    right: 44px;
   }
 
   .profile-info-card {
-    flex: none;
     width: 100%;
     gap: 16px;
     padding: 16px;
