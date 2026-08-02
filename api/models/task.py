@@ -58,6 +58,7 @@ class Task(db.Model):
     description = db.Column(db.Text, nullable=True)   # body, opens on click
     completed = db.Column(db.Boolean, default=False, nullable=False)
     due_date = db.Column(db.Date, nullable=True)
+    due_time = db.Column(db.Time, nullable=True)  # optional — a due_date can stand alone
 
     # Habit-style tasks: "done today" is derived from last_completed_date
     # vs today's date, so it self-resets with no daily job needed.
@@ -89,6 +90,7 @@ class Task(db.Model):
             "done": self.is_done_today,
             "recurring": self.recurring,
             "due_date": self.due_date.isoformat() if self.due_date else None,
+            "due_time": self.due_time.strftime("%H:%M") if self.due_time else None,
             "user_id": self.user_id,
             "tags": [tag.name for tag in self.tags],
             "created_at": self.created_at.isoformat() if self.created_at else None,

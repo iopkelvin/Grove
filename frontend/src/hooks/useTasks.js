@@ -68,15 +68,24 @@ export function useTasks(supabaseId) {
     }
   }
 
-  async function editTask(id, title) {
-    const trimmed = title.trim();
-    if (!trimmed || !supabaseId) return;
+  async function editTask(id, updates) {
+    const trimmed = updates.title?.trim();
+    if (!trimmed || !supabaseId) return false;
     try {
-      const updated = await updateTask(supabaseId, id, { title: trimmed });
+      const updated = await updateTask(supabaseId, id, {
+        title: trimmed,
+        description: updates.description,
+        due_date: updates.dueDate,
+        due_time: updates.dueTime,
+        recurring: updates.recurring,
+        tags: updates.tags,
+      });
       setTasks((current) => current.map((t) => (t.id === id ? updated : t)));
       setError("");
+      return true;
     } catch {
       setError("The task could not be updated.");
+      return false;
     }
   }
 

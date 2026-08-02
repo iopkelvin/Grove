@@ -303,6 +303,7 @@ def create_task():
         description=(data.get("description") or None),
         tag_names=data.get("tags"),
         due_date=data.get("due_date"),
+        due_time=data.get("due_time"),
         recurring=data.get("recurring", False),
     )
     return jsonify(created), 201
@@ -322,7 +323,7 @@ def update_task(task_id):
 
     fields = {
         k: data[k]
-        for k in ("title", "description", "completed", "tags", "due_date", "recurring")
+        for k in ("title", "description", "completed", "tags", "due_date", "due_time", "recurring")
         if k in data
     }
     # commit=False: `user` was fetched above and hasn't been touched by a

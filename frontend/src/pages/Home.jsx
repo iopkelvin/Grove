@@ -32,7 +32,7 @@ function Home() {
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
 
   const [friends, setFriends] = useState([]);
-  const { tasks, toggleTask, editTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
+  const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
   const loadFriends = useCallback(async () => {
     if (!supabaseId) return;
@@ -79,7 +79,7 @@ function Home() {
           </div>
           <UndoToast task={pendingDelete} onUndo={undoDelete} />
           <div data-home-tour="tasks">
-            <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} onEdit={editTask} />
+            <TaskList tasks={tasks} onToggle={toggleTask} onDelete={removeTask} />
           </div>
         </div>
       </div>
