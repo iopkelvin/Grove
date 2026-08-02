@@ -181,6 +181,74 @@ def test_completing_a_recurring_task_again_the_next_day_bumps_streak_again(clien
     assert get_streak(client, "sb-1") == 2
 
 
+def test_turning_off_recurring_carries_over_done_today(client):
+    """Switching a recurring task to one-off shouldn't silently un-complete
+    it just because "done" is tracked a different way for each kind."""
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
+    ).get_json()
+    complete_task(client, "sb-1", task["id"])
+
+    res = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "recurring": False},
+        headers=auth_headers("sb-1"),
+    )
+    assert res.get_json()["done"] is True
+
+
+def test_turning_off_recurring_without_completing_today_stays_not_done(client):
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
+    ).get_json()
+
+    res = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "recurring": False},
+        headers=auth_headers("sb-1"),
+    )
+    assert res.get_json()["done"] is False
+
+
+def test_turning_on_recurring_carries_over_todays_completion(client):
+    sync_user(client, "sb-1", "alice")
+    task = create_task(client, "sb-1").get_json()
+    complete_task(client, "sb-1", task["id"])
+
+    res = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "recurring": True},
+        headers=auth_headers("sb-1"),
+    )
+    assert res.get_json()["done"] is True
+
+
+def test_explicit_completed_wins_over_the_recurring_carry_over(client):
+    """Setting `completed` in the same request as `recurring` is the
+    caller's explicit choice — it shouldn't be overridden by the
+    done-state carry-over."""
+    sync_user(client, "sb-1", "alice")
+    task = client.post(
+        "/api/tasks",
+        json={"supabase_id": "sb-1", "title": "Water your tree", "recurring": True},
+        headers=auth_headers("sb-1"),
+    ).get_json()
+    complete_task(client, "sb-1", task["id"])
+
+    res = client.put(
+        f"/api/tasks/{task['id']}",
+        json={"supabase_id": "sb-1", "recurring": False, "completed": False},
+        headers=auth_headers("sb-1"),
+    )
+    assert res.get_json()["done"] is False
+
+
 def test_creating_a_task_with_new_tags_makes_them_listable(client):
     """Covers the create-task form's tag picker: tags typed for a new
     task should show up in GET /api/tags for next time, not just live on

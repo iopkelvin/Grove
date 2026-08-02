@@ -104,7 +104,20 @@ def update_task(user_id, task_id, fields, commit=True):
     if "due_date" in fields:
         task.due_date = _parse_date(fields["due_date"])
     if "recurring" in fields:
-        task.recurring = bool(fields["recurring"])
+        new_recurring = bool(fields["recurring"])
+        # "done" is tracked differently for recurring vs one-off tasks (see
+        # Task.is_done_today) — switching modes would otherwise silently
+        # discard whatever "done today" state existed under the old
+        # representation. Carry it across, unless the caller is also
+        # setting `completed` explicitly in this same request (that value
+        # wins instead of the carry-over).
+        if new_recurring != task.recurring and "completed" not in fields:
+            if new_recurring:
+                task.last_completed_date = date.today() if was_done_today else None
+            else:
+                task.completed = was_done_today
+        task.recurring = new_recurring
+
     if "completed" in fields:
         mark_done = bool(fields["completed"])
         if task.recurring:
