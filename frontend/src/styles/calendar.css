@@ -86,7 +86,8 @@
   padding: 3px 4px;
 }
 
-.calendar-nav-button {
+.calendar-nav-button,
+.calendar-mini-button {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -95,8 +96,11 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: var(--color-text-primary);
   padding: 0;
+}
+
+.calendar-nav-button {
+  color: var(--color-text-primary);
 }
 
 .calendar-card {
@@ -150,16 +154,7 @@
 }
 
 .calendar-mini-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  background: none;
-  border: none;
-  cursor: pointer;
   color: var(--color-scene-foreground);
-  padding: 0;
 }
 
 .calendar-mini-grid {
@@ -421,10 +416,6 @@
 
   .calendar-today-button {
     padding: 7px 14px;
-  }
-
-  .calendar-card {
-    border-radius: 18px;
   }
 
   .calendar-scroll {

@@ -1,15 +1,10 @@
 import { Fragment } from "react";
+import { startOfWeek, isSameDay } from "../utils/date";
 
 const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 // 5 AM - 10 PM — skips the overnight hours nobody schedules anything in.
 const firstHour = 5;
 const lastHour = 22;
-
-function startOfWeek(date) {
-  const result = new Date(date);
-  result.setDate(result.getDate() - result.getDay());
-  return result;
-}
 
 // daysToShow === 1 gives a single-day column (Day view); anything else
 // builds a full week starting from Sunday, same as before.
@@ -29,14 +24,6 @@ function formatHour(hour) {
   const period = hour < 12 ? "AM" : "PM";
   const display = hour % 12 === 0 ? 12 : hour % 12;
   return `${display} ${period}`;
-}
-
-function isSameDay(first, second) {
-  return (
-    first.getFullYear() === second.getFullYear() &&
-    first.getMonth() === second.getMonth() &&
-    first.getDate() === second.getDate()
-  );
 }
 
 export default function CalendarTimeGrid({ anchorDate, daysToShow = 7 }) {

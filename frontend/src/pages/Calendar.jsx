@@ -8,20 +8,7 @@ import TodayEvents from "../components/TodayEvents";
 import CalendarTodayButton from "../components/CalendarTodayButton";
 import { useUser } from "../context/UserContext";
 import { useTasks } from "../hooks/useTasks";
-
-function startOfWeek(date) {
-  const result = new Date(date);
-  result.setDate(result.getDate() - result.getDay());
-  return result;
-}
-
-function isSameDay(first, second) {
-  return (
-    first.getFullYear() === second.getFullYear() &&
-    first.getMonth() === second.getMonth() &&
-    first.getDate() === second.getDate()
-  );
-}
+import { startOfWeek, isSameDay } from "../utils/date";
 
 function isCurrentScope(view, anchorDate) {
   const today = new Date();
