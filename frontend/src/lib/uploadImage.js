@@ -1,14 +1,64 @@
 import { supabase } from "./supabaseClient";
 
+const MAX_DIMENSION = 1600;
+const JPEG_QUALITY = 0.8;
+
+function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => resolve({ img, url });
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not decode image"));
+    };
+    img.src = url;
+  });
+}
+
+// Phone photos can be large (10-20MB+) or in a format the storage bucket
+// doesn't accept (e.g. iPhone HEIC) — re-encoding through a canvas as a
+// smaller JPEG fixes both before the file ever reaches the network.
+async function toResizedJpeg(file) {
+  const { img, url } = await loadImage(file);
+  try {
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(img.width, img.height));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.round(img.width * scale);
+    canvas.height = Math.round(img.height * scale);
+    canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    return await new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error("Could not encode image"))),
+        "image/jpeg",
+        JPEG_QUALITY
+      );
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
 // Path is scoped by the user's own supabase id so the storage policies
 // (see profile-images bucket setup) can restrict writes to their own folder.
 export async function uploadProfileImage(file, kind, userId) {
-  const ext = file.name.split(".").pop();
+  let uploadFile = file;
+  let ext = file.name.split(".").pop();
+
+  try {
+    uploadFile = await toResizedJpeg(file);
+    ext = "jpg";
+  } catch {
+    // Browser couldn't decode this format (rare) — fall back to uploading
+    // the original file rather than blocking the upload outright.
+  }
+
   const path = `${userId}/${kind}.${ext}`;
 
   const { error } = await supabase.storage
     .from("profile-images")
-    .upload(path, file, { upsert: true });
+    .upload(path, uploadFile, { upsert: true });
 
   if (error) throw error;
 

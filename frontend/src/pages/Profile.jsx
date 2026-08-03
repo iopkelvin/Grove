@@ -109,7 +109,7 @@ function Profile() {
       }
     } catch (err) {
       console.error(`Failed to upload ${kind}:`, err);
-      setError("Failed to upload image. Please try again.");
+      setError(err.message ? `Failed to upload image: ${err.message}` : "Failed to upload image. Please try again.");
     } finally {
       setUploadingImage(null);
     }
