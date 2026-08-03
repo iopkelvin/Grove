@@ -110,14 +110,6 @@
   overflow: hidden;
 }
 
-/* left/right/bottom padding lives here (not on .calendar-card) so the
-   header's horizontal bleed below lands inside this element's own padding
-   box instead of being clipped by its own overflow (bleeding past an
-   ancestor's padding would be, since overflow-y:auto forces overflow-x to
-   compute as auto too). No top padding — sticky's top:0 offset is clamped
-   to this element's own padding edge regardless of margin, so a negative
-   top-margin bleed doesn't work here; instead the header sits flush at the
-   true top with no gap, and gets its own padding-top for breathing room. */
 .calendar-scroll {
   flex: 1;
   min-height: 0;
@@ -143,9 +135,6 @@
   overflow: hidden;
 }
 
-/* solid banner (flat dark green, matching the rest of Home's widgets) so
-   the widget reads as more than plain text on a gray box; bleeds to the
-   card's own edges via negative margin instead of a second nested box. */
 .calendar-mini-header {
   display: flex;
   align-items: center;
@@ -175,9 +164,6 @@
 
 .calendar-mini-grid {
   display: grid;
-  /* minmax(0, 1fr), not plain 1fr — a bare 1fr track still has an
-     implicit min-width:auto, so whichever column happens to hold a
-     2-digit date ("31") that month grows wider than the others. */
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 4px;
 }
@@ -225,8 +211,6 @@
   cursor: default;
 }
 
-/* outline (not filled) so today stays visible even when a different day
-   is the one actually selected below */
 .calendar-mini-day-today {
   box-shadow: inset 0 0 0 2px var(--color-calendar-accent);
 }
@@ -317,11 +301,6 @@
   margin: 4px 0 0;
 }
 
-/* flat dark green banner (matching MiniCalendar's header) instead of the
-   plain gray strip this used to be. Negative margins bleed it out past
-   .calendar-card's own padding so it reaches the card's real edges (same
-   trick as .calendar-mini-header) — .calendar-card's overflow:hidden clips
-   it back to the rounded corners. */
 .calendar-grid-corner {
   position: sticky;
   top: 0;
@@ -342,10 +321,6 @@
   padding: 15.5px 0;
 }
 
-/* rounds the banner's top-right corner to match .calendar-card, and bleeds
-   it out to the card's right edge. Applied explicitly (not via :last-child)
-   since the day headers aren't the grid's last children overall (the hour
-   rows come after them), and the day count varies between Week and Day view. */
 .calendar-day-header-last {
   border-top-right-radius: 24px;
   margin-right: -32px;
@@ -377,9 +352,6 @@
   color: var(--color-button-text);
 }
 
-/* borderless, like the month view's grid — a faint bottom line for row
-   rhythm instead of the harsh vertical "spreadsheet" dividers this used
-   to have. */
 .calendar-hour-cell {
   position: relative;
   height: 73px;
@@ -390,8 +362,6 @@
   background-color: var(--color-divider);
 }
 
-/* soft wash down today's whole column, echoing the month view's filled
-   "today" circle instead of only marking it in the header pill. */
 .calendar-hour-cell-today {
   background-color: color-mix(in srgb, var(--color-calendar-accent) 8%, transparent);
 }

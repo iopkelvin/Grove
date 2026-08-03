@@ -16,9 +16,7 @@ function loadImage(file) {
   });
 }
 
-// Phone photos can be large (10-20MB+) or in a format the storage bucket
-// doesn't accept (e.g. iPhone HEIC) — re-encoding through a canvas as a
-// smaller JPEG fixes both before the file ever reaches the network.
+// encoding images uploaded via mobile
 async function toResizedJpeg(file) {
   const { img, url } = await loadImage(file);
   try {
@@ -50,8 +48,6 @@ export async function uploadProfileImage(file, kind, userId) {
     uploadFile = await toResizedJpeg(file);
     ext = "jpg";
   } catch {
-    // Browser couldn't decode this format (rare) — fall back to uploading
-    // the original file rather than blocking the upload outright.
   }
 
   const path = `${userId}/${kind}.${ext}`;

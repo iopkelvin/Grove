@@ -326,10 +326,6 @@ export function generateTree(userId, streak) {
   const trunkBaseX = width / 2;
   const trunkBaseY = height - 22;
 
-  // safeMarginTop (below) guarantees no tree, however mature, ever grows
-  // above y=16 — so trimming a fixed 14 off the viewBox's top is always
-  // safe (never clips a canopy) and removes some of the dead space above
-  // shorter/younger trees without needing a per-tree dynamic crop.
   const topCrop = 14;
 
   const paths = [];
