@@ -2,11 +2,12 @@ import { useState } from "react";
 import MenuIcon from "../components/MenuIcon";
 import CalendarViewToggle from "../components/CalendarViewToggle";
 import CalendarNav from "../components/CalendarNav";
-import CalendarWeekGrid from "../components/CalendarWeekGrid";
-import CalendarMonthGrid from "../components/CalendarMonthGrid";
+import CalendarTimeGrid from "../components/CalendarTimeGrid";
 import MiniCalendar from "../components/MiniCalendar";
 import TodayEvents from "../components/TodayEvents";
 import CalendarTodayButton from "../components/CalendarTodayButton";
+import { useUser } from "../context/UserContext";
+import { useTasks } from "../hooks/useTasks";
 
 function startOfWeek(date) {
   const result = new Date(date);
@@ -14,35 +15,35 @@ function startOfWeek(date) {
   return result;
 }
 
+function isSameDay(first, second) {
+  return (
+    first.getFullYear() === second.getFullYear() &&
+    first.getMonth() === second.getMonth() &&
+    first.getDate() === second.getDate()
+  );
+}
+
 function isCurrentScope(view, anchorDate) {
   const today = new Date();
-
+  if (view === "day") return isSameDay(anchorDate, today);
   if (view === "month") {
     return (
       anchorDate.getFullYear() === today.getFullYear() &&
       anchorDate.getMonth() === today.getMonth()
     );
   }
-
-  return (
-    startOfWeek(anchorDate).toDateString() === startOfWeek(today).toDateString()
-  );
+  return startOfWeek(anchorDate).toDateString() === startOfWeek(today).toDateString();
 }
 
 function Calendar() {
+  const { session } = useUser();
+  const { tasks } = useTasks(session?.user?.id);
   const [view, setView] = useState("week");
   const [anchorDate, setAnchorDate] = useState(new Date());
 
   function shiftAnchor(direction) {
     const next = new Date(anchorDate);
-
-    if (view === "month") {
-      next.setDate(1);
-      next.setMonth(next.getMonth() + direction);
-    } else {
-      next.setDate(next.getDate() + 7 * direction);
-    }
-
+    next.setDate(next.getDate() + (view === "day" ? 1 : 7) * direction);
     setAnchorDate(next);
   }
 
@@ -58,20 +59,23 @@ function Calendar() {
               {!isCurrentScope(view, anchorDate) && (
                 <CalendarTodayButton onClick={() => setAnchorDate(new Date())} />
               )}
-              <CalendarNav
-                onPrevious={() => shiftAnchor(-1)}
-                onNext={() => shiftAnchor(1)}
-              />
+              {/* Month view uses MiniCalendar's own built-in prev/next month
+                  nav — these arrows only make sense for the Week/Day grid. */}
+              {view !== "month" && (
+                <CalendarNav
+                  onPrevious={() => shiftAnchor(-1)}
+                  onNext={() => shiftAnchor(1)}
+                />
+              )}
             </div>
           </div>
           {view === "month" ? (
-            <CalendarMonthGrid anchorDate={anchorDate} />
+            <MiniCalendar tasks={tasks} monthDate={anchorDate} onMonthChange={setAnchorDate} />
           ) : (
-            <CalendarWeekGrid anchorDate={anchorDate} />
+            <CalendarTimeGrid anchorDate={anchorDate} daysToShow={view === "day" ? 1 : 7} />
           )}
         </div>
         <div className="calendar-sidebar">
-          <MiniCalendar />
           <TodayEvents />
         </div>
       </div>

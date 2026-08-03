@@ -4,7 +4,6 @@ import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
 import { getRoom, createRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
-import { getTreeSeason } from "../utils/treeGenerator";
 import MenuIcon from "../components/MenuIcon";
 import StreakTree from "../components/StreakTree";
 import MiniCalendar from "../components/MiniCalendar";
@@ -44,7 +43,6 @@ function Home() {
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
   const streak = profile?.current_streak ?? 0;
   const streakLeveledUp = useStreakLevelUp(supabaseId, streak);
-  const season = getTreeSeason(streak);
 
   const [lastRoom, setLastRoom] = useState(null);
   const [creatingRoom, setCreatingRoom] = useState(false);
@@ -101,7 +99,7 @@ function Home() {
         <div className="grid-item-columns">
           <div className="grid-item-middle">
             <div className="grid-item-calendar" data-home-tour="calendar">
-              <MiniCalendar tasks={tasks} season={season} />
+              <MiniCalendar tasks={tasks} />
             </div>
 
             <StudyRoomsCard

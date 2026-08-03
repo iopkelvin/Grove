@@ -9,7 +9,7 @@ export default function CalendarNav({ onPrevious, onNext }) {
         aria-label="Previous"
         onClick={onPrevious}
       >
-        <ChevronLeft size={22} />
+        <ChevronLeft size={16} />
       </button>
       <button
         type="button"
@@ -17,7 +17,7 @@ export default function CalendarNav({ onPrevious, onNext }) {
         aria-label="Next"
         onClick={onNext}
       >
-        <ChevronRight size={22} />
+        <ChevronRight size={16} />
       </button>
     </div>
   );
