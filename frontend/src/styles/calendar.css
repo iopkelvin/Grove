@@ -129,6 +129,8 @@
 /* --calendar-days is set inline per render (7 for Week, 1 for Day) so the
    same grid/CSS handles both views. */
 .calendar-grid-week {
+  /* stylelint-disable-next-line custom-property-pattern -- component-scoped
+     grid variable set inline per render, not a design token */
   grid-template-columns: 30px repeat(var(--calendar-days, 7), 1fr);
 }
 
@@ -358,6 +360,8 @@
 }
 
 .calendar-hour-cell-today {
+  /* stylelint-disable-next-line declaration-property-value-allowed-list --
+     still a theme token, just blended with transparency */
   background-color: color-mix(in srgb, var(--color-calendar-accent) 8%, transparent);
 }
 
@@ -424,8 +428,11 @@
   }
 
   .calendar-grid-week {
+    /* stylelint-disable custom-property-pattern -- component-scoped grid
+       variable set inline per render, not a design token */
     grid-template-columns: 26px repeat(var(--calendar-days, 7), minmax(52px, 1fr));
     min-width: calc(26px + var(--calendar-days, 7) * 52px);
+    /* stylelint-enable custom-property-pattern */
   }
 
   .calendar-grid-corner {
