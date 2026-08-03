@@ -9,7 +9,7 @@ export function UserProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-  const [pendingRequestCount, setPendingRequestCount] = useState(0);
+  const [pendingRequests, setPendingRequests] = useState([]);
 
   const fetchProfile = useCallback(async (supabaseId) => {
     if (!supabaseId) {
@@ -24,14 +24,13 @@ export function UserProvider({ children }) {
     }
   }, []);
 
-  const refreshPendingRequestCount = useCallback(async (supabaseId) => {
+  const loadPendingRequests = useCallback(async (supabaseId) => {
     if (!supabaseId) {
-      setPendingRequestCount(0);
+      setPendingRequests([]);
       return;
     }
     try {
-      const requests = await getFriends(supabaseId, { status: "pending" });
-      setPendingRequestCount(requests.length);
+      setPendingRequests(await getFriends(supabaseId, { status: "pending" }));
     } catch (err) {
       console.error("Failed to load friend requests:", err);
     }
@@ -50,7 +49,7 @@ export function UserProvider({ children }) {
       if (userId === lastUserId.current) return;
       lastUserId.current = userId;
       fetchProfile(userId);
-      refreshPendingRequestCount(userId);
+      loadPendingRequests(userId);
     }
 
     supabase.auth.getSession().then(({ data }) => {
@@ -63,7 +62,7 @@ export function UserProvider({ children }) {
     });
 
     return () => listener.subscription.unsubscribe();
-  }, [fetchProfile, refreshPendingRequestCount]);
+  }, [fetchProfile, loadPendingRequests]);
 
   async function logout() {
     const { error } = await supabase.auth.signOut({ scope: "local" });
@@ -100,7 +99,7 @@ export function UserProvider({ children }) {
   }
 
   async function refreshPendingRequests() {
-    await refreshPendingRequestCount(session?.user?.id);
+    await loadPendingRequests(session?.user?.id);
   }
 
   return (
@@ -112,7 +111,8 @@ export function UserProvider({ children }) {
         logout,
         updateProfile,
         refreshProfile,
-        pendingRequestCount,
+        pendingRequests,
+        pendingRequestCount: pendingRequests.length,
         refreshPendingRequests,
       }}
     >
