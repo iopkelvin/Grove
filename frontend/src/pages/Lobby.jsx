@@ -6,7 +6,7 @@ import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
 import { createRoom, getRooms } from "../api/rooms";
-import { capitalize } from "../lib/format";
+import { firstNameOf } from "../lib/format";
 
 // Shown only until the database has seeded public rooms and finished
 // artwork for every map — keeps the lobby usable on a fresh DB.
@@ -65,9 +65,9 @@ const PLACEHOLDER_FRIENDS = [
 // Shown only while the API is unavailable or before a user creates their
 // first task.
 const PLACEHOLDER_TASKS = [
-  { id: "placeholder-task-1", title: "Finish your first Grove task", completed: false },
-  { id: "placeholder-task-2", title: "Invite a friend to study", completed: false },
-  { id: "placeholder-task-3", title: "Water your tree", completed: false },
+  { id: "placeholder-task-1", title: "Finish your first Grove task", done: false },
+  { id: "placeholder-task-2", title: "Invite a friend to study", done: false },
+  { id: "placeholder-task-3", title: "Water your tree", done: false },
 ];
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
@@ -235,7 +235,7 @@ export default function Lobby() {
   const displayedRooms = rooms.length ? rooms : PLACEHOLDER_ROOMS;
   const displayedTasks = tasks.length ? tasks : PLACEHOLDER_TASKS;
   const displayedFriends = friends.length ? friends : PLACEHOLDER_FRIENDS;
-  const firstName = capitalize(profile?.first_name) || "there";
+  const firstName = firstNameOf(profile);
 
   // Router state carries `room` on navigation, but a page refresh loses it —
   // sessionStorage is the fallback Room.jsx reads from in that case.
@@ -341,14 +341,14 @@ export default function Lobby() {
                 <p className="study-eyebrow">Your list</p>
                 <h2>Upcoming tasks</h2>
               </div>
-              <span>{displayedTasks.filter((task) => !task.completed).length} remaining</span>
+              <span>{displayedTasks.filter((task) => !task.done).length} remaining</span>
             </div>
             <div className="study-task-scroll">
               {displayedTasks.map((task) => (
-                <div className={`study-task-row ${task.completed ? "is-complete" : ""}`} key={task.id}>
+                <div className={`study-task-row ${task.done ? "is-complete" : ""}`} key={task.id}>
                   <span className="study-task-dot" />
                   <span>{task.title}</span>
-                  <strong>{task.completed ? "Done" : "1 point"}</strong>
+                  <strong>{task.done ? "Done" : "1 point"}</strong>
                 </div>
               ))}
             </div>
