@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import { capitalize } from "../lib/format";
+import { firstNameOf } from "../lib/format";
 import { getRoom, createRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
 import MenuIcon from "../components/MenuIcon";
@@ -82,7 +82,7 @@ function Home() {
     return <div className="page">Loading...</div>;
   }
 
-  const firstName = capitalize(profile?.first_name) || "there";
+  const firstName = firstNameOf(profile);
   const upNext = pickUpNext(tasks);
 
   return (
@@ -93,7 +93,7 @@ function Home() {
 
       <div className="grid">
         <div className="grid-item-tree" data-home-tour="streak">
-          <StreakTree streak={streak} userId={supabaseId} layout="overlay" glow={streakLeveledUp} />
+          <StreakTree streak={streak} userId={supabaseId} glow={streakLeveledUp} />
         </div>
 
         <div className="grid-item-columns">
