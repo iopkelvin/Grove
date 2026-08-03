@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
-const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const weekdayNames = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 const monthNames = [
   "January",
   "February",
@@ -43,10 +43,19 @@ function toISODate(year, month, dayNumber) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(dayNumber).padStart(2, "0")}`;
 }
 
-export default function MiniCalendar({ tasks = [], season = "none" }) {
-  const [monthDate, setMonthDate] = useState(new Date());
+// monthDate/onMonthChange are optional — pass both to let a parent control
+// (and reset, e.g. a "Today" button) which month is shown; omit both to let
+// MiniCalendar track it internally, as Home does.
+export default function MiniCalendar({ tasks = [], monthDate: controlledMonthDate, onMonthChange }) {
+  const [internalMonthDate, setInternalMonthDate] = useState(new Date());
+  const monthDate = controlledMonthDate ?? internalMonthDate;
+  const setMonthDate = onMonthChange ?? setInternalMonthDate;
   const [selectedDay, setSelectedDay] = useState(null);
   const today = new Date();
+
+  useEffect(() => {
+    setSelectedDay(null);
+  }, [monthDate.getFullYear(), monthDate.getMonth()]);
   const cells = buildCells(monthDate);
   const showToday = isCurrentMonth(monthDate, today);
   const year = monthDate.getFullYear();
@@ -76,7 +85,7 @@ export default function MiniCalendar({ tasks = [], season = "none" }) {
 
   return (
     <div className="calendar-mini">
-      <div className={`calendar-mini-header calendar-mini-header--${season}`}>
+      <div className="calendar-mini-header">
         <button
           type="button"
           className="calendar-mini-button"
@@ -116,7 +125,7 @@ export default function MiniCalendar({ tasks = [], season = "none" }) {
               className={[
                 "calendar-mini-day",
                 isToday ? "calendar-mini-day-today" : "",
-                isSelected ? `calendar-mini-day-selected calendar-mini-day-selected--${season}` : "",
+                isSelected ? "calendar-mini-day-selected" : "",
               ].filter(Boolean).join(" ")}
               onClick={() => setSelectedDay(isSelected ? null : dayNumber)}
             >

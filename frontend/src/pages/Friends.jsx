@@ -5,7 +5,8 @@ import { capitalize } from "../lib/format";
 import {
   searchUsers,
   getFriends,
-  sendFriendRequest,
+  sendFriendRequestOrError,
+  getFriendshipState,
   respondToFriendRequest,
   removeFriend,
 } from "../api/friends";
@@ -31,19 +32,18 @@ function firstLetterOf(user) {
   return sortKeyFor(user).charAt(0).toUpperCase();
 }
 
-function addFriendLabel(user, sentRequestIds) {
-  if (sentRequestIds.has(user.id) || user.friendship_status === "pending") return "Requested";
-  if (user.friendship_status === "accepted") return "Friends";
+function addFriendLabel(state) {
+  if (state === "requested") return "Requested";
+  if (state === "friends") return "Friends";
   return "Add";
 }
 
 function Friends() {
-  const { session, loading, refreshPendingRequests } = useUser();
+  const { session, loading, pendingRequests, refreshPendingRequests } = useUser();
   const supabaseId = session?.user?.id;
 
   const [tab, setTab] = useState("friends");
   const [friends, setFriends] = useState([]);
-  const [requests, setRequests] = useState([]);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState([]);
   const [searching, setSearching] = useState(false);
@@ -57,15 +57,9 @@ function Friends() {
     setFriends(await getFriends(supabaseId, { status: "accepted" }));
   }, [supabaseId]);
 
-  const loadRequests = useCallback(async () => {
-    if (!supabaseId) return;
-    setRequests(await getFriends(supabaseId, { status: "pending" }));
-  }, [supabaseId]);
-
   useEffect(() => {
     loadFriends();
-    loadRequests();
-  }, [loadFriends, loadRequests]);
+  }, [loadFriends]);
 
   const sortedFriends = useMemo(
     () => [...friends].sort((a, b) => sortKeyFor(a.user).localeCompare(sortKeyFor(b.user))),
@@ -110,19 +104,17 @@ function Friends() {
 
   async function handleSendRequest(targetUserId) {
     setError("");
-    const res = await sendFriendRequest(supabaseId, targetUserId);
-    if (res.ok) {
+    const result = await sendFriendRequestOrError(supabaseId, targetUserId);
+    if (result.ok) {
       setSentRequestIds((prev) => new Set(prev).add(targetUserId));
     } else {
-      const data = await res.json().catch(() => ({}));
-      setError(data.error || "Failed to send friend request.");
+      setError(result.error);
     }
   }
 
   async function handleRespond(friendshipId, status) {
     const res = await respondToFriendRequest(friendshipId, supabaseId, status);
     if (res.ok) {
-      await loadRequests();
       await refreshPendingRequests();
       if (status === "accepted") await loadFriends();
     } else {
@@ -165,20 +157,23 @@ function Friends() {
 
         {results.length > 0 && (
           <div className="friends-list">
-            {results.map((user) => (
-              <div key={user.id} className="card friends-row">
-                <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
-                <button
-                  type="button"
-                  className="friends-add-button"
-                  onClick={() => handleSendRequest(user.id)}
-                  disabled={sentRequestIds.has(user.id) || Boolean(user.friendship_status)}
-                >
-                  <UserPlus size={16} />
-                  {addFriendLabel(user, sentRequestIds)}
-                </button>
-              </div>
-            ))}
+            {results.map((user) => {
+              const state = getFriendshipState(user.friendship_status, sentRequestIds.has(user.id));
+              return (
+                <div key={user.id} className="card friends-row">
+                  <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
+                  <button
+                    type="button"
+                    className="friends-add-button"
+                    onClick={() => handleSendRequest(user.id)}
+                    disabled={state !== "none"}
+                  >
+                    <UserPlus size={16} />
+                    {addFriendLabel(state)}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -195,7 +190,7 @@ function Friends() {
             className={`friends-tab${tab === "requests" ? " friends-tab-active" : ""}`}
             onClick={() => setTab("requests")}
           >
-            Requests{requests.length > 0 ? ` (${requests.length})` : ""}
+            Requests{pendingRequests.length > 0 ? ` (${pendingRequests.length})` : ""}
           </button>
         </div>
 
@@ -274,8 +269,8 @@ function Friends() {
 
         {tab === "requests" && (
           <div className="friends-list">
-            {requests.length === 0 && <p>No pending requests.</p>}
-            {requests.map(({ friendship_id, user }) => (
+            {pendingRequests.length === 0 && <p>No pending requests.</p>}
+            {pendingRequests.map(({ friendship_id, user }) => (
               <div key={friendship_id} className="card friends-row">
                 <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
                 <div className="friends-row-actions">

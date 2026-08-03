@@ -326,6 +326,8 @@ export function generateTree(userId, streak) {
   const trunkBaseX = width / 2;
   const trunkBaseY = height - 22;
 
+  const topCrop = 14;
+
   const paths = [];
   const tips = [];
   const ctx = {
@@ -376,7 +378,7 @@ export function generateTree(userId, streak) {
   );
 
   return {
-    viewBox: `0 0 ${width} ${height}`,
+    viewBox: `0 ${topCrop} ${width} ${height - topCrop}`,
     growthProgress: growth.growthProgress,
     seasonName: season.seasonName,
     progressInSeason: season.progressInSeason,

@@ -26,6 +26,25 @@ export async function sendFriendRequest(requesterSupabaseId, targetUserId) {
   });
 }
 
+// Classifies a friendship into one of three UI states so pages don't each
+// hand-roll the same pending/accepted/none mapping.
+export function getFriendshipState(friendshipStatus, alreadyRequested) {
+  if (alreadyRequested || friendshipStatus === "pending") return "requested";
+  if (friendshipStatus === "accepted") return "friends";
+  return "none";
+}
+
+export async function sendFriendRequestOrError(requesterSupabaseId, targetUserId) {
+  try {
+    const res = await sendFriendRequest(requesterSupabaseId, targetUserId);
+    if (res.ok) return { ok: true };
+    const data = await res.json().catch(() => ({}));
+    return { ok: false, error: data.error || "Failed to send friend request." };
+  } catch {
+    return { ok: false, error: "Failed to send friend request. Please try again." };
+  }
+}
+
 export async function respondToFriendRequest(friendshipId, supabaseId, status) {
   return apiFetch(`/api/friends/${friendshipId}`, {
     method: "PATCH",

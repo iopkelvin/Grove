@@ -26,9 +26,7 @@ function TaskItem({ task, onToggle, onDelete, onEditRequest }) {
 
   return (
     <div className={`task-item ${task.done ? "task-item-done" : ""}`}>
-      {/* Note: the API's Task.to_dict() serializes completion as "done"
-          in the response (see the comment there); requests still send
-          { completed: ... }. */}
+      {/* API responses use "done" (not "completed"); see Task.to_dict() in api/models/task.py. */}
       <button
         className="task-checkbox"
         onClick={() => onToggle?.(task.id)}

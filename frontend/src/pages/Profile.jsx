@@ -4,14 +4,14 @@ import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
 import { uploadProfileImage } from "../lib/uploadImage";
 import { getUserByUsername } from "../api/users";
-import { sendFriendRequest, getFriends } from "../api/friends";
+import { sendFriendRequestOrError, getFriendshipState, getFriends } from "../api/friends";
 import { getTreeProgress } from "../api/streaks";
 import useStreakLevelUp from "../hooks/useStreakLevelUp";
 import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
 import StreakTree from "../components/StreakTree";
-import { UserPlus, Mail, Bell, Pencil, CheckSquare, Users } from "lucide-react";
+import { UserPlus, Pencil, CheckSquare, Users } from "lucide-react";
 
 // Common presets, LinkedIn-style; "custom" reveals a free-text field capped
 // at PRONOUNS_MAX_LENGTH so it can't turn into a full sentence.
@@ -109,7 +109,7 @@ function Profile() {
       }
     } catch (err) {
       console.error(`Failed to upload ${kind}:`, err);
-      setError("Failed to upload image. Please try again.");
+      setError(err.message ? `Failed to upload image: ${err.message}` : "Failed to upload image. Please try again.");
     } finally {
       setUploadingImage(null);
     }
@@ -169,27 +169,18 @@ function Profile() {
 
   async function handleAddFriend() {
     setError("");
-    try {
-      const res = await sendFriendRequest(session.user.id, viewedProfile.id);
-      if (res.ok) {
-        setRequestSent(true);
-      } else {
-        const data = await res.json().catch(() => ({}));
-        setError(data.error || "Failed to send friend request.");
-      }
-    } catch {
-      setError("Failed to send friend request. Please try again.");
+    const result = await sendFriendRequestOrError(session.user.id, viewedProfile.id);
+    if (result.ok) {
+      setRequestSent(true);
+    } else {
+      setError(result.error);
     }
   }
 
-  const friendshipStatus = viewedProfile?.friendship_status;
-  const addFriendDisabled = requestSent || Boolean(friendshipStatus);
+  const friendState = getFriendshipState(viewedProfile?.friendship_status, requestSent);
+  const addFriendDisabled = friendState !== "none";
   const addFriendLabel =
-    requestSent || friendshipStatus === "pending"
-      ? "Requested"
-      : friendshipStatus === "accepted"
-      ? "Friends"
-      : "Add Friend";
+    friendState === "requested" ? "Requested" : friendState === "friends" ? "Friends" : "Add Friend";
 
   return (
     <div className="page">
@@ -210,7 +201,7 @@ function Profile() {
             />
           </div>
           <div className="profile-streak-card">
-            <StreakTree streak={streak} userId={profile?.id} layout="overlay" glow={streakLeveledUp} />
+            <StreakTree streak={streak} userId={profile?.id} glow={streakLeveledUp} />
           </div>
           <div className="profile-info-column">
             <div className="card profile-info-card">
@@ -344,14 +335,6 @@ function Profile() {
             <button className="profile-action" onClick={handleAddFriend} disabled={addFriendDisabled}>
               <UserPlus size={32} />
               <p>{addFriendLabel}</p>
-            </button>
-            <button className="profile-action">
-              <Mail size={32} />
-              <p>Send Message</p>
-            </button>
-            <button className="profile-action">
-              <Bell size={32} />
-              <p>Ping</p>
             </button>
           </div>
         )}

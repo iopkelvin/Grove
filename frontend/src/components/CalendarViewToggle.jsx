@@ -1,6 +1,7 @@
 const views = [
   { id: "month", label: "Month View" },
   { id: "week", label: "Week View" },
+  { id: "day", label: "Day View" },
 ];
 
 export default function CalendarViewToggle({ view, onChange }) {

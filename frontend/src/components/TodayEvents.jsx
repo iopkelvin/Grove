@@ -1,14 +1,10 @@
-import { useUser } from "../context/UserContext";
-import { useTasks } from "../hooks/useTasks";
 import EventCard from "./EventCard";
 
 function todayISO() {
   return new Date().toISOString().slice(0, 10);
 }
 
-export default function TodayEvents() {
-  const { session } = useUser();
-  const { tasks, loading } = useTasks(session?.user?.id);
+export default function TodayEvents({ tasks, loading }) {
   const today = todayISO();
 
   const relevant = tasks.filter(
