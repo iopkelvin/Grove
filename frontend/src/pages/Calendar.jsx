@@ -24,7 +24,7 @@ function isCurrentScope(view, anchorDate) {
 
 function Calendar() {
   const { session } = useUser();
-  const { tasks } = useTasks(session?.user?.id);
+  const { tasks, loading } = useTasks(session?.user?.id);
   const [view, setView] = useState("week");
   const [anchorDate, setAnchorDate] = useState(new Date());
 
@@ -63,7 +63,7 @@ function Calendar() {
           )}
         </div>
         <div className="calendar-sidebar">
-          <TodayEvents />
+          <TodayEvents tasks={tasks} loading={loading} />
         </div>
       </div>
     </div>
