@@ -81,6 +81,13 @@ def update_wallpaper(room, wallpaper_url):
     return room
 
 
+def update_setting(room, setting):
+    room.setting = setting
+    room.wallpaper_url = None
+    db.session.commit()
+    return room
+
+
 def list_messages(room, after_id=None):
     """Messages for the room, oldest first. With `after_id`, returns only
     messages newer than it (for polling just what's new); without it,

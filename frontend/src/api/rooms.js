@@ -15,6 +15,8 @@ const ROOM_SETTINGS = {
   },
 };
 
+export const ROOM_SETTING_KEYS = Object.keys(ROOM_SETTINGS);
+
 function settingAssets(setting) {
   return ROOM_SETTINGS[setting] || ROOM_SETTINGS.campsite;
 }
@@ -65,6 +67,18 @@ export async function setRoomWallpaper(roomId, wallpaperUrl) {
     body: JSON.stringify({ wallpaper_url: wallpaperUrl }),
   });
   if (!res.ok) throw new Error("Could not update room wallpaper");
+  return res.json();
+}
+
+// Also clears any custom wallpaper server-side — a new setting means a new
+// default background, so a leftover custom image from the old one would
+// otherwise silently keep showing instead.
+export async function setRoomSetting(roomId, setting) {
+  const res = await apiFetch(`/api/rooms/${roomId}`, {
+    method: "PATCH",
+    body: JSON.stringify({ setting }),
+  });
+  if (!res.ok) throw new Error("Could not change the room background");
   return res.json();
 }
 

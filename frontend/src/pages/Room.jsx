@@ -20,6 +20,8 @@ import {
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
+  setRoomSetting,
+  ROOM_SETTING_KEYS,
   getRoomMessages,
   sendRoomMessage,
 } from "../api/rooms";
@@ -115,6 +117,10 @@ export default function Room() {
     const audio = audioRef.current;
     if (!audio) return;
     if (musicEnabled) {
+      // .load() picks up the new <audio src> when the setting (and so the
+      // ambient track) changes — browsers don't reliably do this on their
+      // own from a src-attribute change alone.
+      audio.load();
       // Autoplay needs a real user gesture; flip the toggle back off
       // instead of claiming to play when the browser blocked it.
       audio.play().catch(() => setMusicEnabled(false));
@@ -181,6 +187,16 @@ export default function Room() {
       setMessageInput("");
     } catch (error) {
       setChatError(error.message);
+    }
+  }
+
+  async function handleChangeSetting(setting) {
+    if (setting === room.setting) return;
+    setWallpaperError("");
+    try {
+      setRoom(await setRoomSetting(room.id, setting));
+    } catch {
+      setWallpaperError("Could not change the room background. Please try again.");
     }
   }
 
@@ -251,6 +267,18 @@ export default function Room() {
                 </button>
                 {wallpaperPanelOpen && (
                   <div className="study-wallpaper-panel">
+                    <div className="study-wallpaper-settings">
+                      {ROOM_SETTING_KEYS.map((key) => (
+                        <button
+                          key={key}
+                          type="button"
+                          className={`study-wallpaper-setting ${room.setting === key ? "is-active" : ""}`}
+                          onClick={() => handleChangeSetting(key)}
+                        >
+                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                        </button>
+                      ))}
+                    </div>
                     <label className="study-wallpaper-upload">
                       {uploadingWallpaper ? "Uploading…" : "Upload a custom background"}
                       <input

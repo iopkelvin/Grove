@@ -54,6 +54,7 @@ FIELD_LIMITS = {
     "body": 500,
 }
 TAG_LIMIT = 40
+ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "library"}
 
 
 def over_length(data):
@@ -223,9 +224,8 @@ def create_room():
     if problem:
         return jsonify({"error": problem}), 400
 
-    allowed_settings = {"campsite", "mars", "library"}
     setting = data.get("setting", "campsite")
-    if setting not in allowed_settings:
+    if setting not in ALLOWED_ROOM_SETTINGS:
         return jsonify({"error": "Unknown room setting"}), 400
 
     try:
@@ -262,15 +262,24 @@ def update_room(room_id):
         return jsonify({"error": "Room not found"}), 404
 
     data = request.json or {}
-    if "wallpaper_url" not in data:
-        return jsonify({"error": "Nothing to update"}), 400
 
-    problem = over_length(data)
-    if problem:
-        return jsonify({"error": problem}), 400
+    # Switching setting changes the room's whole look (and ambient sound,
+    # on the frontend) — any custom wallpaper belonged to the old setting,
+    # so update_setting() clears it rather than leaving a mismatched image.
+    if "setting" in data:
+        if data["setting"] not in ALLOWED_ROOM_SETTINGS:
+            return jsonify({"error": "Unknown room setting"}), 400
+        room = room_service.update_setting(room, data["setting"])
+        return jsonify(room.to_dict()), 200
 
-    room = room_service.update_wallpaper(room, data["wallpaper_url"])
-    return jsonify(room.to_dict()), 200
+    if "wallpaper_url" in data:
+        problem = over_length(data)
+        if problem:
+            return jsonify({"error": problem}), 400
+        room = room_service.update_wallpaper(room, data["wallpaper_url"])
+        return jsonify(room.to_dict()), 200
+
+    return jsonify({"error": "Nothing to update"}), 400
 
 
 @app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
