@@ -251,9 +251,7 @@ def get_room(room_id):
     room = db.session.get(Room, room_id)
     if not room:
         return jsonify({"error": "Room not found"}), 404
-    data = room.to_dict()
-    data["active_focusers"] = room_service.count_active_focusers(room)
-    return jsonify(data), 200
+    return jsonify(room.to_dict()), 200
 
 
 @app.route("/api/rooms/<int:room_id>", methods=["PATCH"])
@@ -284,32 +282,6 @@ def visit_room(room_id):
     user = user_service.find_by_supabase_id(g.supabase_id)
     room_service.record_visit(user, room)
     return jsonify(user.to_dict()), 200
-
-
-# Presence for the "shared room ember". POST reports "I'm still focusing"
-# (a client with its local timer running pings this every few seconds);
-# GET just reads the current count, for a client that's paused and only
-# wants to watch everyone else's ember glow without joining it.
-@app.route("/api/rooms/<int:room_id>/focus-ping", methods=["GET"])
-@require_auth
-def get_room_focus(room_id):
-    room = db.session.get(Room, room_id)
-    if not room:
-        return jsonify({"error": "Room not found"}), 404
-    return jsonify({"active_focusers": room_service.count_active_focusers(room)}), 200
-
-
-@app.route("/api/rooms/<int:room_id>/focus-ping", methods=["POST"])
-@require_auth
-def ping_room_focus(room_id):
-    room = db.session.get(Room, room_id)
-    if not room:
-        return jsonify({"error": "Room not found"}), 404
-    user = user_service.find_by_supabase_id(g.supabase_id)
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    active_focusers = room_service.ping_focus(room, user)
-    return jsonify({"active_focusers": active_focusers}), 200
 
 
 @app.route("/api/rooms/<int:room_id>/messages", methods=["GET"])

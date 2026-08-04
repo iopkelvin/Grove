@@ -6,6 +6,7 @@ import {
   Music,
   Pause,
   Play,
+  RotateCcw,
   Send,
   Volume2,
   VolumeX,
@@ -16,8 +17,6 @@ import { uploadRoomWallpaper } from "../lib/uploadImage";
 import {
   getRoom,
   visitRoom,
-  getRoomFocusCount,
-  pingRoomFocus,
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
@@ -35,7 +34,6 @@ const MEMBER_POSITIONS = [
   { left: "76%", top: "61%" },
 ];
 
-const FOCUS_PING_INTERVAL_MS = 8000;
 const CHAT_POLL_INTERVAL_MS = 4000;
 const MAX_DISPLAYED_MESSAGES = 100;
 
@@ -45,16 +43,10 @@ function isRealRoomId(id) {
   return /^\d+$/.test(String(id));
 }
 
-// Dim-but-visible even with nobody focusing, brighter with each person
-// added, capped so it doesn't need unbounded headroom in the CSS.
-function emberIntensity(activeFocusers) {
-  return Math.min(1, 0.15 + activeFocusers * 0.3);
-}
-
-function emberLabel(activeFocusers) {
-  if (activeFocusers <= 0) return "No one's focusing here right now";
-  if (activeFocusers === 1) return "1 person focusing here";
-  return `${activeFocusers} people focusing here`;
+function formatTime(totalSeconds) {
+  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${minutes}:${seconds}`;
 }
 
 
@@ -64,10 +56,10 @@ export default function Room() {
   const { profile } = useUser();
   const [room, setRoom] = useState(location.state?.room || null);
   const [loadError, setLoadError] = useState("");
-  const [focusing, setFocusing] = useState(true);
+  const [running, setRunning] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(location.state?.room?.music_enabled ?? true);
   const [volume, setVolume] = useState(0.5);
-  const [activeFocusers, setActiveFocusers] = useState(room?.active_focusers ?? 0);
+  const [secondsRemaining, setSecondsRemaining] = useState((room?.focus_minutes || 50) * 60);
   const audioRef = useRef(null);
 
   const [wallpaperPanelOpen, setWallpaperPanelOpen] = useState(false);
@@ -94,12 +86,7 @@ export default function Room() {
     }
 
     if (isRealRoomId(roomId)) {
-      getRoom(roomId)
-        .then((loaded) => {
-          setRoom(loaded);
-          setActiveFocusers(loaded.active_focusers ?? 0);
-        })
-        .catch(() => setLoadError("This room couldn't be loaded."));
+      getRoom(roomId).then(setRoom).catch(() => setLoadError("This room couldn't be loaded."));
     } else {
       setLoadError("This room couldn't be found.");
     }
@@ -117,6 +104,7 @@ export default function Room() {
   useEffect(() => {
     if (!room) return;
     setMusicEnabled(room.music_enabled ?? true);
+    setSecondsRemaining((room.focus_minutes || 50) * 60);
   }, [room?.id]);
 
   useEffect(() => {
@@ -135,30 +123,13 @@ export default function Room() {
     }
   }, [musicEnabled, room?.setting]);
 
-  // Presence heartbeat for the shared ember: while focusing, report our
-  // own presence (which also returns the fresh collective count); while
-  // paused, just read the count so the ember still reflects everyone
-  // else without counting us. Preview rooms (no real id yet) skip this.
   useEffect(() => {
-    if (!room || !isRealRoomId(room.id)) return undefined;
-
-    let cancelled = false;
-    async function tick() {
-      try {
-        const result = focusing ? await pingRoomFocus(room.id) : await getRoomFocusCount(room.id);
-        if (!cancelled) setActiveFocusers(result.active_focusers ?? 0);
-      } catch (error) {
-        console.error("Failed to update room focus presence:", error);
-      }
-    }
-
-    tick();
-    const interval = window.setInterval(tick, FOCUS_PING_INTERVAL_MS);
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
-  }, [room?.id, focusing]);
+    if (!running || secondsRemaining <= 0) return undefined;
+    const timer = window.setInterval(() => {
+      setSecondsRemaining((current) => Math.max(0, current - 1));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [running, secondsRemaining]);
 
   // Chat: load recent history once the panel is opened, then poll for
   // anything newer than the last message we've seen. Simple polling, not
@@ -342,22 +313,22 @@ export default function Room() {
             ))}
           </div>
 
-          <div
-            className="study-room-ember"
-            style={{ "--ember-intensity": emberIntensity(activeFocusers) }}
-            aria-hidden="true"
-          />
-
           <div className="study-timer-card">
             <div>
-              <small>Shared focus</small>
-              <strong>{emberLabel(activeFocusers)}</strong>
+              <small>Focus timer</small>
+              <strong>{formatTime(secondsRemaining)}</strong>
             </div>
+            <button onClick={() => setRunning((value) => !value)} aria-label={running ? "Pause timer" : "Start timer"}>
+              {running ? <Pause size={18} /> : <Play size={18} />}
+            </button>
             <button
-              onClick={() => setFocusing((value) => !value)}
-              aria-label={focusing ? "Pause focusing" : "Resume focusing"}
+              onClick={() => {
+                setSecondsRemaining((room.focus_minutes || 50) * 60);
+                setRunning(false);
+              }}
+              aria-label="Reset timer"
             >
-              {focusing ? <Pause size={18} /> : <Play size={18} />}
+              <RotateCcw size={17} />
             </button>
           </div>
 

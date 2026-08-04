@@ -78,29 +78,6 @@ class RoomMembership(db.Model):
         return f"<RoomMembership user={self.user_id} room={self.room_id}>"
 
 
-class RoomFocusPing(db.Model):
-    """Presence heartbeat, not a session log: one row per (room, user),
-    upserted every time the client reports it's still focusing. Drives the
-    "shared room ember" — how many people are focusing together right now
-    (api/services/room.py:count_active_focusers) — by checking recency
-    rather than requiring an explicit "I stopped" call, so the ember fades
-    on its own if a tab closes or the timer gets paused."""
-
-    __tablename__ = "room_focus_pings"
-
-    id = db.Column(db.Integer, primary_key=True)
-    room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
-    last_ping_at = db.Column(db.DateTime, default=utcnow, nullable=False)
-
-    __table_args__ = (
-        db.UniqueConstraint("room_id", "user_id", name="uq_room_focus_ping"),
-    )
-
-    def __repr__(self):
-        return f"<RoomFocusPing user={self.user_id} room={self.room_id}>"
-
-
 class RoomMessage(db.Model):
     __tablename__ = "room_messages"
 

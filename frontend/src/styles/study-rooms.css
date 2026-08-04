@@ -607,23 +607,7 @@
   box-shadow: 0 9px 20px rgba(0, 0, 0, 0.25);
   place-items: center;
 }
-/* SHARED EMBER, FOCUS CARD, AND MUSIC NOTE */
-.study-room-ember {
-  position: absolute;
-  left: 18%;
-  bottom: 8%;
-  width: clamp(140px, 22vw, 260px);
-  height: clamp(140px, 22vw, 260px);
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--color-streak-accent) 0%, transparent 70%);
-  /* stylelint-disable-next-line custom-property-pattern -- component-scoped
-     brightness set inline per render, not a design token */
-  opacity: var(--ember-intensity, 0.15);
-  filter: blur(6px);
-  transition: opacity 600ms ease;
-  pointer-events: none;
-}
-
+/* TIMER CARD AND MUSIC NOTE */
 .study-timer-card {
   position: absolute;
   bottom: 20px;
@@ -641,8 +625,7 @@
 
 .study-timer-card div {
   display: flex;
-  min-width: 160px;
-  max-width: 220px;
+  min-width: 105px;
   flex-direction: column;
 }
 
@@ -651,9 +634,7 @@
 }
 
 .study-timer-card strong {
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1.3;
+  font-size: 22px;
 }
 
 .study-timer-card button {

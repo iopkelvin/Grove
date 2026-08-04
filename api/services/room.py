@@ -1,26 +1,19 @@
 """
 Grove — Room service.
 
-Data layer for study rooms: listing, creation, and shared-focus presence.
-Routes in app.py keep the validation that produces specific 400s; everything
-that touches the database lives here, same split as api/services/task.py.
+Data layer for study rooms: listing, creation, and chat. Routes in app.py
+keep the validation that produces specific 400s; everything that touches
+the database lives here, same split as api/services/task.py.
 """
-
-from datetime import timedelta
 
 from sqlalchemy.orm import selectinload
 
 from api.config.database import db
-from api.models.room import Room, RoomMembership, RoomFocusPing, RoomMessage
+from api.models.room import Room, RoomMembership, RoomMessage
 from api.models.user import User
 from api.utils import utcnow
 
 MESSAGE_PAGE_SIZE = 50
-
-# A ping older than this no longer counts as "currently focusing" — a bit
-# longer than the client's expected ping interval so one missed beat (a
-# slow network tick) doesn't make the ember flicker.
-ACTIVE_FOCUS_WINDOW = timedelta(seconds=20)
 
 
 def list_visible(user=None):
@@ -109,23 +102,3 @@ def send_message(room, user, body):
     db.session.add(message)
     db.session.commit()
     return message
-
-
-def count_active_focusers(room):
-    cutoff = utcnow() - ACTIVE_FOCUS_WINDOW
-    return RoomFocusPing.query.filter(
-        RoomFocusPing.room_id == room.id,
-        RoomFocusPing.last_ping_at >= cutoff,
-    ).count()
-
-
-def ping_focus(room, user):
-    """Upserts `user`'s presence heartbeat for `room` and returns the
-    resulting count of people currently focusing together."""
-    ping = RoomFocusPing.query.filter_by(room_id=room.id, user_id=user.id).first()
-    if ping:
-        ping.last_ping_at = utcnow()
-    else:
-        db.session.add(RoomFocusPing(room_id=room.id, user_id=user.id, last_ping_at=utcnow()))
-    db.session.commit()
-    return count_active_focusers(room)

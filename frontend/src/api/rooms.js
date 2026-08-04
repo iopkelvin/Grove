@@ -59,22 +59,6 @@ export async function visitRoom(roomId) {
   return apiFetch(`/api/rooms/${roomId}/visit`, { method: "POST" });
 }
 
-// Presence for the shared room ember. GET just reads the current count
-// (for a paused viewer who isn't contributing); POST reports "I'm still
-// focusing" and returns the resulting count — call every few seconds
-// while the local focus timer is running.
-export async function getRoomFocusCount(roomId) {
-  const res = await apiFetch(`/api/rooms/${roomId}/focus-ping`);
-  if (!res.ok) throw new Error("Could not read focus presence");
-  return res.json();
-}
-
-export async function pingRoomFocus(roomId) {
-  const res = await apiFetch(`/api/rooms/${roomId}/focus-ping`, { method: "POST" });
-  if (!res.ok) throw new Error("Could not send focus ping");
-  return res.json();
-}
-
 export async function setRoomWallpaper(roomId, wallpaperUrl) {
   const res = await apiFetch(`/api/rooms/${roomId}`, {
     method: "PATCH",
