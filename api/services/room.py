@@ -88,6 +88,19 @@ def update_setting(room, setting):
     return room
 
 
+def delete(room):
+    # Messages have no cascade relationship to Room, so delete them first.
+    RoomMessage.query.filter_by(room_id=room.id).delete()
+    db.session.delete(room)
+    db.session.commit()
+
+
+def remove_member(room, user_id):
+    RoomMembership.query.filter_by(room_id=room.id, user_id=user_id).delete()
+    db.session.commit()
+    return room
+
+
 def invite_members(room, user_ids):
     """Adds RoomMembership rows for the given user ids, skipping anyone
     already a member. Non-numeric ids are silently skipped, same as
