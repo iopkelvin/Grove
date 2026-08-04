@@ -50,8 +50,11 @@ FIELD_LIMITS = {
     "display_name": 80,
     "avatar_url": 500,
     "banner_url": 500,
+    "wallpaper_url": 500,
+    "body": 500,
 }
 TAG_LIMIT = 40
+ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "library"}
 
 
 def over_length(data):
@@ -196,8 +199,7 @@ def search_users():
 
 
 # Room routes
-# Global room + rooms the user hosts or is a member of. (The Lobby page
-# also shows its own placeholder rooms so a fresh database isn't empty.)
+# Global room + rooms the user hosts or is a member of.
 @app.route("/api/rooms", methods=["GET"])
 @require_auth
 def get_rooms():
@@ -222,9 +224,8 @@ def create_room():
     if problem:
         return jsonify({"error": problem}), 400
 
-    allowed_settings = {"campsite", "mars", "library"}
     setting = data.get("setting", "campsite")
-    if setting not in allowed_settings:
+    if setting not in ALLOWED_ROOM_SETTINGS:
         return jsonify({"error": "Unknown room setting"}), 400
 
     try:
@@ -253,6 +254,52 @@ def get_room(room_id):
     return jsonify(room.to_dict()), 200
 
 
+@app.route("/api/rooms/<int:room_id>", methods=["PATCH"])
+@require_auth
+def update_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    data = request.json or {}
+
+    # Switching setting changes the room's whole look (and ambient sound,
+    # on the frontend) — any custom wallpaper belonged to the old setting,
+    # so update_setting() clears it rather than leaving a mismatched image.
+    if "setting" in data:
+        if data["setting"] not in ALLOWED_ROOM_SETTINGS:
+            return jsonify({"error": "Unknown room setting"}), 400
+        room = room_service.update_setting(room, data["setting"])
+        return jsonify(room.to_dict()), 200
+
+    if "wallpaper_url" in data:
+        problem = over_length(data)
+        if problem:
+            return jsonify({"error": problem}), 400
+        room = room_service.update_wallpaper(room, data["wallpaper_url"])
+        return jsonify(room.to_dict()), 200
+
+    return jsonify({"error": "Nothing to update"}), 400
+
+
+@app.route("/api/rooms/<int:room_id>/invite", methods=["POST"])
+@require_auth
+def invite_room_members(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user.id != room.host_id:
+        return jsonify({"error": "Only the host can invite people to this room"}), 403
+
+    user_ids = (request.json or {}).get("user_ids", [])
+    room = room_service.invite_members(room, user_ids)
+    return jsonify(room.to_dict()), 200
+
+
 @app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
 @require_auth
 def visit_room(room_id):
@@ -262,6 +309,41 @@ def visit_room(room_id):
     user = user_service.find_by_supabase_id(g.supabase_id)
     room_service.record_visit(user, room)
     return jsonify(user.to_dict()), 200
+
+
+@app.route("/api/rooms/<int:room_id>/messages", methods=["GET"])
+@require_auth
+def get_room_messages(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    after_id = request.args.get("after_id", type=int)
+    messages = room_service.list_messages(room, after_id=after_id)
+    return jsonify([message.to_dict() for message in messages]), 200
+
+
+@app.route("/api/rooms/<int:room_id>/messages", methods=["POST"])
+@require_auth
+def create_room_message(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    data = request.json or {}
+    body = (data.get("body") or "").strip()
+    if not body:
+        return jsonify({"error": "Message body is required"}), 400
+    problem = over_length({"body": body})
+    if problem:
+        return jsonify({"error": problem}), 400
+
+    message = room_service.send_message(room, user, body)
+    return jsonify(message.to_dict()), 201
 
 
 # Task routes

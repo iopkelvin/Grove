@@ -65,23 +65,24 @@ body {
 }
 
 :root {
-  /* ── Study rooms / tree ── */
-  --color-surface-soft: #E7EAE4;
-  --color-surface-warm: #ECE9DF;
-  --color-surface-strong: #C7D2C9;
-  --color-surface-white: #FFFDF7;
-  --color-study-ink: #17342C;
-  --color-study-muted: #66736C;
-  --color-study-line: #BCC8BF;
+  /* ── Study room scene (the night-scene overlay/background pixel-art
+     look — shared with the tree page, not a parallel design system) ── */
   --color-study-online: #2E6D50;
-  --color-study-task: #C7E7F4;
-  --color-study-points: #C9F2CF;
   --color-study-scene: #21142B;
   --color-study-overlay: rgba(15, 20, 17, 0.56);
   --color-study-overlay-soft: rgba(255, 253, 247, 0.84);
   --color-tree-night: #142B4B;
   --color-tree-card: rgba(244, 243, 238, 0.90);
   --color-tree-water: #7EB9DE;
+
+  /* ── Tree page / onboarding tour surfaces (Rooms & Lobby no longer use
+     these — they were migrated onto the shared card/text tokens above) ── */
+  --color-surface-soft: #E7EAE4;
+  --color-surface-strong: #C7D2C9;
+  --color-surface-white: #FFFDF7;
+  --color-study-ink: #17342C;
+  --color-study-muted: #66736C;
+  --color-study-line: #BCC8BF;
 }
 
 /* Dark theme — same tokens, dark values. Toggled via <html data-theme="dark">. */
@@ -112,19 +113,18 @@ body {
   --color-overlay-background: rgba(0, 0, 0, 0.5);
   --color-divider: rgba(255, 255, 255, 0.10);
 
-  /* ── Study rooms / tree: surfaces → dark, ink → light ── */
+  /* ── Study room scene ── */
+  --color-study-online: #4FA97E;
+  --color-study-overlay-soft: rgba(20, 26, 22, 0.72);
+  --color-tree-card:          rgba(30, 33, 28, 0.90);
+
+  /* ── Tree page / onboarding tour surfaces ── */
   --color-surface-white:  #1F241F;
   --color-surface-soft:   #232823;
-  --color-surface-warm:   #262520;
   --color-surface-strong: #2C332D;
   --color-study-ink:   #E8EDE6;
   --color-study-muted: #9CA79E;
   --color-study-line: #38403A;
-  --color-study-points: #2C4A33;
-  --color-study-task:   #294A54;
-  --color-study-online: #4FA97E;
-  --color-study-overlay-soft: rgba(20, 26, 22, 0.72);
-  --color-tree-card:          rgba(30, 33, 28, 0.90);
 
   /* Deliberately NOT overridden — already correct:
      --color-study-scene, --color-tree-night   night backgrounds

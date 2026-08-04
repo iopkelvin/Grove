@@ -5,70 +5,8 @@ import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, getRooms } from "../api/rooms";
+import { createRoom, getRooms, roomImageFor } from "../api/rooms";
 import { firstNameOf } from "../lib/format";
-
-// Shown only until the database has seeded public rooms and finished
-// artwork for every map — keeps the lobby usable on a fresh DB.
-const PLACEHOLDER_ROOMS = [
-  {
-    id: "campsite-61c",
-    name: "61C Study Room",
-    course: "CS 61C",
-    setting: "campsite",
-    image: "/assets/Study-Room.png",
-    music_enabled: true,
-    chat_enabled: true,
-    focus_minutes: 50,
-    members: [
-      { id: "placeholder-jose", display_name: "Jose" },
-      { id: "placeholder-jack", display_name: "Jack" },
-      { id: "placeholder-jeff", display_name: "Jeff" },
-      { id: "placeholder-john", display_name: "John" },
-    ],
-  },
-  {
-    id: "mars-160",
-    name: "CS 160 Mars Lab",
-    course: "CS 160",
-    setting: "mars",
-    image: "/assets/mars-placeholder.svg",
-    music_enabled: false,
-    chat_enabled: true,
-    focus_minutes: 25,
-    members: [
-      { id: "placeholder-amy", display_name: "Amy" },
-      { id: "placeholder-kelvin", display_name: "Kelvin" },
-    ],
-  },
-  {
-    id: "library-89",
-    name: "Physics 89 Library",
-    course: "PHYS 89",
-    setting: "library",
-    image: "/assets/library-placeholder.svg",
-    music_enabled: true,
-    chat_enabled: false,
-    focus_minutes: 50,
-    members: [{ id: "placeholder-mia", display_name: "Mia" }],
-  },
-];
-
-// Shown only when the signed-in account has no accepted friends yet.
-const PLACEHOLDER_FRIENDS = [
-  { id: "placeholder-friend-1", display_name: "Jeff", username: "jeff", is_online: true },
-  { id: "placeholder-friend-2", display_name: "John", username: "john", is_online: false },
-  { id: "placeholder-friend-3", display_name: "Jack", username: "jack", is_online: true },
-  { id: "placeholder-friend-4", display_name: "Julia", username: "julia", is_online: false },
-];
-
-// Shown only while the API is unavailable or before a user creates their
-// first task.
-const PLACEHOLDER_TASKS = [
-  { id: "placeholder-task-1", title: "Finish your first Grove task", done: false },
-  { id: "placeholder-task-2", title: "Invite a friend to study", done: false },
-  { id: "placeholder-task-3", title: "Water your tree", done: false },
-];
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [name, setName] = useState("My Study Room");
@@ -103,10 +41,7 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
       music_enabled: musicEnabled,
       chat_enabled: chatEnabled,
       focus_minutes: focusMinutes,
-      invite_user_ids: selectedFriendIds.filter((id) => Number.isInteger(id)),
-      selected_placeholder_friends: friends.filter((friend) =>
-        selectedFriendIds.includes(friend.id)
-      ),
+      invite_user_ids: selectedFriendIds,
     });
   }
 
@@ -155,12 +90,16 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
 
           <fieldset className="study-friend-picker">
             <legend>Invite friends</legend>
-            <input
-              type="search"
-              placeholder="Search friends"
-              value={friendSearch}
-              onChange={(event) => setFriendSearch(event.target.value)}
-            />
+            {friends.length === 0 ? (
+              <p>No friends yet — add some from the Friends page.</p>
+            ) : (
+              <input
+                type="search"
+                placeholder="Search friends"
+                value={friendSearch}
+                onChange={(event) => setFriendSearch(event.target.value)}
+              />
+            )}
             <div className="study-friend-options">
               {filteredFriends.map((friend) => (
                 <label className="study-friend-option" key={friend.id}>
@@ -214,6 +153,7 @@ export default function Lobby() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     const supabaseId = session?.user?.id;
@@ -229,12 +169,12 @@ export default function Lobby() {
       if (friendResult.status === "fulfilled") {
         setFriends(friendResult.value.map((entry) => entry.user));
       }
+      if ([roomResult, taskResult, friendResult].some((result) => result.status === "rejected")) {
+        setLoadError("Some content couldn't load. Try refreshing the page.");
+      }
     });
   }, [session?.user?.id]);
 
-  const displayedRooms = rooms.length ? rooms : PLACEHOLDER_ROOMS;
-  const displayedTasks = tasks.length ? tasks : PLACEHOLDER_TASKS;
-  const displayedFriends = friends.length ? friends : PLACEHOLDER_FRIENDS;
   const firstName = firstNameOf(profile);
 
   // Router state carries `room` on navigation, but a page refresh loses it —
@@ -250,14 +190,6 @@ export default function Lobby() {
 
     try {
       let room;
-      // .every() on an empty array is vacuously true, so this only counts as
-      // "placeholder-only" when at least one friend was actually selected —
-      // otherwise a real room with zero invitees would wrongly get treated
-      // as a placeholder-preview room below.
-      const hasOnlyPlaceholderFriends =
-        formValues.selected_placeholder_friends.length > 0 &&
-        formValues.selected_placeholder_friends.every((friend) => typeof friend.id !== "number");
-
       if (session?.user?.id) {
         room = await createRoom({
           host_supabase_id: session.user.id,
@@ -268,18 +200,12 @@ export default function Lobby() {
           focus_minutes: formValues.focus_minutes,
           invite_user_ids: formValues.invite_user_ids,
         });
-      }
-
-      // PLACEHOLDER MEMBERS: only included in the local preview when a fresh
-      // account has no database friends yet. Real room members come from the API.
-      if (!room || (hasOnlyPlaceholderFriends && room.members?.length <= 1)) {
+      } else {
+        // No session — preview the room locally instead of hitting the API.
         room = {
           ...formValues,
-          id: room?.id ?? `preview-${Date.now()}`,
-          members: [
-            { id: profile?.id || "current-user", display_name: profile?.display_name || firstName },
-            ...formValues.selected_placeholder_friends,
-          ],
+          id: `preview-${Date.now()}`,
+          members: [{ id: profile?.id || "current-user", display_name: profile?.display_name || firstName }],
         };
       }
 
@@ -302,6 +228,8 @@ export default function Lobby() {
           <p>Choose a room, invite friends, and make a little progress together.</p>
         </header>
 
+        {loadError && <p className="study-form-error">{loadError}</p>}
+
         <section className="study-lobby-grid">
           <div className="study-room-section">
             <div className="study-section-heading">
@@ -312,27 +240,22 @@ export default function Lobby() {
               <span>Scroll to explore</span>
             </div>
 
-            <div className="study-room-wheel" aria-label="Available study rooms">
-              {displayedRooms.map((room) => {
-                const image = room.image || (
-                  room.setting === "mars"
-                    ? "/assets/mars-placeholder.svg"
-                    : room.setting === "library"
-                      ? "/assets/library-placeholder.svg"
-                      : "/assets/Study-Room.png"
-                );
-                return (
+            {rooms.length === 0 ? (
+              <p>No study rooms yet — create one below to get started.</p>
+            ) : (
+              <div className="study-room-wheel" aria-label="Available study rooms">
+                {rooms.map((room) => (
                   <button className="study-room-card" key={room.id} onClick={() => openRoom(room)}>
-                    <img src={image} alt="" />
+                    <img src={roomImageFor(room)} alt="" />
                     <span className="study-room-card-overlay">
                       <strong>{room.name}</strong>
                       <small>{room.population ?? room.members?.length ?? 0} studying</small>
                     </span>
                     <ChevronRight className="study-room-arrow" size={22} />
                   </button>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <aside className="study-task-section">
@@ -341,17 +264,21 @@ export default function Lobby() {
                 <p className="study-eyebrow">Your list</p>
                 <h2>Upcoming tasks</h2>
               </div>
-              <span>{displayedTasks.filter((task) => !task.done).length} remaining</span>
+              <span>{tasks.filter((task) => !task.done).length} remaining</span>
             </div>
-            <div className="study-task-scroll">
-              {displayedTasks.map((task) => (
-                <div className={`study-task-row ${task.done ? "is-complete" : ""}`} key={task.id}>
-                  <span className="study-task-dot" />
-                  <span>{task.title}</span>
-                  <strong>{task.done ? "Done" : "1 point"}</strong>
-                </div>
-              ))}
-            </div>
+            {tasks.length === 0 ? (
+              <p>No tasks yet.</p>
+            ) : (
+              <div className="study-task-scroll">
+                {tasks.map((task) => (
+                  <div className={`study-task-row ${task.done ? "is-complete" : ""}`} key={task.id}>
+                    <span className="study-task-dot" />
+                    <span>{task.title}</span>
+                    <strong>{task.done ? "Done" : "1 point"}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
           </aside>
 
           <section className="study-create-section">
@@ -362,17 +289,21 @@ export default function Lobby() {
               </div>
             </div>
             <p className="study-create-copy">Invite friends and choose a map, focus timer, music, and chat.</p>
-            <div className="study-friend-preview" aria-label="Friends available to invite">
-              {displayedFriends.map((friend) => (
-                <div className="study-friend-preview-row" key={friend.id}>
-                  <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                  <div>
-                    <strong>{friend.display_name || friend.username}</strong>
-                    <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+            {friends.length === 0 ? (
+              <p>No friends yet — add some from the Friends page to invite them here.</p>
+            ) : (
+              <div className="study-friend-preview" aria-label="Friends available to invite">
+                {friends.map((friend) => (
+                  <div className="study-friend-preview-row" key={friend.id}>
+                    <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
+                    <div>
+                      <strong>{friend.display_name || friend.username}</strong>
+                      <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
             <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
               <Plus size={20} /> Create a room
             </button>
@@ -382,7 +313,7 @@ export default function Lobby() {
 
       {showModal && (
         <CreateRoomModal
-          friends={displayedFriends}
+          friends={friends}
           onClose={() => setShowModal(false)}
           onCreate={handleCreateRoom}
           creating={creating}

@@ -30,6 +30,10 @@ class Room(db.Model):
     chat_enabled = db.Column(db.Boolean, default=True, nullable=False)
     focus_minutes = db.Column(db.Integer, default=50, nullable=False)
 
+    # A custom background the host uploaded; falls back to the setting's
+    # curated default art on the frontend when unset.
+    wallpaper_url = db.Column(db.String(500), nullable=True)
+
     memberships = db.relationship(
         "RoomMembership", back_populates="room", cascade="all, delete-orphan"
     )
@@ -44,18 +48,10 @@ class Room(db.Model):
             "music_enabled": self.music_enabled,
             "chat_enabled": self.chat_enabled,
             "focus_minutes": self.focus_minutes,
+            "wallpaper_url": self.wallpaper_url,
             "population": len(self.memberships),
             # avatars of everyone currently in the room, for co-presence
-            "members": [
-                {
-                    "id": membership.user.id,
-                    "username": membership.user.username,
-                    "display_name": membership.user.display_name,
-                    "avatar_url": membership.user.avatar_url,
-                    "is_online": membership.user.is_online,
-                }
-                for membership in self.memberships
-            ],
+            "members": [membership.user.to_summary_dict() for membership in self.memberships],
         }
 
     def __repr__(self):
@@ -80,3 +76,27 @@ class RoomMembership(db.Model):
 
     def __repr__(self):
         return f"<RoomMembership user={self.user_id} room={self.room_id}>"
+
+
+class RoomMessage(db.Model):
+    __tablename__ = "room_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    user = db.relationship("User")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "room_id": self.room_id,
+            "body": self.body,
+            "created_at": self.created_at.isoformat(),
+            "user": self.user.to_summary_dict(),
+        }
+
+    def __repr__(self):
+        return f"<RoomMessage user={self.user_id} room={self.room_id}>"
