@@ -88,6 +88,26 @@ def update_setting(room, setting):
     return room
 
 
+def invite_members(room, user_ids):
+    """Adds RoomMembership rows for the given user ids, skipping anyone
+    already a member. Non-numeric ids are silently skipped, same as
+    room creation."""
+    candidate_ids = set()
+    for raw_id in user_ids or []:
+        try:
+            candidate_ids.add(int(raw_id))
+        except (TypeError, ValueError):
+            continue
+
+    existing_ids = {row.user_id for row in RoomMembership.query.filter_by(room_id=room.id).all()}
+    new_ids = candidate_ids - existing_ids
+    if new_ids:
+        for member in User.query.filter(User.id.in_(new_ids)).all():
+            db.session.add(RoomMembership(user_id=member.id, room_id=room.id))
+        db.session.commit()
+    return room
+
+
 def list_messages(room, after_id=None):
     """Messages for the room, oldest first. With `after_id`, returns only
     messages newer than it (for polling just what's new); without it,

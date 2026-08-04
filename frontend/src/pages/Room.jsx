@@ -8,12 +8,14 @@ import {
   Play,
   RotateCcw,
   Send,
+  UserPlus,
   Volume2,
   VolumeX,
 } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { uploadRoomWallpaper } from "../lib/uploadImage";
+import { getFriends } from "../api/friends";
 import {
   getRoom,
   visitRoom,
@@ -22,6 +24,7 @@ import {
   setRoomWallpaper,
   setRoomSetting,
   ROOM_SETTING_KEYS,
+  inviteRoomMembers,
   getRoomMessages,
   sendRoomMessage,
 } from "../api/rooms";
@@ -55,7 +58,7 @@ function formatTime(totalSeconds) {
 export default function Room() {
   const { roomId } = useParams();
   const location = useLocation();
-  const { profile } = useUser();
+  const { session, profile } = useUser();
   const [room, setRoom] = useState(location.state?.room || null);
   const [loadError, setLoadError] = useState("");
   const [running, setRunning] = useState(true);
@@ -73,6 +76,10 @@ export default function Room() {
   const [messageInput, setMessageInput] = useState("");
   const [chatError, setChatError] = useState("");
   const lastMessageIdRef = useRef(null);
+
+  const [invitePanelOpen, setInvitePanelOpen] = useState(false);
+  const [friends, setFriends] = useState([]);
+  const [inviteError, setInviteError] = useState("");
 
   useEffect(() => {
     if (room) return;
@@ -175,6 +182,13 @@ export default function Room() {
     };
   }, [room?.id, room?.chat_enabled, chatOpen]);
 
+  useEffect(() => {
+    if (!invitePanelOpen || !session?.user?.id) return;
+    getFriends(session.user.id, { status: "accepted" })
+      .then(setFriends)
+      .catch((error) => console.error("Failed to load friends:", error));
+  }, [invitePanelOpen, session?.user?.id]);
+
   async function handleSendMessage(event) {
     event.preventDefault();
     const body = messageInput.trim();
@@ -187,6 +201,15 @@ export default function Room() {
       setMessageInput("");
     } catch (error) {
       setChatError(error.message);
+    }
+  }
+
+  async function handleInvite(userId) {
+    setInviteError("");
+    try {
+      setRoom(await inviteRoomMembers(room.id, [userId]));
+    } catch (error) {
+      setInviteError(error.message);
     }
   }
 
@@ -230,12 +253,14 @@ export default function Room() {
   }
 
   const members = room.members || [];
+  const memberIds = new Set(members.map((member) => member.id));
+  const invitableFriends = friends.filter(({ user }) => !memberIds.has(user.id));
 
   const settingLabel = room.setting
     ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
     : "Campsite";
 
-  const canEditWallpaper = Boolean(room.host_id) && profile?.id === room.host_id;
+  const isHost = Boolean(room.host_id) && profile?.id === room.host_id;
 
   return (
     <div className="page study-room-page">
@@ -256,7 +281,40 @@ export default function Room() {
                 <MessageCircle size={18} /> Chat
               </button>
             )}
-            {canEditWallpaper && (
+            {isHost && (
+              <div className="study-invite-control">
+                <button
+                  className={`study-room-status ${invitePanelOpen ? "is-on" : ""}`}
+                  onClick={() => setInvitePanelOpen((value) => !value)}
+                  aria-label="Invite friends"
+                >
+                  <UserPlus size={18} /> Invite
+                </button>
+                {invitePanelOpen && (
+                  <div className="study-invite-panel">
+                    {invitableFriends.length === 0 ? (
+                      <p className="study-invite-empty">No friends to invite.</p>
+                    ) : (
+                      <div className="study-invite-list">
+                        {invitableFriends.map(({ user }) => (
+                          <button
+                            key={user.id}
+                            type="button"
+                            className="study-invite-option"
+                            onClick={() => handleInvite(user.id)}
+                          >
+                            <span className={`study-presence ${user.is_online ? "is-online" : ""}`} />
+                            {user.display_name || user.username}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {inviteError && <p className="study-form-error">{inviteError}</p>}
+                  </div>
+                )}
+              </div>
+            )}
+            {isHost && (
               <div className="study-wallpaper-control">
                 <button
                   className={`study-room-status ${wallpaperPanelOpen ? "is-on" : ""}`}

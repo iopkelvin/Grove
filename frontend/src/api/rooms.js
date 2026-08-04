@@ -82,6 +82,18 @@ export async function setRoomSetting(roomId, setting) {
   return res.json();
 }
 
+export async function inviteRoomMembers(roomId, userIds) {
+  const res = await apiFetch(`/api/rooms/${roomId}/invite`, {
+    method: "POST",
+    body: JSON.stringify({ user_ids: userIds }),
+  });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Could not invite friends");
+  }
+  return res.json();
+}
+
 export async function getRoomMessages(roomId, afterId) {
   const params = new URLSearchParams();
   if (afterId) params.set("after_id", afterId);

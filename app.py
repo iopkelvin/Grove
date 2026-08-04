@@ -282,6 +282,24 @@ def update_room(room_id):
     return jsonify({"error": "Nothing to update"}), 400
 
 
+@app.route("/api/rooms/<int:room_id>/invite", methods=["POST"])
+@require_auth
+def invite_room_members(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user.id != room.host_id:
+        return jsonify({"error": "Only the host can invite people to this room"}), 403
+
+    user_ids = (request.json or {}).get("user_ids", [])
+    room = room_service.invite_members(room, user_ids)
+    return jsonify(room.to_dict()), 200
+
+
 @app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
 @require_auth
 def visit_room(room_id):
