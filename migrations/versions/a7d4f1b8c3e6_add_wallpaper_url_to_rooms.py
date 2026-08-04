@@ -1,7 +1,7 @@
 """add wallpaper_url to rooms
 
 Revision ID: a7d4f1b8c3e6
-Revises: f3a8c2e6b9d4
+Revises: e9a1c5f7b3d0
 Create Date: 2026-08-03
 """
 
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 revision = "a7d4f1b8c3e6"
-down_revision = "f3a8c2e6b9d4"
+down_revision = "e9a1c5f7b3d0"
 branch_labels = None
 depends_on = None
 
