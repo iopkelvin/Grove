@@ -1,7 +1,7 @@
 /* PAGE TEXT, SHELLS, HEADINGS */
 .study-lobby-page,
 .study-room-page {
-  color: var(--color-study-ink);
+  color: var(--color-text-primary);
 }
 
 .study-lobby-shell,
@@ -18,7 +18,7 @@
 
 .study-eyebrow {
   margin: 0 0 7px;
-  color: var(--color-study-muted);
+  color: var(--color-text-secondary);
   font-family: var(--font-family-base);
   font-size: 14px;
   font-weight: 600;
@@ -29,7 +29,7 @@
 .study-lobby-header h1,
 .study-room-header h1 {
   margin: 0;
-  color: var(--color-study-ink);
+  color: var(--color-title-text);
   font-family: var(--font-family-base);
   font-size: clamp(36px, 5vw, 58px);
   font-weight: 400;
@@ -38,7 +38,7 @@
 
 .study-lobby-header > p:last-child {
   margin: 15px 0 0;
-  color: var(--color-study-muted);
+  color: var(--color-text-secondary);
   font-size: 18px;
 }
 /* LOBBY GRID, CARDS, AND SECTION HEADINGS */
@@ -53,9 +53,9 @@
 .study-task-section,
 .study-create-section {
   padding: 26px;
-  border: 1px solid var(--color-study-line);
+  border: 1px solid var(--color-card-border);
   border-radius: 24px;
-  background-color: var(--color-surface-white);
+  background-color: var(--color-card-background);
   box-shadow: 0 18px 45px rgba(23, 52, 44, 0.08);
 }
 
@@ -91,14 +91,14 @@
 .study-section-heading h2,
 .study-modal h2 {
   margin: 0;
-  color: var(--color-study-ink);
+  color: var(--color-title-text);
   font-family: var(--font-family-base);
   font-size: 28px;
   font-weight: 400;
 }
 
 .study-section-heading > span {
-  color: var(--color-study-muted);
+  color: var(--color-text-secondary);
   font-size: 13px;
   white-space: nowrap;
 }
@@ -120,9 +120,9 @@
   min-height: 300px;
   padding: 0;
   overflow: hidden;
-  border: 1px solid var(--color-study-line);
-  border-radius: 20px;
-  background-color: var(--color-surface-strong);
+  border: 1px solid var(--color-card-border);
+  border-radius: 16px;
+  background-color: var(--color-card-accent-background);
   cursor: pointer;
   scroll-snap-align: start;
   text-align: left;
@@ -172,7 +172,7 @@
   padding: 5px;
   border-radius: 50%;
   background-color: var(--color-study-overlay-soft);
-  color: var(--color-study-ink);
+  color: var(--color-text-primary);
 }
 /* VERTICAL TASK LIST FORMATTING */
 .study-task-scroll {
@@ -191,9 +191,9 @@
   grid-template-columns: auto minmax(0, 1fr) auto;
   gap: 11px;
   padding: 14px;
-  border: 1px solid var(--color-study-line);
-  border-radius: 14px;
-  background-color: var(--color-surface-soft);
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  background-color: var(--color-page-background);
   align-items: center;
 }
 
@@ -215,8 +215,8 @@
 .study-task-row strong {
   padding: 5px 8px;
   border-radius: 8px;
-  background-color: var(--color-study-points);
-  color: var(--color-study-ink);
+  background-color: var(--color-badge-background);
+  color: var(--color-text-primary);
   font-family: var(--font-family-base);
   font-size: 13px;
   font-weight: 500;
@@ -225,7 +225,7 @@
 /* CREATE ROOM COPY, FRIEND LIST, AND PRESENCE DOTS */
 .study-create-copy {
   margin: 0;
-  color: var(--color-study-muted);
+  color: var(--color-text-secondary);
   font-size: 17px;
   line-height: 1.45;
 }
@@ -243,8 +243,8 @@
   display: flex;
   gap: 10px;
   padding: 8px 10px;
-  border-radius: 12px;
-  background-color: var(--color-surface-soft);
+  border-radius: 8px;
+  background-color: var(--color-page-background);
   align-items: center;
 }
 
@@ -259,7 +259,7 @@
 }
 
 .study-friend-preview-row small {
-  color: var(--color-study-muted);
+  color: var(--color-text-secondary);
   font-size: 12px;
 }
 
@@ -269,7 +269,7 @@
   border: 2px solid var(--color-scene-foreground);
   border-radius: 50%;
   background-color: var(--color-picture-placeholder);
-  box-shadow: 0 0 0 1px var(--color-study-line);
+  box-shadow: 0 0 0 1px var(--color-card-border);
   flex: 0 0 auto;
 }
 
@@ -283,7 +283,7 @@
   min-height: 46px;
   padding: 10px 18px;
   border: 0;
-  border-radius: 12px;
+  border-radius: 8px;
   background-color: var(--color-button-background);
   color: var(--color-button-text);
   cursor: pointer;
@@ -341,7 +341,7 @@
   border: 0;
   border-radius: 50%;
   background-color: var(--color-card-background);
-  color: var(--color-study-ink);
+  color: var(--color-text-primary);
   cursor: pointer;
   place-items: center;
 }
@@ -355,7 +355,7 @@
 
 .study-room-form label,
 .study-friend-picker legend {
-  color: var(--color-study-ink);
+  color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 600;
 }
@@ -371,10 +371,10 @@
   width: 100%;
   min-height: 45px;
   padding: 10px 12px;
-  border: 1px solid var(--color-study-line);
-  border-radius: 10px;
-  background-color: var(--color-surface-white);
-  color: var(--color-study-ink);
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
   font: inherit;
 }
 
@@ -388,8 +388,8 @@
   min-width: 0;
   margin: 0;
   padding: 14px;
-  border: 1px solid var(--color-study-line);
-  border-radius: 14px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
 }
 
 .study-friend-picker legend {
@@ -409,8 +409,8 @@
   display: flex !important;
   gap: 8px !important;
   padding: 8px;
-  border-radius: 9px;
-  background-color: var(--color-surface-soft);
+  border-radius: 8px;
+  background-color: var(--color-page-background);
   cursor: pointer;
   flex-direction: row !important;
   align-items: center;
@@ -429,8 +429,8 @@
 .study-toggle-row {
   display: flex !important;
   padding: 13px 14px;
-  border: 1px solid var(--color-study-line);
-  border-radius: 12px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
   flex-direction: row !important;
   align-items: center;
   justify-content: space-between;
@@ -496,7 +496,7 @@
   min-height: 42px;
   padding: 9px 13px;
   border: 1px solid var(--color-scene-foreground);
-  border-radius: 12px;
+  border-radius: 8px;
   background-color: transparent;
   color: var(--color-scene-foreground);
   font-family: var(--font-family-base);
@@ -517,8 +517,8 @@
   position: relative;
   min-height: min(70vh, 760px);
   overflow: hidden;
-  border: 1px solid var(--color-study-line);
-  border-radius: 26px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 24px;
   background-color: var(--color-study-scene);
   box-shadow: 0 24px 65px rgba(0, 0, 0, 0.3);
 }
@@ -564,7 +564,7 @@
   border: 3px solid var(--color-scene-foreground);
   border-radius: 16px 16px 22px 22px;
   background-color: var(--color-card-accent-background);
-  color: var(--color-study-ink);
+  color: var(--color-text-primary);
   font-family: var(--font-family-base);
   font-size: clamp(18px, 3vw, 28px);
   box-shadow: 0 9px 20px rgba(0, 0, 0, 0.25);
@@ -579,7 +579,7 @@
   gap: 9px;
   padding: 10px 12px;
   border: 1px solid var(--color-study-overlay-soft);
-  border-radius: 14px;
+  border-radius: 8px;
   background-color: var(--color-study-overlay);
   color: var(--color-scene-foreground);
   backdrop-filter: blur(7px);
@@ -620,7 +620,7 @@
   display: inline-flex;
   gap: 7px;
   padding: 9px 12px;
-  border-radius: 12px;
+  border-radius: 8px;
   background-color: var(--color-study-overlay);
   color: var(--color-scene-foreground);
   font-size: 13px;

@@ -1,16 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { MessageCircle, Music, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
-import { getRoom, visitRoom } from "../api/rooms";
-
-// Shown in place of real members until a room has database-backed ones.
-const PLACEHOLDER_MEMBERS = [
-  { id: "jose", display_name: "Jose" },
-  { id: "jack", display_name: "Jack" },
-  { id: "jeff", display_name: "Jeff" },
-  { id: "john", display_name: "John" },
-];
+import { getRoom, visitRoom, roomImageFor } from "../api/rooms";
 
 // Percentage-based so marker placement holds up across screen resolutions.
 const MEMBER_POSITIONS = [
@@ -33,6 +25,7 @@ export default function Room() {
   const { roomId } = useParams();
   const location = useLocation();
   const [room, setRoom] = useState(location.state?.room || null);
+  const [loadError, setLoadError] = useState("");
   const [running, setRunning] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(location.state?.room?.music_enabled ?? true);
 
@@ -53,7 +46,9 @@ export default function Room() {
     }
 
     if (/^\d+$/.test(roomId)) {
-      getRoom(roomId).then(setRoom).catch(() => setRoom(null));
+      getRoom(roomId).then(setRoom).catch(() => setLoadError("This room couldn't be loaded."));
+    } else {
+      setLoadError("This room couldn't be found.");
     }
   }, [room, roomId]);
 
@@ -62,7 +57,7 @@ export default function Room() {
   // the room came from the sessionStorage/location.state cache.
   useEffect(() => {
     if (/^\d+$/.test(roomId)) {
-      visitRoom(roomId).catch(() => {});
+      visitRoom(roomId).catch((error) => console.error("Failed to record room visit:", error));
     }
   }, [roomId]);
 
@@ -80,23 +75,32 @@ export default function Room() {
     return () => window.clearInterval(timer);
   }, [running, secondsRemaining]);
 
-  const resolvedRoom = room || {
-    id: roomId,
-    name: roomId?.includes("mars") ? "CS 160 Mars Lab" : "61C Cozy Study Room",
-    setting: roomId?.includes("mars") ? "mars" : "campsite",
-    music_enabled: true,
-    chat_enabled: true,
-    focus_minutes: 50,
-    members: PLACEHOLDER_MEMBERS,
-  };
+  if (loadError) {
+    return (
+      <div className="page study-room-page">
+        <MenuIcon />
+        <main className="study-room-shell">
+          <p className="study-eyebrow">{loadError}</p>
+        </main>
+      </div>
+    );
+  }
 
-  const members = useMemo(
-    () => (resolvedRoom.members?.length ? resolvedRoom.members : PLACEHOLDER_MEMBERS),
-    [resolvedRoom.members]
-  );
+  if (!room) {
+    return (
+      <div className="page study-room-page">
+        <MenuIcon />
+        <main className="study-room-shell">
+          <p className="study-eyebrow">Loading room…</p>
+        </main>
+      </div>
+    );
+  }
 
-  const settingLabel = resolvedRoom.setting
-    ? resolvedRoom.setting.charAt(0).toUpperCase() + resolvedRoom.setting.slice(1)
+  const members = room.members || [];
+
+  const settingLabel = room.setting
+    ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
     : "Campsite";
 
   return (
@@ -106,10 +110,10 @@ export default function Room() {
         <header className="study-room-header">
           <div>
             <p className="study-eyebrow">{settingLabel}</p>
-            <h1>{resolvedRoom.name} — {settingLabel}</h1>
+            <h1>{room.name} — {settingLabel}</h1>
           </div>
           <div className="study-room-controls">
-            {resolvedRoom.chat_enabled && (
+            {room.chat_enabled && (
               <span className="study-room-status" title="Chat enabled">
                 <MessageCircle size={18} /> Chat on
               </span>
@@ -126,7 +130,11 @@ export default function Room() {
         </header>
 
         <section className="study-room-scene" aria-label={`${settingLabel} study room`}>
-          <img className="study-room-background" src="/assets/Study-Room.png" alt="Pixel art campsite study room" />
+          <img
+            className="study-room-background"
+            src={roomImageFor(room)}
+            alt={`Pixel art ${settingLabel.toLowerCase()} study room`}
+          />
 
           <div className="study-member-layer">
             {members.slice(0, MEMBER_POSITIONS.length).map((member, index) => (
@@ -153,7 +161,7 @@ export default function Room() {
             </button>
             <button
               onClick={() => {
-                setSecondsRemaining((resolvedRoom.focus_minutes || 50) * 60);
+                setSecondsRemaining((room.focus_minutes || 50) * 60);
                 setRunning(false);
               }}
               aria-label="Reset timer"
