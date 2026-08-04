@@ -21,7 +21,6 @@ import {
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
-  defaultWallpapersFor,
   getRoomMessages,
   sendRoomMessage,
 } from "../api/rooms";
@@ -214,20 +213,6 @@ export default function Room() {
     }
   }
 
-  async function applyWallpaper(url) {
-    setRoom(await setRoomWallpaper(room.id, url));
-    setWallpaperPanelOpen(false);
-  }
-
-  async function handlePickWallpaper(url) {
-    setWallpaperError("");
-    try {
-      await applyWallpaper(url);
-    } catch {
-      setWallpaperError("Could not update the room background. Please try again.");
-    }
-  }
-
   async function handleUploadWallpaper(event) {
     const file = event.target.files[0];
     event.target.value = "";
@@ -236,7 +221,9 @@ export default function Room() {
     setUploadingWallpaper(true);
     setWallpaperError("");
     try {
-      await applyWallpaper(await uploadRoomWallpaper(file, room.id));
+      const url = await uploadRoomWallpaper(file, room.id);
+      setRoom(await setRoomWallpaper(room.id, url));
+      setWallpaperPanelOpen(false);
     } catch {
       setWallpaperError("Could not upload the image. Please try again.");
     } finally {
@@ -293,21 +280,8 @@ export default function Room() {
                 </button>
                 {wallpaperPanelOpen && (
                   <div className="study-wallpaper-panel">
-                    <p className="study-wallpaper-panel-title">Choose a background</p>
-                    <div className="study-wallpaper-options">
-                      {defaultWallpapersFor(room.setting).map((url) => (
-                        <button
-                          key={url}
-                          type="button"
-                          className="study-wallpaper-option"
-                          onClick={() => handlePickWallpaper(url)}
-                        >
-                          <img src={url} alt="" />
-                        </button>
-                      ))}
-                    </div>
                     <label className="study-wallpaper-upload">
-                      {uploadingWallpaper ? "Uploading…" : "Upload your own"}
+                      {uploadingWallpaper ? "Uploading…" : "Upload a custom background"}
                       <input
                         type="file"
                         accept="image/*"

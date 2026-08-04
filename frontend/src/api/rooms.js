@@ -3,17 +3,14 @@ import { apiFetch } from "./client";
 const ROOM_SETTINGS = {
   campsite: {
     image: "/assets/Study-Room.png",
-    wallpapers: ["/assets/wallpapers/campsite-1.jpg", "/assets/wallpapers/campsite-2.jpg"],
     sound: "/assets/sound/campsite.mp3",
   },
   mars: {
-    image: "/assets/mars-placeholder.svg",
-    wallpapers: ["/assets/wallpapers/mars-1.jpg", "/assets/wallpapers/mars-2.jpg"],
+    image: "/assets/wallpapers/mars-1.jpg",
     sound: "/assets/sound/mars.mp3",
   },
   library: {
-    image: "/assets/library-placeholder.svg",
-    wallpapers: ["/assets/wallpapers/library-1.jpg", "/assets/wallpapers/library-2.jpg"],
+    image: "/assets/wallpapers/library-1.jpg",
     sound: "/assets/sound/library.mp3",
   },
 };
@@ -26,10 +23,6 @@ function settingAssets(setting) {
 // setting's curated default art.
 export function roomImageFor(room) {
   return room.wallpaper_url || settingAssets(room.setting).image;
-}
-
-export function defaultWallpapersFor(setting) {
-  return settingAssets(setting).wallpapers;
 }
 
 export function roomSoundFor(room) {
