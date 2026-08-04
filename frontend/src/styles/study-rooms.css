@@ -505,12 +505,76 @@
   align-items: center;
 }
 
+.study-room-status,
 .study-music-toggle {
   cursor: pointer;
 }
 
+.study-room-status.is-on,
 .study-music-toggle.is-on {
   background-color: var(--color-button-background);
+}
+
+.study-volume-slider {
+  width: 90px;
+  accent-color: var(--color-button-background);
+}
+
+.study-wallpaper-control {
+  position: relative;
+}
+
+.study-wallpaper-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 5;
+  display: flex;
+  width: 220px;
+  padding: 14px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 16px;
+  background-color: var(--color-card-background);
+  color: var(--color-text-primary);
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-wallpaper-panel-title {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.study-wallpaper-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.study-wallpaper-option {
+  padding: 0;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.study-wallpaper-option img {
+  display: block;
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+}
+
+.study-wallpaper-upload {
+  padding: 8px 10px;
+  border: 1px solid var(--color-card-border);
+  border-radius: 8px;
+  text-align: center;
+  font-size: 13px;
+  cursor: pointer;
 }
 /* CAMPSITE SCENE AND MEMBER MARKERS */
 .study-room-scene {
@@ -570,7 +634,23 @@
   box-shadow: 0 9px 20px rgba(0, 0, 0, 0.25);
   place-items: center;
 }
-/* TIEMR CARD AND MUSIC NOTE */
+/* SHARED EMBER, FOCUS CARD, AND MUSIC NOTE */
+.study-room-ember {
+  position: absolute;
+  left: 18%;
+  bottom: 8%;
+  width: clamp(140px, 22vw, 260px);
+  height: clamp(140px, 22vw, 260px);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--color-streak-accent) 0%, transparent 70%);
+  /* stylelint-disable-next-line custom-property-pattern -- component-scoped
+     brightness set inline per render, not a design token */
+  opacity: var(--ember-intensity, 0.15);
+  filter: blur(6px);
+  transition: opacity 600ms ease;
+  pointer-events: none;
+}
+
 .study-timer-card {
   position: absolute;
   bottom: 20px;
@@ -588,7 +668,8 @@
 
 .study-timer-card div {
   display: flex;
-  min-width: 105px;
+  min-width: 160px;
+  max-width: 220px;
   flex-direction: column;
 }
 
@@ -597,7 +678,9 @@
 }
 
 .study-timer-card strong {
-  font-size: 22px;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.3;
 }
 
 .study-timer-card button {
@@ -626,6 +709,79 @@
   font-size: 13px;
   backdrop-filter: blur(7px);
   align-items: center;
+}
+
+.study-chat-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  width: min(280px, calc(100% - 40px));
+  padding: 12px;
+  border: 1px solid var(--color-study-overlay-soft);
+  border-radius: 8px;
+  background-color: var(--color-study-overlay);
+  color: var(--color-scene-foreground);
+  backdrop-filter: blur(7px);
+  flex-direction: column;
+  gap: 10px;
+}
+
+.study-chat-messages {
+  display: flex;
+  min-height: 0;
+  overflow-y: auto;
+  flex: 1;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.study-chat-empty {
+  margin: 0;
+  opacity: 0.75;
+  font-size: 13px;
+}
+
+.study-chat-message {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.study-chat-message strong {
+  font-size: 12px;
+  opacity: 0.75;
+}
+
+.study-chat-form {
+  display: flex;
+  gap: 6px;
+}
+
+.study-chat-form input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--color-study-overlay-soft);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--color-scene-foreground);
+  font: inherit;
+}
+
+.study-chat-form button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--color-scene-foreground);
+  border-radius: 50%;
+  background-color: transparent;
+  color: var(--color-scene-foreground);
+  cursor: pointer;
+  place-items: center;
 }
 /* TABLET MEDIA QUERY */
 @media (max-width: 880px) {
@@ -689,6 +845,10 @@
   .study-room-status,
   .study-music-toggle {
     justify-content: center;
+  }
+
+  .study-volume-slider {
+    width: 100%;
   }
 
   .study-room-scene {

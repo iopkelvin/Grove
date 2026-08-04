@@ -1,8 +1,29 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { MessageCircle, Music, Pause, Play, RotateCcw, Volume2, VolumeX } from "lucide-react";
+import {
+  Image as ImageIcon,
+  MessageCircle,
+  Music,
+  Pause,
+  Play,
+  Send,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
-import { getRoom, visitRoom, roomImageFor } from "../api/rooms";
+import { useUser } from "../context/UserContext";
+import { uploadRoomWallpaper } from "../lib/uploadImage";
+import {
+  getRoom,
+  visitRoom,
+  pingRoomFocus,
+  roomImageFor,
+  roomSoundFor,
+  setRoomWallpaper,
+  defaultWallpapersFor,
+  getRoomMessages,
+  sendRoomMessage,
+} from "../api/rooms";
 
 // Percentage-based so marker placement holds up across screen resolutions.
 const MEMBER_POSITIONS = [
@@ -14,23 +35,44 @@ const MEMBER_POSITIONS = [
   { left: "76%", top: "61%" },
 ];
 
-function formatTime(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
-  const seconds = (totalSeconds % 60).toString().padStart(2, "0");
-  return `${minutes}:${seconds}`;
+const FOCUS_PING_INTERVAL_MS = 8000;
+const CHAT_POLL_INTERVAL_MS = 4000;
+const MAX_DISPLAYED_MESSAGES = 100;
+
+// Dim-but-visible even with nobody focusing, brighter with each person
+// added, capped so it doesn't need unbounded headroom in the CSS.
+function emberIntensity(activeFocusers) {
+  return Math.min(1, 0.15 + activeFocusers * 0.3);
+}
+
+function emberLabel(activeFocusers) {
+  if (activeFocusers <= 0) return "No one's focusing here right now";
+  if (activeFocusers === 1) return "1 person focusing here";
+  return `${activeFocusers} people focusing here`;
 }
 
 
 export default function Room() {
   const { roomId } = useParams();
   const location = useLocation();
+  const { profile } = useUser();
   const [room, setRoom] = useState(location.state?.room || null);
   const [loadError, setLoadError] = useState("");
-  const [running, setRunning] = useState(true);
+  const [focusing, setFocusing] = useState(true);
   const [musicEnabled, setMusicEnabled] = useState(location.state?.room?.music_enabled ?? true);
+  const [volume, setVolume] = useState(0.5);
+  const [activeFocusers, setActiveFocusers] = useState(room?.active_focusers ?? 0);
+  const audioRef = useRef(null);
 
-  const initialMinutes = room?.focus_minutes || 50;
-  const [secondsRemaining, setSecondsRemaining] = useState(initialMinutes * 60);
+  const [wallpaperPanelOpen, setWallpaperPanelOpen] = useState(false);
+  const [uploadingWallpaper, setUploadingWallpaper] = useState(false);
+  const [wallpaperError, setWallpaperError] = useState("");
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [messageInput, setMessageInput] = useState("");
+  const [chatError, setChatError] = useState("");
+  const lastMessageIdRef = useRef(null);
 
   useEffect(() => {
     if (room) return;
@@ -64,16 +106,130 @@ export default function Room() {
   useEffect(() => {
     if (!room) return;
     setMusicEnabled(room.music_enabled ?? true);
-    setSecondsRemaining((room.focus_minutes || 50) * 60);
   }, [room?.id]);
 
   useEffect(() => {
-    if (!running || secondsRemaining <= 0) return undefined;
-    const timer = window.setInterval(() => {
-      setSecondsRemaining((current) => Math.max(0, current - 1));
-    }, 1000);
-    return () => window.clearInterval(timer);
-  }, [running, secondsRemaining]);
+    if (audioRef.current) audioRef.current.volume = volume;
+  }, [volume]);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (musicEnabled) {
+      // Browsers block autoplay until a real user gesture happens on the
+      // page (a click on the toggle counts, the initial mount doesn't) —
+      // failing silently here is expected until then.
+      audio.play().catch(() => {});
+    } else {
+      audio.pause();
+    }
+  }, [musicEnabled, room?.setting]);
+
+  // Presence heartbeat for the shared ember: while focusing, report our
+  // own presence (which also returns the fresh collective count); while
+  // paused, just read the count so the ember still reflects everyone
+  // else without counting us. Preview rooms (no real id yet) skip this.
+  useEffect(() => {
+    if (!room || !/^\d+$/.test(String(room.id))) return undefined;
+
+    let cancelled = false;
+    async function tick() {
+      try {
+        const result = focusing ? await pingRoomFocus(room.id) : await getRoom(room.id);
+        if (!cancelled) setActiveFocusers(result.active_focusers ?? 0);
+      } catch (error) {
+        console.error("Failed to update room focus presence:", error);
+      }
+    }
+
+    tick();
+    const interval = window.setInterval(tick, FOCUS_PING_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [room?.id, focusing]);
+
+  // Chat: load recent history once, then poll for anything newer than the
+  // last message we've seen. Simple polling, not a websocket — matches
+  // every other shared-state feature in this app.
+  useEffect(() => {
+    if (!room || !room.chat_enabled || !/^\d+$/.test(String(room.id))) return undefined;
+
+    let cancelled = false;
+
+    async function loadInitial() {
+      try {
+        const initial = await getRoomMessages(room.id);
+        if (cancelled) return;
+        setMessages(initial);
+        if (initial.length) lastMessageIdRef.current = initial[initial.length - 1].id;
+      } catch (error) {
+        console.error("Failed to load room messages:", error);
+      }
+    }
+
+    async function poll() {
+      try {
+        const fresh = await getRoomMessages(room.id, lastMessageIdRef.current);
+        if (cancelled || fresh.length === 0) return;
+        setMessages((current) => [...current, ...fresh].slice(-MAX_DISPLAYED_MESSAGES));
+        lastMessageIdRef.current = fresh[fresh.length - 1].id;
+      } catch (error) {
+        console.error("Failed to poll room messages:", error);
+      }
+    }
+
+    loadInitial();
+    const interval = window.setInterval(poll, CHAT_POLL_INTERVAL_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+    };
+  }, [room?.id, room?.chat_enabled]);
+
+  async function handleSendMessage(event) {
+    event.preventDefault();
+    const body = messageInput.trim();
+    if (!body || !room?.id) return;
+    setChatError("");
+    try {
+      const message = await sendRoomMessage(room.id, body);
+      setMessages((current) => [...current, message].slice(-MAX_DISPLAYED_MESSAGES));
+      lastMessageIdRef.current = message.id;
+      setMessageInput("");
+    } catch (error) {
+      setChatError(error.message);
+    }
+  }
+
+  async function handlePickWallpaper(url) {
+    setWallpaperError("");
+    try {
+      setRoom(await setRoomWallpaper(room.id, url));
+      setWallpaperPanelOpen(false);
+    } catch {
+      setWallpaperError("Could not update the room background. Please try again.");
+    }
+  }
+
+  async function handleUploadWallpaper(event) {
+    const file = event.target.files[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploadingWallpaper(true);
+    setWallpaperError("");
+    try {
+      const url = await uploadRoomWallpaper(file, room.id);
+      setRoom(await setRoomWallpaper(room.id, url));
+      setWallpaperPanelOpen(false);
+    } catch {
+      setWallpaperError("Could not upload the image. Please try again.");
+    } finally {
+      setUploadingWallpaper(false);
+    }
+  }
 
   if (loadError) {
     return (
@@ -103,6 +259,8 @@ export default function Room() {
     ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
     : "Campsite";
 
+  const canEditWallpaper = Boolean(room.host_id) && profile?.id === room.host_id;
+
   return (
     <div className="page study-room-page">
       <MenuIcon />
@@ -114,9 +272,52 @@ export default function Room() {
           </div>
           <div className="study-room-controls">
             {room.chat_enabled && (
-              <span className="study-room-status" title="Chat enabled">
-                <MessageCircle size={18} /> Chat on
-              </span>
+              <button
+                className={`study-room-status ${chatOpen ? "is-on" : ""}`}
+                onClick={() => setChatOpen((value) => !value)}
+                aria-label={chatOpen ? "Close chat" : "Open chat"}
+              >
+                <MessageCircle size={18} /> Chat
+              </button>
+            )}
+            {canEditWallpaper && (
+              <div className="study-wallpaper-control">
+                <button
+                  className={`study-room-status ${wallpaperPanelOpen ? "is-on" : ""}`}
+                  onClick={() => setWallpaperPanelOpen((value) => !value)}
+                  aria-label="Customize room background"
+                >
+                  <ImageIcon size={18} /> Background
+                </button>
+                {wallpaperPanelOpen && (
+                  <div className="study-wallpaper-panel">
+                    <p className="study-wallpaper-panel-title">Choose a background</p>
+                    <div className="study-wallpaper-options">
+                      {defaultWallpapersFor(room.setting).map((url) => (
+                        <button
+                          key={url}
+                          type="button"
+                          className="study-wallpaper-option"
+                          onClick={() => handlePickWallpaper(url)}
+                        >
+                          <img src={url} alt="" />
+                        </button>
+                      ))}
+                    </div>
+                    <label className="study-wallpaper-upload">
+                      {uploadingWallpaper ? "Uploading…" : "Upload your own"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleUploadWallpaper}
+                        disabled={uploadingWallpaper}
+                        hidden
+                      />
+                    </label>
+                    {wallpaperError && <p className="study-form-error">{wallpaperError}</p>}
+                  </div>
+                )}
+              </div>
             )}
             <button
               className={`study-music-toggle ${musicEnabled ? "is-on" : ""}`}
@@ -126,14 +327,28 @@ export default function Room() {
               {musicEnabled ? <Volume2 size={20} /> : <VolumeX size={20} />}
               <span>{musicEnabled ? "Music on" : "Music off"}</span>
             </button>
+            {musicEnabled && (
+              <input
+                type="range"
+                className="study-volume-slider"
+                min="0"
+                max="1"
+                step="0.05"
+                value={volume}
+                onChange={(event) => setVolume(Number(event.target.value))}
+                aria-label="Room music volume"
+              />
+            )}
           </div>
         </header>
+
+        <audio ref={audioRef} src={roomSoundFor(room)} loop preload="auto" />
 
         <section className="study-room-scene" aria-label={`${settingLabel} study room`}>
           <img
             className="study-room-background"
             src={roomImageFor(room)}
-            alt={`Pixel art ${settingLabel.toLowerCase()} study room`}
+            alt={`${settingLabel} study room background`}
           />
 
           <div className="study-member-layer">
@@ -151,28 +366,55 @@ export default function Room() {
             ))}
           </div>
 
+          <div
+            className="study-room-ember"
+            style={{ "--ember-intensity": emberIntensity(activeFocusers) }}
+            aria-hidden="true"
+          />
+
           <div className="study-timer-card">
             <div>
-              <small>Focus timer</small>
-              <strong>{formatTime(secondsRemaining)}</strong>
+              <small>Shared focus</small>
+              <strong>{emberLabel(activeFocusers)}</strong>
             </div>
-            <button onClick={() => setRunning((value) => !value)} aria-label={running ? "Pause timer" : "Start timer"}>
-              {running ? <Pause size={18} /> : <Play size={18} />}
-            </button>
             <button
-              onClick={() => {
-                setSecondsRemaining((room.focus_minutes || 50) * 60);
-                setRunning(false);
-              }}
-              aria-label="Reset timer"
+              onClick={() => setFocusing((value) => !value)}
+              aria-label={focusing ? "Pause focusing" : "Resume focusing"}
             >
-              <RotateCcw size={17} />
+              {focusing ? <Pause size={18} /> : <Play size={18} />}
             </button>
           </div>
 
           <div className="study-room-music-note" aria-hidden="true">
-            <Music size={18} /> {musicEnabled ? "ambient campfire" : "quiet mode"}
+            <Music size={18} /> {musicEnabled ? `ambient ${settingLabel.toLowerCase()}` : "quiet mode"}
           </div>
+
+          {room.chat_enabled && chatOpen && (
+            <div className="study-chat-panel">
+              <div className="study-chat-messages">
+                {messages.length === 0 && <p className="study-chat-empty">No messages yet — say hi!</p>}
+                {messages.map((message) => (
+                  <div className="study-chat-message" key={message.id}>
+                    <strong>{message.user.display_name || message.user.username}</strong>
+                    <span>{message.body}</span>
+                  </div>
+                ))}
+              </div>
+              <form className="study-chat-form" onSubmit={handleSendMessage}>
+                <input
+                  type="text"
+                  value={messageInput}
+                  onChange={(event) => setMessageInput(event.target.value)}
+                  placeholder="Message the room…"
+                  maxLength={500}
+                />
+                <button type="submit" aria-label="Send message">
+                  <Send size={16} />
+                </button>
+              </form>
+              {chatError && <p className="study-form-error">{chatError}</p>}
+            </div>
+          )}
         </section>
       </main>
     </div>

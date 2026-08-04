@@ -196,8 +196,7 @@ def search_users():
 
 
 # Room routes
-# Global room + rooms the user hosts or is a member of. (The Lobby page
-# also shows its own placeholder rooms so a fresh database isn't empty.)
+# Global room + rooms the user hosts or is a member of.
 @app.route("/api/rooms", methods=["GET"])
 @require_auth
 def get_rooms():
@@ -250,6 +249,28 @@ def get_room(room_id):
     room = db.session.get(Room, room_id)
     if not room:
         return jsonify({"error": "Room not found"}), 404
+    data = room.to_dict()
+    data["active_focusers"] = room_service.count_active_focusers(room)
+    return jsonify(data), 200
+
+
+@app.route("/api/rooms/<int:room_id>", methods=["PATCH"])
+@require_auth
+def update_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    data = request.json or {}
+    if "wallpaper_url" not in data:
+        return jsonify({"error": "Nothing to update"}), 400
+
+    wallpaper_url = data["wallpaper_url"]
+    if wallpaper_url is not None:
+        if not isinstance(wallpaper_url, str) or len(wallpaper_url) > 500:
+            return jsonify({"error": "wallpaper_url must be a string of 500 characters or fewer"}), 400
+
+    room = room_service.update_wallpaper(room, wallpaper_url)
     return jsonify(room.to_dict()), 200
 
 
@@ -262,6 +283,55 @@ def visit_room(room_id):
     user = user_service.find_by_supabase_id(g.supabase_id)
     room_service.record_visit(user, room)
     return jsonify(user.to_dict()), 200
+
+
+# Presence heartbeat for the "shared room ember" — the client pings this
+# every few seconds while its local timer is running; the response is how
+# many people are currently focusing together right now.
+@app.route("/api/rooms/<int:room_id>/focus-ping", methods=["POST"])
+@require_auth
+def ping_room_focus(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    active_focusers = room_service.ping_focus(room, user)
+    return jsonify({"active_focusers": active_focusers}), 200
+
+
+@app.route("/api/rooms/<int:room_id>/messages", methods=["GET"])
+@require_auth
+def get_room_messages(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    after_id = request.args.get("after_id", type=int)
+    messages = room_service.list_messages(room, after_id=after_id)
+    return jsonify([message.to_dict() for message in messages]), 200
+
+
+@app.route("/api/rooms/<int:room_id>/messages", methods=["POST"])
+@require_auth
+def create_room_message(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    body = (request.json or {}).get("body", "").strip()
+    if not body:
+        return jsonify({"error": "Message body is required"}), 400
+    if len(body) > 500:
+        return jsonify({"error": "Message must be 500 characters or fewer"}), 400
+
+    message = room_service.send_message(room, user, body)
+    return jsonify(message.to_dict()), 201
 
 
 # Task routes

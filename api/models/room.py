@@ -30,6 +30,10 @@ class Room(db.Model):
     chat_enabled = db.Column(db.Boolean, default=True, nullable=False)
     focus_minutes = db.Column(db.Integer, default=50, nullable=False)
 
+    # A custom background the host uploaded; falls back to the setting's
+    # curated default art on the frontend when unset.
+    wallpaper_url = db.Column(db.String(500), nullable=True)
+
     memberships = db.relationship(
         "RoomMembership", back_populates="room", cascade="all, delete-orphan"
     )
@@ -44,6 +48,7 @@ class Room(db.Model):
             "music_enabled": self.music_enabled,
             "chat_enabled": self.chat_enabled,
             "focus_minutes": self.focus_minutes,
+            "wallpaper_url": self.wallpaper_url,
             "population": len(self.memberships),
             # avatars of everyone currently in the room, for co-presence
             "members": [
@@ -80,3 +85,55 @@ class RoomMembership(db.Model):
 
     def __repr__(self):
         return f"<RoomMembership user={self.user_id} room={self.room_id}>"
+
+
+class RoomFocusPing(db.Model):
+    """Presence heartbeat, not a session log: one row per (room, user),
+    upserted every time the client reports it's still focusing. Drives the
+    "shared room ember" — how many people are focusing together right now
+    (api/services/room.py:count_active_focusers) — by checking recency
+    rather than requiring an explicit "I stopped" call, so the ember fades
+    on its own if a tab closes or the timer gets paused."""
+
+    __tablename__ = "room_focus_pings"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    last_ping_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("room_id", "user_id", name="uq_room_focus_ping"),
+    )
+
+    def __repr__(self):
+        return f"<RoomFocusPing user={self.user_id} room={self.room_id}>"
+
+
+class RoomMessage(db.Model):
+    __tablename__ = "room_messages"
+
+    id = db.Column(db.Integer, primary_key=True)
+    room_id = db.Column(db.Integer, db.ForeignKey("rooms.id"), nullable=False, index=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    body = db.Column(db.String(500), nullable=False)
+    created_at = db.Column(db.DateTime, default=utcnow, nullable=False)
+
+    user = db.relationship("User")
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "room_id": self.room_id,
+            "body": self.body,
+            "created_at": self.created_at.isoformat(),
+            "user": {
+                "id": self.user.id,
+                "username": self.user.username,
+                "display_name": self.user.display_name,
+                "avatar_url": self.user.avatar_url,
+            },
+        }
+
+    def __repr__(self):
+        return f"<RoomMessage user={self.user_id} room={self.room_id}>"

@@ -38,9 +38,11 @@ async function toResizedJpeg(file) {
   }
 }
 
-// Path is scoped by the user's own supabase id so the storage policies
-// (see profile-images bucket setup) can restrict writes to their own folder.
-export async function uploadProfileImage(file, kind, userId) {
+// `path` (without extension) should already be scoped by whatever owns the
+// upload — the user's supabase id for profile images, the room id for
+// wallpapers — so each bucket's storage policies can restrict writes to
+// the right folder.
+async function uploadResizedImage(file, bucket, path) {
   let uploadFile = file;
   let ext = file.name.split(".").pop();
 
@@ -50,16 +52,24 @@ export async function uploadProfileImage(file, kind, userId) {
   } catch {
   }
 
-  const path = `${userId}/${kind}.${ext}`;
+  const fullPath = `${path}.${ext}`;
 
   const { error } = await supabase.storage
-    .from("profile-images")
-    .upload(path, uploadFile, { upsert: true });
+    .from(bucket)
+    .upload(fullPath, uploadFile, { upsert: true });
 
   if (error) throw error;
 
-  const { data } = supabase.storage.from("profile-images").getPublicUrl(path);
+  const { data } = supabase.storage.from(bucket).getPublicUrl(fullPath);
   // Cache-bust: re-uploading to the same path keeps the same URL, so
   // browsers would otherwise keep showing the old cached image.
   return `${data.publicUrl}?t=${Date.now()}`;
+}
+
+export async function uploadProfileImage(file, kind, userId) {
+  return uploadResizedImage(file, "profile-images", `${userId}/${kind}`);
+}
+
+export async function uploadRoomWallpaper(file, roomId) {
+  return uploadResizedImage(file, "room-wallpapers", `${roomId}/wallpaper`);
 }

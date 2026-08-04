@@ -1,17 +1,26 @@
 """
 Grove — Room service.
 
-Data layer for study rooms: listing and creation. Routes in app.py keep the
-validation that produces specific 400s; everything that touches the
-database lives here, same split as api/services/task.py.
+Data layer for study rooms: listing, creation, and shared-focus presence.
+Routes in app.py keep the validation that produces specific 400s; everything
+that touches the database lives here, same split as api/services/task.py.
 """
+
+from datetime import timedelta
 
 from sqlalchemy.orm import selectinload
 
 from api.config.database import db
-from api.models.room import Room, RoomMembership
+from api.models.room import Room, RoomMembership, RoomFocusPing, RoomMessage
 from api.models.user import User
 from api.utils import utcnow
+
+MESSAGE_PAGE_SIZE = 50
+
+# A ping older than this no longer counts as "currently focusing" — a bit
+# longer than the client's expected ping interval so one missed beat (a
+# slow network tick) doesn't make the ember flicker.
+ACTIVE_FOCUS_WINDOW = timedelta(seconds=20)
 
 
 def list_visible(user=None):
@@ -71,3 +80,52 @@ def record_visit(user, room):
     user.last_room_id = room.id
     user.last_room_visited_at = utcnow()
     db.session.commit()
+
+
+def update_wallpaper(room, wallpaper_url):
+    room.wallpaper_url = wallpaper_url
+    db.session.commit()
+    return room
+
+
+def list_messages(room, after_id=None):
+    """Messages for the room, oldest first. With `after_id`, returns only
+    messages newer than it (for polling just what's new); without it,
+    returns the most recent page of history."""
+    query = RoomMessage.query.filter_by(room_id=room.id)
+    if after_id:
+        return (
+            query.filter(RoomMessage.id > after_id)
+            .order_by(RoomMessage.id.asc())
+            .limit(MESSAGE_PAGE_SIZE)
+            .all()
+        )
+    recent = query.order_by(RoomMessage.id.desc()).limit(MESSAGE_PAGE_SIZE).all()
+    return list(reversed(recent))
+
+
+def send_message(room, user, body):
+    message = RoomMessage(room_id=room.id, user_id=user.id, body=body)
+    db.session.add(message)
+    db.session.commit()
+    return message
+
+
+def count_active_focusers(room):
+    cutoff = utcnow() - ACTIVE_FOCUS_WINDOW
+    return RoomFocusPing.query.filter(
+        RoomFocusPing.room_id == room.id,
+        RoomFocusPing.last_ping_at >= cutoff,
+    ).count()
+
+
+def ping_focus(room, user):
+    """Upserts `user`'s presence heartbeat for `room` and returns the
+    resulting count of people currently focusing together."""
+    ping = RoomFocusPing.query.filter_by(room_id=room.id, user_id=user.id).first()
+    if ping:
+        ping.last_ping_at = utcnow()
+    else:
+        db.session.add(RoomFocusPing(room_id=room.id, user_id=user.id, last_ping_at=utcnow()))
+    db.session.commit()
+    return count_active_focusers(room)
