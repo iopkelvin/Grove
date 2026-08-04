@@ -80,5 +80,16 @@ class User(db.Model):
             "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
+    def to_summary_dict(self):
+        """Minimal shape for showing this user inline in someone else's
+        payload (room members, chat authorship) — not the full profile."""
+        return {
+            "id": self.id,
+            "username": self.username,
+            "display_name": self.display_name,
+            "avatar_url": self.avatar_url,
+            "is_online": self.is_online,
+        }
+
     def __repr__(self):
         return f"<User {self.username}>"

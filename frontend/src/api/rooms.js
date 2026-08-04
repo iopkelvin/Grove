@@ -1,35 +1,39 @@
 import { apiFetch } from "./client";
 
-const SETTING_IMAGES = {
-  mars: "/assets/mars-placeholder.svg",
-  library: "/assets/library-placeholder.svg",
-  campsite: "/assets/Study-Room.png",
+const ROOM_SETTINGS = {
+  campsite: {
+    image: "/assets/Study-Room.png",
+    wallpapers: ["/assets/wallpapers/campsite-1.jpg", "/assets/wallpapers/campsite-2.jpg"],
+    sound: "/assets/sound/campsite.mp3",
+  },
+  mars: {
+    image: "/assets/mars-placeholder.svg",
+    wallpapers: ["/assets/wallpapers/mars-1.jpg", "/assets/wallpapers/mars-2.jpg"],
+    sound: "/assets/sound/mars.mp3",
+  },
+  library: {
+    image: "/assets/library-placeholder.svg",
+    wallpapers: ["/assets/wallpapers/library-1.jpg", "/assets/wallpapers/library-2.jpg"],
+    sound: "/assets/sound/library.mp3",
+  },
 };
+
+function settingAssets(setting) {
+  return ROOM_SETTINGS[setting] || ROOM_SETTINGS.campsite;
+}
 
 // Custom upload wins if the host set one; otherwise fall back to the
 // setting's curated default art.
 export function roomImageFor(room) {
-  return room.wallpaper_url || room.image || SETTING_IMAGES[room.setting] || SETTING_IMAGES.campsite;
+  return room.wallpaper_url || settingAssets(room.setting).image;
 }
-
-const DEFAULT_WALLPAPERS = {
-  campsite: ["/assets/wallpapers/campsite-1.jpg", "/assets/wallpapers/campsite-2.jpg"],
-  mars: ["/assets/wallpapers/mars-1.jpg", "/assets/wallpapers/mars-2.jpg"],
-  library: ["/assets/wallpapers/library-1.jpg", "/assets/wallpapers/library-2.jpg"],
-};
 
 export function defaultWallpapersFor(setting) {
-  return DEFAULT_WALLPAPERS[setting] || DEFAULT_WALLPAPERS.campsite;
+  return settingAssets(setting).wallpapers;
 }
 
-const SETTING_SOUNDS = {
-  mars: "/assets/sound/mars.mp3",
-  library: "/assets/sound/library.mp3",
-  campsite: "/assets/sound/campsite.mp3",
-};
-
 export function roomSoundFor(room) {
-  return SETTING_SOUNDS[room.setting] || SETTING_SOUNDS.campsite;
+  return settingAssets(room.setting).sound;
 }
 
 export async function getRooms(supabaseId) {
@@ -62,9 +66,16 @@ export async function visitRoom(roomId) {
   return apiFetch(`/api/rooms/${roomId}/visit`, { method: "POST" });
 }
 
-// Presence heartbeat for the shared room ember — call every few seconds
-// while the local focus timer is running. Returns how many people are
-// currently focusing together in the room right now.
+// Presence for the shared room ember. GET just reads the current count
+// (for a paused viewer who isn't contributing); POST reports "I'm still
+// focusing" and returns the resulting count — call every few seconds
+// while the local focus timer is running.
+export async function getRoomFocusCount(roomId) {
+  const res = await apiFetch(`/api/rooms/${roomId}/focus-ping`);
+  if (!res.ok) throw new Error("Could not read focus presence");
+  return res.json();
+}
+
 export async function pingRoomFocus(roomId) {
   const res = await apiFetch(`/api/rooms/${roomId}/focus-ping`, { method: "POST" });
   if (!res.ok) throw new Error("Could not send focus ping");

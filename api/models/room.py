@@ -51,16 +51,7 @@ class Room(db.Model):
             "wallpaper_url": self.wallpaper_url,
             "population": len(self.memberships),
             # avatars of everyone currently in the room, for co-presence
-            "members": [
-                {
-                    "id": membership.user.id,
-                    "username": membership.user.username,
-                    "display_name": membership.user.display_name,
-                    "avatar_url": membership.user.avatar_url,
-                    "is_online": membership.user.is_online,
-                }
-                for membership in self.memberships
-            ],
+            "members": [membership.user.to_summary_dict() for membership in self.memberships],
         }
 
     def __repr__(self):
@@ -127,12 +118,7 @@ class RoomMessage(db.Model):
             "room_id": self.room_id,
             "body": self.body,
             "created_at": self.created_at.isoformat(),
-            "user": {
-                "id": self.user.id,
-                "username": self.user.username,
-                "display_name": self.user.display_name,
-                "avatar_url": self.user.avatar_url,
-            },
+            "user": self.user.to_summary_dict(),
         }
 
     def __repr__(self):

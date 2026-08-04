@@ -16,6 +16,7 @@ import { uploadRoomWallpaper } from "../lib/uploadImage";
 import {
   getRoom,
   visitRoom,
+  getRoomFocusCount,
   pingRoomFocus,
   roomImageFor,
   roomSoundFor,
@@ -38,6 +39,12 @@ const MEMBER_POSITIONS = [
 const FOCUS_PING_INTERVAL_MS = 8000;
 const CHAT_POLL_INTERVAL_MS = 4000;
 const MAX_DISPLAYED_MESSAGES = 100;
+
+// Real rooms have numeric ids; a locally-previewed room (no session, see
+// Lobby.jsx) has a "preview-<timestamp>" id and skips server-backed features.
+function isRealRoomId(id) {
+  return /^\d+$/.test(String(id));
+}
 
 // Dim-but-visible even with nobody focusing, brighter with each person
 // added, capped so it doesn't need unbounded headroom in the CSS.
@@ -87,8 +94,13 @@ export default function Room() {
       }
     }
 
-    if (/^\d+$/.test(roomId)) {
-      getRoom(roomId).then(setRoom).catch(() => setLoadError("This room couldn't be loaded."));
+    if (isRealRoomId(roomId)) {
+      getRoom(roomId)
+        .then((loaded) => {
+          setRoom(loaded);
+          setActiveFocusers(loaded.active_focusers ?? 0);
+        })
+        .catch(() => setLoadError("This room couldn't be loaded."));
     } else {
       setLoadError("This room couldn't be found.");
     }
@@ -98,7 +110,7 @@ export default function Room() {
   // Independent of the room-resolution effect above so it still fires when
   // the room came from the sessionStorage/location.state cache.
   useEffect(() => {
-    if (/^\d+$/.test(roomId)) {
+    if (isRealRoomId(roomId)) {
       visitRoom(roomId).catch((error) => console.error("Failed to record room visit:", error));
     }
   }, [roomId]);
@@ -116,14 +128,9 @@ export default function Room() {
     const audio = audioRef.current;
     if (!audio) return;
     if (musicEnabled) {
-      audio.play().catch(() => {
-        // Browsers block autoplay until a real user gesture happens on the
-        // page — the initial mount doesn't count, so this rejects on load.
-        // Flip the toggle back off so it honestly reflects that nothing is
-        // playing, instead of showing "on" over silence; the next click is
-        // a real gesture and will actually start playback.
-        setMusicEnabled(false);
-      });
+      // Autoplay needs a real user gesture; flip the toggle back off
+      // instead of claiming to play when the browser blocked it.
+      audio.play().catch(() => setMusicEnabled(false));
     } else {
       audio.pause();
     }
@@ -134,12 +141,12 @@ export default function Room() {
   // paused, just read the count so the ember still reflects everyone
   // else without counting us. Preview rooms (no real id yet) skip this.
   useEffect(() => {
-    if (!room || !/^\d+$/.test(String(room.id))) return undefined;
+    if (!room || !isRealRoomId(room.id)) return undefined;
 
     let cancelled = false;
     async function tick() {
       try {
-        const result = focusing ? await pingRoomFocus(room.id) : await getRoom(room.id);
+        const result = focusing ? await pingRoomFocus(room.id) : await getRoomFocusCount(room.id);
         if (!cancelled) setActiveFocusers(result.active_focusers ?? 0);
       } catch (error) {
         console.error("Failed to update room focus presence:", error);
@@ -154,11 +161,11 @@ export default function Room() {
     };
   }, [room?.id, focusing]);
 
-  // Chat: load recent history once, then poll for anything newer than the
-  // last message we've seen. Simple polling, not a websocket — matches
-  // every other shared-state feature in this app.
+  // Chat: load recent history once the panel is opened, then poll for
+  // anything newer than the last message we've seen. Simple polling, not
+  // a websocket — matches every other shared-state feature in this app.
   useEffect(() => {
-    if (!room || !room.chat_enabled || !/^\d+$/.test(String(room.id))) return undefined;
+    if (!room || !room.chat_enabled || !chatOpen || !isRealRoomId(room.id)) return undefined;
 
     let cancelled = false;
 
@@ -190,7 +197,7 @@ export default function Room() {
       cancelled = true;
       window.clearInterval(interval);
     };
-  }, [room?.id, room?.chat_enabled]);
+  }, [room?.id, room?.chat_enabled, chatOpen]);
 
   async function handleSendMessage(event) {
     event.preventDefault();
@@ -207,11 +214,15 @@ export default function Room() {
     }
   }
 
+  async function applyWallpaper(url) {
+    setRoom(await setRoomWallpaper(room.id, url));
+    setWallpaperPanelOpen(false);
+  }
+
   async function handlePickWallpaper(url) {
     setWallpaperError("");
     try {
-      setRoom(await setRoomWallpaper(room.id, url));
-      setWallpaperPanelOpen(false);
+      await applyWallpaper(url);
     } catch {
       setWallpaperError("Could not update the room background. Please try again.");
     }
@@ -225,9 +236,7 @@ export default function Room() {
     setUploadingWallpaper(true);
     setWallpaperError("");
     try {
-      const url = await uploadRoomWallpaper(file, room.id);
-      setRoom(await setRoomWallpaper(room.id, url));
-      setWallpaperPanelOpen(false);
+      await applyWallpaper(await uploadRoomWallpaper(file, room.id));
     } catch {
       setWallpaperError("Could not upload the image. Please try again.");
     } finally {
@@ -235,23 +244,12 @@ export default function Room() {
     }
   }
 
-  if (loadError) {
+  if (loadError || !room) {
     return (
       <div className="page study-room-page">
         <MenuIcon />
         <main className="study-room-shell">
-          <p className="study-eyebrow">{loadError}</p>
-        </main>
-      </div>
-    );
-  }
-
-  if (!room) {
-    return (
-      <div className="page study-room-page">
-        <MenuIcon />
-        <main className="study-room-shell">
-          <p className="study-eyebrow">Loading room…</p>
+          <p className="study-eyebrow">{loadError || "Loading room…"}</p>
         </main>
       </div>
     );

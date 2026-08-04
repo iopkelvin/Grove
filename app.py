@@ -50,6 +50,8 @@ FIELD_LIMITS = {
     "display_name": 80,
     "avatar_url": 500,
     "banner_url": 500,
+    "wallpaper_url": 500,
+    "body": 500,
 }
 TAG_LIMIT = 40
 
@@ -265,12 +267,11 @@ def update_room(room_id):
     if "wallpaper_url" not in data:
         return jsonify({"error": "Nothing to update"}), 400
 
-    wallpaper_url = data["wallpaper_url"]
-    if wallpaper_url is not None:
-        if not isinstance(wallpaper_url, str) or len(wallpaper_url) > 500:
-            return jsonify({"error": "wallpaper_url must be a string of 500 characters or fewer"}), 400
+    problem = over_length(data)
+    if problem:
+        return jsonify({"error": problem}), 400
 
-    room = room_service.update_wallpaper(room, wallpaper_url)
+    room = room_service.update_wallpaper(room, data["wallpaper_url"])
     return jsonify(room.to_dict()), 200
 
 
@@ -285,9 +286,19 @@ def visit_room(room_id):
     return jsonify(user.to_dict()), 200
 
 
-# Presence heartbeat for the "shared room ember" — the client pings this
-# every few seconds while its local timer is running; the response is how
-# many people are currently focusing together right now.
+# Presence for the "shared room ember". POST reports "I'm still focusing"
+# (a client with its local timer running pings this every few seconds);
+# GET just reads the current count, for a client that's paused and only
+# wants to watch everyone else's ember glow without joining it.
+@app.route("/api/rooms/<int:room_id>/focus-ping", methods=["GET"])
+@require_auth
+def get_room_focus(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+    return jsonify({"active_focusers": room_service.count_active_focusers(room)}), 200
+
+
 @app.route("/api/rooms/<int:room_id>/focus-ping", methods=["POST"])
 @require_auth
 def ping_room_focus(room_id):
@@ -324,11 +335,13 @@ def create_room_message(room_id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    body = (request.json or {}).get("body", "").strip()
+    data = request.json or {}
+    body = (data.get("body") or "").strip()
     if not body:
         return jsonify({"error": "Message body is required"}), 400
-    if len(body) > 500:
-        return jsonify({"error": "Message must be 500 characters or fewer"}), 400
+    problem = over_length({"body": body})
+    if problem:
+        return jsonify({"error": problem}), 400
 
     message = room_service.send_message(room, user, body)
     return jsonify(message.to_dict()), 201
