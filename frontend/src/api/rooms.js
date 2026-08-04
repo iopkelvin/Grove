@@ -94,6 +94,23 @@ export async function inviteRoomMembers(roomId, userIds) {
   return res.json();
 }
 
+export async function deleteRoom(roomId) {
+  const res = await apiFetch(`/api/rooms/${roomId}`, { method: "DELETE" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Could not delete room");
+  }
+}
+
+export async function removeRoomMember(roomId, userId) {
+  const res = await apiFetch(`/api/rooms/${roomId}/members/${userId}`, { method: "DELETE" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Could not remove member");
+  }
+  return res.json();
+}
+
 export async function getRoomMessages(roomId, afterId) {
   const params = new URLSearchParams();
   if (afterId) params.set("after_id", afterId);
