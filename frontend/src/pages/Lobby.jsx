@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Music, MessageCircle, Plus, X } from "lucide-react";
+import { ChevronRight, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, getRooms, roomImageFor } from "../api/rooms";
+import { createRoom, deleteRoom, getRooms, roomImageFor } from "../api/rooms";
 import { firstNameOf } from "../lib/format";
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
@@ -184,6 +184,16 @@ export default function Lobby() {
     navigate(`/rooms/${room.id}`, { state: { room } });
   }
 
+  async function handleDeleteRoom(roomId) {
+    if (!window.confirm("Delete this room? This can't be undone.")) return;
+    try {
+      await deleteRoom(roomId);
+      setRooms((current) => current.filter((room) => room.id !== roomId));
+    } catch (error) {
+      setLoadError(error.message);
+    }
+  }
+
   async function handleCreateRoom(formValues) {
     setCreating(true);
     setCreateError("");
@@ -245,14 +255,26 @@ export default function Lobby() {
             ) : (
               <div className="study-room-wheel" aria-label="Available study rooms">
                 {rooms.map((room) => (
-                  <button className="study-room-card" key={room.id} onClick={() => openRoom(room)}>
-                    <img src={roomImageFor(room)} alt="" />
-                    <span className="study-room-card-overlay">
-                      <strong>{room.name}</strong>
-                      <small>{room.population ?? room.members?.length ?? 0} studying</small>
-                    </span>
-                    <ChevronRight className="study-room-arrow" size={22} />
-                  </button>
+                  <div className="study-room-card-wrap" key={room.id}>
+                    <button className="study-room-card" onClick={() => openRoom(room)}>
+                      <img src={roomImageFor(room)} alt="" />
+                      <span className="study-room-card-overlay">
+                        <strong>{room.name}</strong>
+                        <small>{room.population ?? room.members?.length ?? 0} studying</small>
+                      </span>
+                      <ChevronRight className="study-room-arrow" size={22} />
+                    </button>
+                    {profile?.id === room.host_id && (
+                      <button
+                        type="button"
+                        className="study-room-delete"
+                        onClick={() => handleDeleteRoom(room.id)}
+                        aria-label="Delete room"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
             )}

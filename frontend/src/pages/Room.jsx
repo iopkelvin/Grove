@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
+import { Fragment, useEffect, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Image as ImageIcon,
   MessageCircle,
@@ -8,23 +8,29 @@ import {
   Play,
   RotateCcw,
   Send,
+  Trash2,
   UserPlus,
   Volume2,
   VolumeX,
+  X,
 } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
+import { supabase } from "../lib/supabaseClient";
 import { uploadRoomWallpaper } from "../lib/uploadImage";
+import { isSameDay } from "../utils/date";
 import { getFriends } from "../api/friends";
 import {
   getRoom,
   visitRoom,
+  deleteRoom,
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
   setRoomSetting,
   ROOM_SETTING_KEYS,
   inviteRoomMembers,
+  removeRoomMember,
   getRoomMessages,
   sendRoomMessage,
 } from "../api/rooms";
@@ -39,7 +45,9 @@ const MEMBER_POSITIONS = [
   { left: "76%", top: "61%" },
 ];
 
-const CHAT_POLL_INTERVAL_MS = 4000;
+// Realtime delivers new messages instantly; this is just a fallback resync
+// in case a connection drops silently.
+const CHAT_RESYNC_INTERVAL_MS = 20000;
 const MAX_DISPLAYED_MESSAGES = 100;
 
 // Real rooms have numeric ids; a locally-previewed room (no session, see
@@ -54,10 +62,17 @@ function formatTime(totalSeconds) {
   return `${minutes}:${seconds}`;
 }
 
+// Label for a chat date separator — shown once whenever the thread crosses
+// into a new calendar day, so a long-running conversation stays readable.
+function formatMessageDate(date) {
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
 
 export default function Room() {
   const { roomId } = useParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const { session, profile } = useUser();
   const [room, setRoom] = useState(location.state?.room || null);
   const [loadError, setLoadError] = useState("");
@@ -144,41 +159,46 @@ export default function Room() {
     return () => window.clearInterval(timer);
   }, [running, secondsRemaining]);
 
-  // Chat: load recent history once the panel is opened, then poll for
-  // anything newer than the last message we've seen. Simple polling, not
-  // a websocket — matches every other shared-state feature in this app.
+  // Realtime just triggers a refetch — the INSERT payload lacks the joined
+  // sender name, so messages still come from the REST endpoint.
   useEffect(() => {
     if (!room || !room.chat_enabled || !chatOpen || !isRealRoomId(room.id)) return undefined;
 
     let cancelled = false;
 
-    async function loadInitial() {
-      try {
-        const initial = await getRoomMessages(room.id);
-        if (cancelled) return;
-        setMessages(initial);
-        if (initial.length) lastMessageIdRef.current = initial[initial.length - 1].id;
-      } catch (error) {
-        console.error("Failed to load room messages:", error);
-      }
-    }
-
-    async function poll() {
+    async function fetchNewMessages() {
       try {
         const fresh = await getRoomMessages(room.id, lastMessageIdRef.current);
         if (cancelled || fresh.length === 0) return;
         setMessages((current) => [...current, ...fresh].slice(-MAX_DISPLAYED_MESSAGES));
         lastMessageIdRef.current = fresh[fresh.length - 1].id;
       } catch (error) {
-        console.error("Failed to poll room messages:", error);
+        console.error("Failed to fetch new room messages:", error);
       }
     }
 
-    loadInitial();
-    const interval = window.setInterval(poll, CHAT_POLL_INTERVAL_MS);
+    getRoomMessages(room.id)
+      .then((initial) => {
+        if (cancelled) return;
+        setMessages(initial);
+        if (initial.length) lastMessageIdRef.current = initial[initial.length - 1].id;
+      })
+      .catch((error) => console.error("Failed to load room messages:", error));
+
+    const channel = supabase
+      .channel(`room-${room.id}-messages`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "room_messages", filter: `room_id=eq.${room.id}` },
+        fetchNewMessages
+      )
+      .subscribe();
+
+    const interval = window.setInterval(fetchNewMessages, CHAT_RESYNC_INTERVAL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(interval);
+      supabase.removeChannel(channel);
     };
   }, [room?.id, room?.chat_enabled, chatOpen]);
 
@@ -210,6 +230,25 @@ export default function Room() {
       setRoom(await inviteRoomMembers(room.id, [userId]));
     } catch (error) {
       setInviteError(error.message);
+    }
+  }
+
+  async function handleRemoveMember(userId) {
+    setInviteError("");
+    try {
+      setRoom(await removeRoomMember(room.id, userId));
+    } catch (error) {
+      setInviteError(error.message);
+    }
+  }
+
+  async function handleDeleteRoom() {
+    if (!window.confirm("Delete this room? This removes it and its chat history for everyone.")) return;
+    try {
+      await deleteRoom(room.id);
+      navigate("/rooms");
+    } catch (error) {
+      window.alert(error.message);
     }
   }
 
@@ -255,6 +294,7 @@ export default function Room() {
   const members = room.members || [];
   const memberIds = new Set(members.map((member) => member.id));
   const invitableFriends = friends.filter(({ user }) => !memberIds.has(user.id));
+  const removableMembers = members.filter((member) => member.id !== room.host_id);
 
   const settingLabel = room.setting
     ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
@@ -292,6 +332,27 @@ export default function Room() {
                 </button>
                 {invitePanelOpen && (
                   <div className="study-invite-panel">
+                    {removableMembers.length > 0 && (
+                      <>
+                        <p className="study-invite-panel-title">Members</p>
+                        <div className="study-invite-list">
+                          {removableMembers.map((member) => (
+                            <div className="study-invite-option study-invite-member" key={member.id}>
+                              <span className={`study-presence ${member.is_online ? "is-online" : ""}`} />
+                              <span>{member.display_name || member.username}</span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveMember(member.id)}
+                                aria-label={`Remove ${member.display_name || member.username}`}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                    <p className="study-invite-panel-title">Invite friends</p>
                     {invitableFriends.length === 0 ? (
                       <p className="study-invite-empty">No friends to invite.</p>
                     ) : (
@@ -351,6 +412,11 @@ export default function Room() {
                   </div>
                 )}
               </div>
+            )}
+            {isHost && (
+              <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
+                <Trash2 size={18} /> Delete
+              </button>
             )}
             <button
               className={`study-music-toggle ${musicEnabled ? "is-on" : ""}`}
@@ -424,14 +490,28 @@ export default function Room() {
 
           {room.chat_enabled && chatOpen && (
             <div className="study-chat-panel">
+              <div className="study-chat-header">
+                <span>Chat</span>
+                <button type="button" onClick={() => setChatOpen(false)} aria-label="Close chat">
+                  <X size={16} />
+                </button>
+              </div>
               <div className="study-chat-messages">
                 {messages.length === 0 && <p className="study-chat-empty">No messages yet — say hi!</p>}
-                {messages.map((message) => (
-                  <div className="study-chat-message" key={message.id}>
-                    <strong>{message.user.display_name || message.user.username}</strong>
-                    <span>{message.body}</span>
-                  </div>
-                ))}
+                {messages.map((message, index) => {
+                  const sentAt = new Date(message.created_at);
+                  const previousSentAt = index > 0 ? new Date(messages[index - 1].created_at) : null;
+                  const showDate = !previousSentAt || !isSameDay(sentAt, previousSentAt);
+                  return (
+                    <Fragment key={message.id}>
+                      {showDate && <div className="study-chat-date">{formatMessageDate(sentAt)}</div>}
+                      <div className="study-chat-message">
+                        <strong>{message.user.display_name || message.user.username}</strong>
+                        <span>{message.body}</span>
+                      </div>
+                    </Fragment>
+                  );
+                })}
               </div>
               <form className="study-chat-form" onSubmit={handleSendMessage}>
                 <input

@@ -300,6 +300,38 @@ def invite_room_members(room_id):
     return jsonify(room.to_dict()), 200
 
 
+@app.route("/api/rooms/<int:room_id>", methods=["DELETE"])
+@require_auth
+def delete_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user or user.id != room.host_id:
+        return jsonify({"error": "Only the host can delete this room"}), 403
+
+    room_service.delete(room)
+    return "", 204
+
+
+@app.route("/api/rooms/<int:room_id>/members/<int:user_id>", methods=["DELETE"])
+@require_auth
+def remove_room_member(room_id, user_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user or user.id != room.host_id:
+        return jsonify({"error": "Only the host can remove members"}), 403
+    if user_id == room.host_id:
+        return jsonify({"error": "The host can't be removed"}), 400
+
+    room = room_service.remove_member(room, user_id)
+    return jsonify(room.to_dict()), 200
+
+
 @app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
 @require_auth
 def visit_room(room_id):
