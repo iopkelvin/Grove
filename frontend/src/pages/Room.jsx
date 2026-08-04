@@ -116,10 +116,14 @@ export default function Room() {
     const audio = audioRef.current;
     if (!audio) return;
     if (musicEnabled) {
-      // Browsers block autoplay until a real user gesture happens on the
-      // page (a click on the toggle counts, the initial mount doesn't) —
-      // failing silently here is expected until then.
-      audio.play().catch(() => {});
+      audio.play().catch(() => {
+        // Browsers block autoplay until a real user gesture happens on the
+        // page — the initial mount doesn't count, so this rejects on load.
+        // Flip the toggle back off so it honestly reflects that nothing is
+        // playing, instead of showing "on" over silence; the next click is
+        // a real gesture and will actually start playback.
+        setMusicEnabled(false);
+      });
     } else {
       audio.pause();
     }
