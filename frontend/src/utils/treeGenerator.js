@@ -2,11 +2,17 @@
 //
 // GROWTH MODEL (linear, two phases):
 //   Phase 1 (streak 1–20): structural growth, interpolated smoothly.
-//     No leaves yet. By streak === 20 the skeleton is final and frozen.
+//     Leaves grow in alongside the branches (a sapling shouldn't be bare),
+//     reaching full coverage by streak === 20, when the skeleton is also
+//     final and frozen. No flowers yet — those are a phase 2 signal.
 //   Phase 2 (streak 21+): skeleton frozen. Only color, leaves, flowers,
 //     fallen leaves, and snow keep changing, on a repeating 80-day
 //     cycle (4 seasons x 20 days), continuously interpolated so every
-//     day looks slightly different from the last.
+//     day looks slightly different from the last. The very first spring
+//     (streak 21–40) holds leaf coverage at full — continuing straight
+//     from the sapling's canopy instead of resetting to sparse — so only
+//     the new flowers signal the transition into phase 2. Later springs
+//     (streak 101+, 181+, ...) ramp from sparse as before.
 //
 // SIZING: the frame is fixed at "0 0 200 200". Growth is tuned so a
 // FULLY MATURE tree (streak >= 20) naturally reaches near the frame's
@@ -58,6 +64,9 @@ const MIN_BRANCH_LENGTH = 2;
 const MIN_WIDTH = 0.6;
 
 const TRUNK_GRADIENT = { highlight: "#9C7B54", mid: "#6B4F35", shadow: "#3E2B1D" };
+
+const FULL_PUFF_COUNT = 6;
+const FULL_PUFF_RADIUS = [4, 8];
 
 const PALETTE = {
   springLeafA: "#A8CC8C",
@@ -154,13 +163,14 @@ export function getTreeSeason(streak) {
 }
 
 function getSeasonState(streak) {
-  if (streak < 21) return { seasonIndex: -1, seasonName: "none", progressInSeason: 0 };
+  if (streak < 21) return { seasonIndex: -1, seasonName: "none", progressInSeason: 0, isFirstCycle: false };
   const cycleStreak = streak - 21;
   const cyclePosition = cycleStreak % 80;
   const seasonIndex = Math.floor(cyclePosition / 20);
   const progressInSeason = (cyclePosition % 20) / 20;
+  const isFirstCycle = cycleStreak < 80;
   const names = ["spring", "summer", "fall", "winter"];
-  return { seasonIndex, seasonName: names[seasonIndex], progressInSeason };
+  return { seasonIndex, seasonName: names[seasonIndex], progressInSeason, isFirstCycle };
 }
 
 function makeFoliagePuff(tip, rng, color, radiusRange, count, opacityBase) {
@@ -221,23 +231,35 @@ function makeSnowBlob(tip, rng, size, opacity) {
   };
 }
 
-function buildSeasonalShapes(tips, rng, seasonIndex, progressInSeason, trunkBaseX, trunkBaseY) {
+function buildSeasonalShapes(tips, rng, seasonIndex, progressInSeason, trunkBaseX, trunkBaseY, growthProgress, isFirstCycle) {
   const leaves = [];
   const flowers = [];
   const fallenLeaves = [];
   const snow = [];
 
-  if (seasonIndex === -1 || tips.length === 0) {
+  if (tips.length === 0) {
     return { leaves, flowers, fallenLeaves, snow };
   }
 
-  const FULL_PUFF_COUNT = 6;
-  const FULL_PUFF_RADIUS = [4, 8];
-
   tips.forEach((tip) => {
+    if (seasonIndex === -1) {
+      const leafColor = lerpColor(PALETTE.springLeafA, PALETTE.springLeafB, growthProgress);
+      const puffCount = growthProgress <= 0
+        ? 0
+        : Math.max(1, Math.round(lerp(0, FULL_PUFF_COUNT, growthProgress)));
+      if (puffCount > 0) {
+        leaves.push(...makeFoliagePuff(tip, rng, leafColor, FULL_PUFF_RADIUS, puffCount, 0.65));
+      }
+      return; // leaves only — no flowers/fruit/snow during sapling growth
+    }
+
     if (seasonIndex === 0) {
-      const leafColor = lerpColor(PALETTE.springLeafA, PALETTE.springLeafB, progressInSeason);
-      const puffCount = Math.round(lerp(1, FULL_PUFF_COUNT, progressInSeason));
+      const leafColor = isFirstCycle
+        ? PALETTE.springLeafB
+        : lerpColor(PALETTE.springLeafA, PALETTE.springLeafB, progressInSeason);
+      const puffCount = isFirstCycle
+        ? FULL_PUFF_COUNT
+        : Math.round(lerp(1, FULL_PUFF_COUNT, progressInSeason));
       leaves.push(...makeFoliagePuff(tip, rng, leafColor, FULL_PUFF_RADIUS, puffCount, 0.65));
 
       const flowerCount = Math.round(lerp(0, 4, progressInSeason));
@@ -374,7 +396,9 @@ export function generateTree(userId, streak) {
     season.seasonIndex,
     season.progressInSeason,
     trunkBaseX,
-    trunkBaseY
+    trunkBaseY,
+    growth.growthProgress,
+    season.isFirstCycle
   );
 
   return {
