@@ -143,6 +143,7 @@ def get_user_by_username(username):
     data = user.to_dict()
     data.pop("email", None)
     data.pop("supabase_id", None)
+    data.update(user_service.public_profile_stats(user))
 
     viewer = user_service.find_by_supabase_id(g.supabase_id)
     if viewer:
