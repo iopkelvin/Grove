@@ -56,11 +56,16 @@ function Profile() {
     }
   }, [username, loadViewedProfile]);
 
-  // Both /api/streaks/<id> and /api/friends only ever answer for the
-  // signed-in caller, so these stats can only be shown for your own
-  // profile — there's no way to fetch someone else's counts.
   useEffect(() => {
-    if (!isOwnProfile || !session?.user?.id) return;
+    if (!isOwnProfile) {
+      setStats({
+        points: viewedProfile?.completed_tasks ?? 0,
+        trophy_points: viewedProfile?.trophy_points ?? 0,
+        friends: viewedProfile?.friend_count ?? 0,
+      });
+      return;
+    }
+    if (!session?.user?.id) return;
     Promise.allSettled([
       getTreeProgress(session.user.id),
       getFriends(session.user.id, { status: "accepted" }),
@@ -72,7 +77,7 @@ function Profile() {
         friends: friendsResult.status === "fulfilled" ? friendsResult.value.length : 0,
       });
     });
-  }, [isOwnProfile, session?.user?.id]);
+  }, [isOwnProfile, session?.user?.id, viewedProfile]);
 
   const streakLeveledUp = useStreakLevelUp(
     isOwnProfile ? session?.user?.id : null,
@@ -324,49 +329,45 @@ function Profile() {
                 </>
               )}
             </div>
-            {isOwnProfile && (
-              <div className="profile-social-stat">
-                <div className="profile-stat-chip">
-                  <Users size={16} />
-                  <span>{stats.friends} friends</span>
-                </div>
-                {memberSince && (
-                  <div className="profile-stat-chip">
-                    <CalendarDays size={16} />
-                    <span>Joined {memberSince}</span>
-                  </div>
-                )}
+            <div className="profile-social-stat">
+              <div className="profile-stat-chip">
+                <Users size={16} />
+                <span>{stats.friends} friends</span>
               </div>
-            )}
-            {isOwnProfile && (
-              <section className="card profile-achievements" aria-labelledby="achievements-title">
-                <div className="profile-achievements-heading">
-                  <h2 id="achievements-title">Achievements</h2>
+              {memberSince && (
+                <div className="profile-stat-chip">
+                  <CalendarDays size={16} />
+                  <span>Joined {memberSince}</span>
                 </div>
-                <div className="profile-achievement-summary">
-                  <div className="profile-completed-stat">
-                    <div className="profile-task-emblem" aria-hidden="true">
-                      <ClipboardCheck size={20} />
-                    </div>
-                    <div>
-                      <strong>{stats.points}</strong>
-                      <span>tasks completed</span>
-                    </div>
+              )}
+            </div>
+            <section className="card profile-achievements" aria-labelledby="achievements-title">
+              <div className="profile-achievements-heading">
+                <h2 id="achievements-title">Achievements</h2>
+              </div>
+              <div className="profile-achievement-summary">
+                <div className="profile-completed-stat">
+                  <div className="profile-task-emblem" aria-hidden="true">
+                    <ClipboardCheck size={20} />
                   </div>
-                  <div className="profile-trophy-stat">
-                    <div className="profile-trophy-emblem" aria-hidden="true">
-                      <Leaf className="profile-trophy-leaf profile-trophy-leaf-left" size={15} />
-                      <Trophy size={28} />
-                      <Leaf className="profile-trophy-leaf profile-trophy-leaf-right" size={15} />
-                    </div>
-                    <div>
-                      <strong>{stats.trophy_points}</strong>
-                      <span>{stats.trophy_points === 1 ? "trophy earned" : "trophies earned"}</span>
-                    </div>
+                  <div>
+                    <strong>{stats.points}</strong>
+                    <span>tasks completed</span>
                   </div>
                 </div>
-              </section>
-            )}
+                <div className="profile-trophy-stat">
+                  <div className="profile-trophy-emblem" aria-hidden="true">
+                    <Leaf className="profile-trophy-leaf profile-trophy-leaf-left" size={15} />
+                    <Trophy size={28} />
+                    <Leaf className="profile-trophy-leaf profile-trophy-leaf-right" size={15} />
+                  </div>
+                  <div>
+                    <strong>{stats.trophy_points}</strong>
+                    <span>{stats.trophy_points === 1 ? "trophy earned" : "trophies earned"}</span>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
         </div>
         {!isOwnProfile && (
