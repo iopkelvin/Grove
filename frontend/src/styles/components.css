@@ -26,7 +26,7 @@
    percentage-based position lined up with the tree artwork. */
 .streak-frame {
   position: relative;
-  height: 80vh;
+  height: 72vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -206,12 +206,6 @@
   gap: 16px;
   text-decoration: none;
   color: var(--color-text-primary);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.continue-room-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
 }
 
 /* same pixel-art scene used on the actual Room page — scaled down to a
