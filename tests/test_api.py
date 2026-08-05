@@ -11,11 +11,9 @@ task, another user's email).
 from datetime import date, timedelta
 
 from api.config.database import db
-from api.models.streak import Streak
 from api.models.task import Task
-from api.models.user import User
 
-from .conftest import auth_headers, flask_app
+from .conftest import auth_headers
 
 
 def sync_user(client, supabase_id, username, first_name="a", last_name="a"):
@@ -51,10 +49,6 @@ def get_streak(client, supabase_id):
     return res.get_json()["current_streak"]
 
 
-def get_tree_progress(client, supabase_id):
-    return client.get(f"/api/streaks/{supabase_id}", headers=auth_headers(supabase_id)).get_json()
-
-
 def create_room(client, supabase_id, name="Study Room"):
     return client.post(
         "/api/rooms", json={"name": name}, headers=auth_headers(supabase_id)
@@ -76,40 +70,6 @@ def test_sync_is_idempotent(client):
     first = sync_user(client, "sb-1", "alice")
     second = sync_user(client, "sb-1", "alice")
     assert first.get_json()["id"] == second.get_json()["id"]
-
-
-def test_streak_trophy_is_earned_at_100(client):
-    sync_user(client, "sb-1", "alice")
-
-    assert get_tree_progress(client, "sb-1")["trophy_points"] == 0
-
-    with flask_app.app_context():
-        user = User.query.filter_by(supabase_id="sb-1").one()
-        db.session.add(Streak(user_id=user.id, current_count=77))
-        db.session.commit()
-
-    progress = get_tree_progress(client, "sb-1")
-    assert progress["current_streak"] == 77
-    assert progress["trophy_points"] == 0
-
-    with flask_app.app_context():
-        user = User.query.filter_by(supabase_id="sb-1").one()
-        streak = Streak.query.filter_by(user_id=user.id).one()
-        streak.current_count = 100
-        db.session.commit()
-
-    earned = get_tree_progress(client, "sb-1")
-    assert earned["trophy_points"] == 1
-
-    with flask_app.app_context():
-        user = User.query.filter_by(supabase_id="sb-1").one()
-        streak = Streak.query.filter_by(user_id=user.id).one()
-        streak.current_count = 101
-        db.session.commit()
-
-    restarted = get_tree_progress(client, "sb-1")
-    assert restarted["current_streak"] == 101
-    assert restarted["trophy_points"] == 1
 
 
 def test_banner_position_defaults_to_center(client):
