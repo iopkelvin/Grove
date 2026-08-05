@@ -47,10 +47,7 @@ def tree_progress(user):
     points_remaining = max(0, next_threshold - points)
 
     streak_count = user.streak.current_count if user.streak else 0
-    cycle_level = streak_count % TREE_CYCLE_LENGTH or TREE_CYCLE_LENGTH
     trophy_points = streak_count // TREE_CYCLE_LENGTH
-    if streak_count == 0:
-        cycle_level = 1
 
     return {
         "points": points,
@@ -64,6 +61,5 @@ def tree_progress(user):
         "max_tree_level": max_level,
         "next_level_points": next_threshold,
         "points_remaining": points_remaining,
-        "cycle_level": cycle_level,
         "trophy_points": trophy_points,
     }

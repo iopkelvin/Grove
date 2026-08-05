@@ -78,17 +78,19 @@ def test_sync_is_idempotent(client):
     assert first.get_json()["id"] == second.get_json()["id"]
 
 
-def test_tree_cycle_uses_streak_count_and_restarts_after_100(client):
+def test_streak_trophy_is_earned_at_100(client):
     sync_user(client, "sb-1", "alice")
 
-    assert get_tree_progress(client, "sb-1")["cycle_level"] == 1
+    assert get_tree_progress(client, "sb-1")["trophy_points"] == 0
 
     with flask_app.app_context():
         user = User.query.filter_by(supabase_id="sb-1").one()
         db.session.add(Streak(user_id=user.id, current_count=77))
         db.session.commit()
 
-    assert get_tree_progress(client, "sb-1")["cycle_level"] == 77
+    progress = get_tree_progress(client, "sb-1")
+    assert progress["current_streak"] == 77
+    assert progress["trophy_points"] == 0
 
     with flask_app.app_context():
         user = User.query.filter_by(supabase_id="sb-1").one()
@@ -97,7 +99,6 @@ def test_tree_cycle_uses_streak_count_and_restarts_after_100(client):
         db.session.commit()
 
     earned = get_tree_progress(client, "sb-1")
-    assert earned["cycle_level"] == 100
     assert earned["trophy_points"] == 1
 
     with flask_app.app_context():
@@ -107,7 +108,7 @@ def test_tree_cycle_uses_streak_count_and_restarts_after_100(client):
         db.session.commit()
 
     restarted = get_tree_progress(client, "sb-1")
-    assert restarted["cycle_level"] == 1
+    assert restarted["current_streak"] == 101
     assert restarted["trophy_points"] == 1
 
 
