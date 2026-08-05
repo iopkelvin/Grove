@@ -218,6 +218,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
+  align-self: stretch;
 }
 
 .profile-info-card {
@@ -228,17 +229,125 @@
   gap: 24px;
 }
 
-/* ── Stat chips ── */
-.profile-stats {
+/* ── Achievements ── */
+.profile-achievements {
+  width: 100%;
+  margin-top: auto;
+  padding: 16px;
+  background: linear-gradient(110deg, var(--color-card-background), color-mix(in srgb, var(--color-card-accent-background) 36%, var(--color-card-background)));
+}
+
+.profile-achievements-heading h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.profile-achievement-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.profile-completed-stat,
+.profile-trophy-stat {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--color-card-border) 75%, transparent);
+  border-radius: 12px;
+  background-color: var(--color-page-background);
+}
+
+.profile-task-emblem,
+.profile-trophy-emblem {
+  display: flex;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-task-emblem {
+  width: 34px;
+  height: 34px;
+  border: 1px solid color-mix(in srgb, var(--color-button-background) 45%, var(--color-card-border));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--color-button-background) 13%, transparent);
+  color: var(--color-button-background);
+}
+
+.profile-completed-stat > div:last-child,
+.profile-trophy-stat > div:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.profile-completed-stat strong,
+.profile-trophy-stat strong {
+  font-size: 19px;
+  line-height: 1;
+}
+
+.profile-completed-stat span,
+.profile-trophy-stat span {
+  margin-top: 5px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.profile-trophy-emblem {
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--color-streak-accent) 62%, var(--color-card-border));
+  border-radius: 50% 50% 46% 46%;
+  background: linear-gradient(145deg, #f8e6a1, color-mix(in srgb, var(--color-streak-accent) 74%, #d1a34a));
+  color: var(--color-title-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 3px 8px color-mix(in srgb, var(--color-streak-accent) 24%, transparent);
+}
+
+.profile-trophy-leaf {
+  position: absolute;
+  bottom: -3px;
+  color: var(--color-button-background);
+}
+
+.profile-trophy-leaf-left {
+  left: -7px;
+  transform: rotate(-42deg);
+}
+
+.profile-trophy-leaf-right {
+  right: -7px;
+  transform: scaleX(-1) rotate(-42deg);
+}
+
+.profile-social-stat {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  padding-left: 2px;
+}
+
+.profile-social-stat .profile-stat-chip {
+  padding: 5px 10px;
+}
+
+@media (min-width: 641px) {
+  .profile-achievements {
+    transform: translateY(-40px);
+  }
 }
 
 .profile-stat-chip {
   display: flex;
   align-items: center;
   gap: 6px;
+  width: fit-content;
   padding: 6px 12px;
   background-color: var(--color-badge-background);
   border-radius: 999px;
@@ -487,6 +596,19 @@
     width: 100%;
     gap: 16px;
     padding: 16px;
+  }
+
+  .banner {
+    aspect-ratio: 3 / 1;
+  }
+
+  .profile-info-column {
+    align-self: start;
+  }
+
+  .profile-achievements {
+    margin-top: 0;
+    transform: none;
   }
 
   .profile-info-grid {

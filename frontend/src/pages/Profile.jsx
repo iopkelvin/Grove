@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { capitalize } from "../lib/format";
+import { getTreeCycleLevel } from "../lib/treeCycle";
 import { uploadProfileImage } from "../lib/uploadImage";
 import { getUserByUsername } from "../api/users";
 import { sendFriendRequestOrError, getFriendshipState, getFriends } from "../api/friends";
@@ -11,7 +12,7 @@ import MenuIcon from "../components/MenuIcon";
 import Banner from "../components/Banner";
 import ProfilePicture from "../components/ProfilePicture";
 import StreakTree from "../components/StreakTree";
-import { UserPlus, Pencil, CheckSquare, Users } from "lucide-react";
+import { UserPlus, Pencil, Users, Trophy, ClipboardCheck, Leaf, CalendarDays } from "lucide-react";
 
 // Common presets, LinkedIn-style; "custom" reveals a free-text field capped
 // at PRONOUNS_MAX_LENGTH so it can't turn into a full sentence.
@@ -39,9 +40,8 @@ function Profile() {
   const isOwnProfile =
     !username || (myProfile && username.toLowerCase() === myProfile.username.toLowerCase());
   const profile = isOwnProfile ? myProfile : viewedProfile;
-  const streak = profile?.current_streak ?? 0;
-
-  const [stats, setStats] = useState({ points: 0, friends: 0 });
+  const treeLevel = getTreeCycleLevel(profile?.current_streak);
+  const [stats, setStats] = useState({ points: 0, trophy_points: 0, friends: 0 });
 
   const loadViewedProfile = useCallback(async () => {
     if (!username) return;
@@ -65,14 +65,19 @@ function Profile() {
       getTreeProgress(session.user.id),
       getFriends(session.user.id, { status: "accepted" }),
     ]).then(([pointsResult, friendsResult]) => {
+      const progress = pointsResult.status === "fulfilled" ? pointsResult.value : {};
       setStats({
-        points: pointsResult.status === "fulfilled" ? pointsResult.value.points : 0,
+        points: progress.points ?? 0,
+        trophy_points: progress.trophy_points ?? 0,
         friends: friendsResult.status === "fulfilled" ? friendsResult.value.length : 0,
       });
     });
   }, [isOwnProfile, session?.user?.id]);
 
-  const streakLeveledUp = useStreakLevelUp(isOwnProfile ? session?.user?.id : null, streak);
+  const streakLeveledUp = useStreakLevelUp(
+    isOwnProfile ? session?.user?.id : null,
+    profile?.current_streak ?? 0
+  );
 
   if (loading || (username && viewedProfileLoading)) {
     return <div className="page">Loading...</div>;
@@ -93,6 +98,9 @@ function Profile() {
   const fullName = [capitalize(profile?.first_name), capitalize(profile?.last_name)]
     .filter(Boolean)
     .join(" ");
+  const memberSince = profile?.created_at
+    ? new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(profile.created_at))
+    : null;
 
   async function handleImageChange(kind, e) {
     const file = e.target.files[0];
@@ -201,7 +209,7 @@ function Profile() {
             />
           </div>
           <div className="profile-streak-card">
-            <StreakTree streak={streak} userId={profile?.id} glow={streakLeveledUp} />
+            <StreakTree streak={treeLevel} userId={profile?.id} glow={streakLeveledUp} />
           </div>
           <div className="profile-info-column">
             <div className="card profile-info-card">
@@ -317,16 +325,47 @@ function Profile() {
               )}
             </div>
             {isOwnProfile && (
-              <div className="profile-stats">
-                <div className="profile-stat-chip">
-                  <CheckSquare size={16} />
-                  <span>{stats.points} tasks completed</span>
-                </div>
+              <div className="profile-social-stat">
                 <div className="profile-stat-chip">
                   <Users size={16} />
                   <span>{stats.friends} friends</span>
                 </div>
+                {memberSince && (
+                  <div className="profile-stat-chip">
+                    <CalendarDays size={16} />
+                    <span>Joined {memberSince}</span>
+                  </div>
+                )}
               </div>
+            )}
+            {isOwnProfile && (
+              <section className="card profile-achievements" aria-labelledby="achievements-title">
+                <div className="profile-achievements-heading">
+                  <h2 id="achievements-title">Achievements</h2>
+                </div>
+                <div className="profile-achievement-summary">
+                  <div className="profile-completed-stat">
+                    <div className="profile-task-emblem" aria-hidden="true">
+                      <ClipboardCheck size={20} />
+                    </div>
+                    <div>
+                      <strong>{stats.points}</strong>
+                      <span>tasks completed</span>
+                    </div>
+                  </div>
+                  <div className="profile-trophy-stat">
+                    <div className="profile-trophy-emblem" aria-hidden="true">
+                      <Leaf className="profile-trophy-leaf profile-trophy-leaf-left" size={15} />
+                      <Trophy size={28} />
+                      <Leaf className="profile-trophy-leaf profile-trophy-leaf-right" size={15} />
+                    </div>
+                    <div>
+                      <strong>{stats.trophy_points}</strong>
+                      <span>{stats.trophy_points === 1 ? "trophy earned" : "trophies earned"}</span>
+                    </div>
+                  </div>
+                </div>
+              </section>
             )}
           </div>
         </div>
