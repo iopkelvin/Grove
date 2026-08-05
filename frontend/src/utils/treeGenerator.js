@@ -1,18 +1,13 @@
 // Procedural streak tree.
 //
 // GROWTH MODEL (linear, two phases):
-//   Phase 1 (streak 1–20): structural growth, interpolated smoothly.
-//     Leaves grow in alongside the branches (a sapling shouldn't be bare),
-//     reaching full coverage by streak === 20, when the skeleton is also
-//     final and frozen. No flowers yet — those are a phase 2 signal.
-//   Phase 2 (streak 21+): skeleton frozen. Only color, leaves, flowers,
-//     fallen leaves, and snow keep changing, on a repeating 80-day
-//     cycle (4 seasons x 20 days), continuously interpolated so every
-//     day looks slightly different from the last. The very first spring
-//     (streak 21–40) holds leaf coverage at full — continuing straight
-//     from the sapling's canopy instead of resetting to sparse — so only
-//     the new flowers signal the transition into phase 2. Later springs
-//     (streak 101+, 181+, ...) ramp from sparse as before.
+//   Phase 1 (streak 1–20): structural growth, leaves fill in alongside it,
+//     both reaching full by streak === 20. No flowers yet.
+//   Phase 2 (streak 21+): skeleton frozen. Color, leaves, flowers, fallen
+//     leaves, and snow cycle on a repeating 80-day, 4-season loop. The
+//     first spring (streak 21–40) holds leaves at full instead of
+//     resetting to sparse, so only flowers mark the transition; later
+//     springs ramp from sparse as usual.
 //
 // SIZING: the frame is fixed at "0 0 200 200". Growth is tuned so a
 // FULLY MATURE tree (streak >= 20) naturally reaches near the frame's
@@ -250,7 +245,7 @@ function buildSeasonalShapes(tips, rng, seasonIndex, progressInSeason, trunkBase
       if (puffCount > 0) {
         leaves.push(...makeFoliagePuff(tip, rng, leafColor, FULL_PUFF_RADIUS, puffCount, 0.65));
       }
-      return; // leaves only — no flowers/fruit/snow during sapling growth
+      return;
     }
 
     if (seasonIndex === 0) {
