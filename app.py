@@ -54,8 +54,7 @@ FIELD_LIMITS = {
     "body": 500,
 }
 TAG_LIMIT = 40
-ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "library"}
-
+ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "poker", "library"}
 
 def over_length(data):
     """The first field that won't fit its column, or None."""

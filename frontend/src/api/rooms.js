@@ -6,8 +6,12 @@ const ROOM_SETTINGS = {
     sound: "/assets/sound/campsite.mp3",
   },
   mars: {
-    image: "/assets/wallpapers/mars-1.jpg",
-    sound: "/assets/sound/mars.mp3",
+  image: "/assets/mars-room-study.png",
+  sound: "/assets/sound/mars.mp3",
+  },
+  poker: {
+    image: "/assets/poker-table-room-study.png",
+    sound: "/assets/sound/campsite.mp3",
   },
   library: {
     image: "/assets/wallpapers/library-1.jpg",
