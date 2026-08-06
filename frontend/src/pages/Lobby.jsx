@@ -72,6 +72,7 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
               <select value={setting} onChange={(event) => setSetting(event.target.value)}>
                 <option value="campsite">Campsite</option>
                 <option value="mars">Mars</option>
+                <option value="poker">Poker Table</option>
                 <option value="library">Library</option>
               </select>
             </label>
