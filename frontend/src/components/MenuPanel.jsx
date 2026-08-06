@@ -18,7 +18,7 @@ export default function MenuPanel({ isOpen, onClose }) {
     { label: "Tasks", path: "/tasks", icon: CheckSquare },
     { label: "Rooms", path: "/rooms", icon: Share2 },
     { label: "Calendar", path: "/calendar", icon: Calendar },
-    { label: "Streaks", path: "/streaks", icon: Sprout },
+    // { label: "Streaks", path: "/streaks", icon: Sprout },
     { label: "Settings", path: "/settings", icon: Settings },
   ];
 
