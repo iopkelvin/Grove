@@ -14,7 +14,7 @@ const ROOM_SETTINGS = {
     sound: "/assets/sound/campsite.mp3",
   },
   library: {
-    image: "/assets/wallpapers/library-1.jpg",
+    image: "/assets/library-study-room.png",
     sound: "/assets/sound/library.mp3",
   },
 };
