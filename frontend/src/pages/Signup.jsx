@@ -3,7 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { apiFetch } from "../api/client";
 import { useUser } from "../context/UserContext";
-import { queueHomeTutorialAfterLogin } from "../hooks/useHomeTutorial";
+// import { queueHomeTutorialAfterLogin } from "../hooks/useHomeTutorial";
 
 function Signup() {
   const [firstName, setFirstName] = useState("");
@@ -58,7 +58,7 @@ function Signup() {
       return;
     }
 
-    queueHomeTutorialAfterLogin();
+    // queueHomeTutorialAfterLogin();
 
     navigate("/");
   }

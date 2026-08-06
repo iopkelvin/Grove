@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { queueHomeTutorialAfterLogin } from "../hooks/useHomeTutorial";
+// import { queueHomeTutorialAfterLogin } from "../hooks/useHomeTutorial";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -24,7 +24,7 @@ function Login() {
     }
 
     // Home consumes this one-time flag after the successful login redirect.
-    queueHomeTutorialAfterLogin();
+    // queueHomeTutorialAfterLogin();
     navigate("/");
   }
 
