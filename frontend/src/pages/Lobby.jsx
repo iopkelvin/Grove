@@ -161,7 +161,7 @@ export default function Lobby() {
 
     Promise.allSettled([
       getRooms(supabaseId),
-      getTasks(supabaseId),
+      getTasks(supabaseId, { completed: false }),
       getFriends(supabaseId),
     ]).then(([roomResult, taskResult, friendResult]) => {
       if (roomResult.status === "fulfilled") setRooms(roomResult.value);
@@ -286,17 +286,17 @@ export default function Lobby() {
                 <p className="study-eyebrow">Your list</p>
                 <h2>Upcoming tasks</h2>
               </div>
-              <span>{tasks.filter((task) => !task.done).length} remaining</span>
+              <span>{tasks.length} remaining</span>
             </div>
             {tasks.length === 0 ? (
               <p>No tasks yet.</p>
             ) : (
               <div className="study-task-scroll">
                 {tasks.map((task) => (
-                  <div className={`study-task-row ${task.done ? "is-complete" : ""}`} key={task.id}>
+                  <div className="study-task-row" key={task.id}>
                     <span className="study-task-dot" />
                     <span>{task.title}</span>
-                    <strong>{task.done ? "Done" : "1 point"}</strong>
+                    <strong>1 point</strong>
                   </div>
                 ))}
               </div>
