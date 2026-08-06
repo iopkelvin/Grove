@@ -103,6 +103,7 @@ function Profile() {
   const fullName = [capitalize(profile?.first_name), capitalize(profile?.last_name)]
     .filter(Boolean)
     .join(" ");
+  const cardName = profile?.display_name || fullName;
   const memberSince = profile?.created_at
     ? new Intl.DateTimeFormat(undefined, { month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(profile.created_at))
     : null;
@@ -304,7 +305,7 @@ function Profile() {
               ) : (
                 <>
                   <div className="profile-name-row">
-                    <h2 className="profile-full-name">{fullName || "—"}</h2>
+                    <h2 className="profile-full-name">{cardName || "—"}</h2>
                     {profile?.pronouns && (
                       <span className="profile-pronouns">{profile.pronouns}</span>
                     )}
