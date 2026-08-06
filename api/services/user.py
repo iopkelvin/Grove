@@ -5,6 +5,8 @@ Data layer for users: lookups, signup sync, profile updates, and search.
 """
 
 from api.config.database import db
+from api.models.friend import Friendship
+from api.models.task import Task
 from api.models.user import User
 
 
@@ -23,6 +25,18 @@ def find_for_streaks(user_id):
     if not user and str(user_id).isdigit():
         user = db.session.get(User, int(user_id))
     return user
+
+
+def public_profile_stats(user):
+    streak_count = user.streak.current_count if user.streak else 0
+    return {
+        "completed_tasks": Task.query.filter_by(user_id=user.id, completed=True).count(),
+        "friend_count": Friendship.query.filter(
+            Friendship.status == "accepted",
+            db.or_(Friendship.user_id == user.id, Friendship.friend_id == user.id),
+        ).count(),
+        "trophy_points": streak_count // 100,
+    }
 
 
 def generate_unique_username(base):

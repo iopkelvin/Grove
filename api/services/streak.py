@@ -12,6 +12,7 @@ from api.models.streak import Streak
 from api.models.task import Task
 
 TREE_THRESHOLDS = [0, 3, 7, 12, 18, 25, 33]
+TREE_CYCLE_LENGTH = 100
 
 
 def bump_for_completion(user):
@@ -45,6 +46,9 @@ def tree_progress(user):
     next_threshold = TREE_THRESHOLDS[level] if level < max_level else points
     points_remaining = max(0, next_threshold - points)
 
+    streak_count = user.streak.current_count if user.streak else 0
+    trophy_points = streak_count // TREE_CYCLE_LENGTH
+
     return {
         "points": points,
         "current_streak": user.streak.current_count if user.streak else 0,
@@ -57,4 +61,5 @@ def tree_progress(user):
         "max_tree_level": max_level,
         "next_level_points": next_threshold,
         "points_remaining": points_remaining,
+        "trophy_points": trophy_points,
     }

@@ -54,8 +54,7 @@ FIELD_LIMITS = {
     "body": 500,
 }
 TAG_LIMIT = 40
-ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "library"}
-
+ALLOWED_ROOM_SETTINGS = {"campsite", "mars", "poker", "library"}
 
 def over_length(data):
     """The first field that won't fit its column, or None."""
@@ -143,6 +142,7 @@ def get_user_by_username(username):
     data = user.to_dict()
     data.pop("email", None)
     data.pop("supabase_id", None)
+    data.update(user_service.public_profile_stats(user))
 
     viewer = user_service.find_by_supabase_id(g.supabase_id)
     if viewer:

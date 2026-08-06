@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { firstNameOf } from "../lib/format";
+import { getTreeCycleLevel } from "../lib/treeCycle";
 import { getRoom, createRoom } from "../api/rooms";
 import { useTasks } from "../hooks/useTasks";
 import MenuIcon from "../components/MenuIcon";
@@ -42,6 +43,7 @@ function Home() {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Morning" : hour < 18 ? "Afternoon" : "Evening";
   const streak = profile?.current_streak ?? 0;
+  const treeLevel = getTreeCycleLevel(streak);
   const streakLeveledUp = useStreakLevelUp(supabaseId, streak);
 
   const [lastRoom, setLastRoom] = useState(null);
@@ -93,7 +95,7 @@ function Home() {
 
       <div className="grid">
         <div className="grid-item-tree" data-home-tour="streak">
-          <StreakTree streak={streak} userId={supabaseId} glow={streakLeveledUp} />
+          <StreakTree streak={treeLevel} userId={supabaseId} glow={streakLeveledUp} />
         </div>
 
         <div className="grid-item-columns">
