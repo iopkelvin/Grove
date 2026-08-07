@@ -563,8 +563,8 @@
 }
 
 .study-room-leave-button {
-  border-color: var(--color-button-background);
-  color: var(--color-text-primary);
+  border-color: var(--color-scene-foreground);
+  color: var(--color-scene-foreground);
 }
 
 .study-volume-slider {
