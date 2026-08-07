@@ -71,6 +71,10 @@ function formatMessageDate(date) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatMessageTime(date) {
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 
 export default function Room() {
   const { roomId } = useParams();
@@ -524,7 +528,10 @@ export default function Room() {
                     <Fragment key={message.id}>
                       {showDate && <div className="study-chat-date">{formatMessageDate(sentAt)}</div>}
                       <div className="study-chat-message">
-                        <strong>{message.user.display_name || message.user.username}</strong>
+                        <div className="study-chat-message-meta">
+                          <strong>{message.user.display_name || message.user.username}</strong>
+                          <span className="study-chat-time">{formatMessageTime(sentAt)}</span>
+                        </div>
                         <span>{message.body}</span>
                       </div>
                     </Fragment>

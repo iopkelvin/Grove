@@ -876,6 +876,20 @@
   opacity: 0.75;
 }
 
+.study-chat-message-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.study-chat-time {
+  flex: 0 0 auto;
+  opacity: 0.6;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .study-chat-form {
   display: flex;
   gap: 6px;
