@@ -2,6 +2,7 @@ import { Fragment, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Image as ImageIcon,
+  LogOut,
   MessageCircle,
   Music,
   Pause,
@@ -24,6 +25,7 @@ import {
   getRoom,
   visitRoom,
   deleteRoom,
+  leaveRoom,
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
@@ -252,6 +254,15 @@ export default function Room() {
     }
   }
 
+  async function handleLeaveRoom() {
+    try {
+      await leaveRoom(room.id);
+      navigate("/rooms");
+    } catch (error) {
+      window.alert(error.message);
+    }
+  }
+
   async function handleChangeSetting(setting) {
     if (setting === room.setting) return;
     setWallpaperError("");
@@ -416,6 +427,11 @@ export default function Room() {
             {isHost && (
               <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
                 <Trash2 size={18} /> Delete
+              </button>
+            )}
+            {!isHost && !room.is_global && (
+              <button className="study-room-status study-room-leave-button" onClick={handleLeaveRoom} aria-label="Leave room">
+                <LogOut size={18} /> Leave
               </button>
             )}
             <button

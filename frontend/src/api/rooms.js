@@ -106,6 +106,14 @@ export async function deleteRoom(roomId) {
   }
 }
 
+export async function leaveRoom(roomId) {
+  const res = await apiFetch(`/api/rooms/${roomId}/leave`, { method: "POST" });
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || "Could not leave room");
+  }
+}
+
 export async function removeRoomMember(roomId, userId) {
   const res = await apiFetch(`/api/rooms/${roomId}/members/${userId}`, { method: "DELETE" });
   if (!res.ok) {

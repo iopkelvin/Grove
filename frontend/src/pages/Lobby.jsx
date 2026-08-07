@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
+import { ChevronRight, LogOut, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, deleteRoom, getRooms, roomImageFor } from "../api/rooms";
+import { createRoom, deleteRoom, getRooms, leaveRoom, roomImageFor } from "../api/rooms";
 import { firstNameOf } from "../lib/format";
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
@@ -195,6 +195,15 @@ export default function Lobby() {
     }
   }
 
+  async function handleLeaveRoom(roomId) {
+    try {
+      await leaveRoom(roomId);
+      setRooms((current) => current.filter((room) => room.id !== roomId));
+    } catch (error) {
+      setLoadError(error.message);
+    }
+  }
+
   async function handleCreateRoom(formValues) {
     setCreating(true);
     setCreateError("");
@@ -273,6 +282,16 @@ export default function Lobby() {
                         aria-label="Delete room"
                       >
                         <Trash2 size={16} />
+                      </button>
+                    )}
+                    {profile?.id !== room.host_id && !room.is_global && (
+                      <button
+                        type="button"
+                        className="study-room-leave"
+                        onClick={() => handleLeaveRoom(room.id)}
+                        aria-label="Leave room"
+                      >
+                        <LogOut size={16} />
                       </button>
                     )}
                   </div>

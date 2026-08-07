@@ -203,6 +203,19 @@
   color: var(--color-error-text);
   cursor: pointer;
 }
+
+.study-room-leave {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 1;
+  padding: 5px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-study-overlay-soft);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
 /* VERTICAL TASK LIST FORMATTING */
 .study-task-scroll {
   display: flex;
@@ -547,6 +560,11 @@
 .study-room-delete-button {
   border-color: var(--color-error-text);
   color: var(--color-error-text);
+}
+
+.study-room-leave-button {
+  border-color: var(--color-button-background);
+  color: var(--color-text-primary);
 }
 
 .study-volume-slider {
