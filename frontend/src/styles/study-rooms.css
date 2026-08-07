@@ -74,10 +74,10 @@
 }
 
 .study-task-section {
-  grid-row: span 2;
   display: flex;
-  min-height: 600px;
+  max-height: 600px;
   flex-direction: column;
+  align-self: start;
 }
 
 .study-create-section {
@@ -917,11 +917,6 @@
 @media (max-width: 880px) {
   .study-lobby-grid {
     grid-template-columns: 1fr;
-  }
-
-  .study-task-section {
-    grid-row: auto;
-    min-height: 420px;
   }
 
   .study-room-header {

@@ -257,7 +257,7 @@ export default function Lobby() {
                 <p className="study-eyebrow">Now studying</p>
                 <h2>Current study rooms</h2>
               </div>
-              <span>Scroll to explore</span>
+              <span>Scroll for more rooms</span>
             </div>
 
             {rooms.length === 0 ? (
@@ -330,7 +330,7 @@ export default function Lobby() {
                 <h2>Create your own study room</h2>
               </div>
             </div>
-            <p className="study-create-copy">Invite friends and choose a map, focus timer, music, and chat.</p>
+            <p className="study-create-copy">Set the vibe: pick a map, a timer, and who's joining you.</p>
             {friends.length === 0 ? (
               <p>No friends yet — add some from the Friends page to invite them here.</p>
             ) : (
