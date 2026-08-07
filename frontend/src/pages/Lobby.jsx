@@ -5,8 +5,16 @@ import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, deleteRoom, getRooms, leaveRoom, roomImageFor } from "../api/rooms";
+import { createRoom, deleteRoom, getRooms, leaveRoom, roomImageFor, ROOM_SETTING_KEYS, ROOM_SETTING_LABELS } from "../api/rooms";
 import { firstNameOf } from "../lib/format";
+
+const FOCUS_MINUTE_PRESETS = [25, 50, 90];
+const MIN_FOCUS_MINUTES = 5;
+const MAX_FOCUS_MINUTES = 180;
+
+function friendLabel(friend) {
+  return friend.display_name || friend.username || "";
+}
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [name, setName] = useState("My Study Room");
@@ -16,13 +24,13 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [focusMinutes, setFocusMinutes] = useState(50);
+  const isCustomFocus = !FOCUS_MINUTE_PRESETS.includes(focusMinutes);
 
   const filteredFriends = useMemo(() => {
     const query = friendSearch.trim().toLowerCase();
-    if (!query) return friends;
-    return friends.filter((friend) =>
-      `${friend.display_name || ""} ${friend.username || ""}`.toLowerCase().includes(query)
-    );
+    return friends
+      .filter((friend) => !query || friendLabel(friend).toLowerCase().includes(query))
+      .sort((a, b) => friendLabel(a).localeCompare(friendLabel(b)));
   }, [friendSearch, friends]);
 
   function toggleFriend(friendId) {
@@ -67,26 +75,53 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
           </label>
 
           <div className="study-form-row">
-            <label>
-              Map
-              <select value={setting} onChange={(event) => setSetting(event.target.value)}>
-                <option value="campsite">Campsite</option>
-                <option value="mars">Mars</option>
-                <option value="poker">Poker Table</option>
-                <option value="library">Library</option>
-              </select>
-            </label>
-            <label>
-              Focus timer
-              <select
-                value={focusMinutes}
-                onChange={(event) => setFocusMinutes(Number(event.target.value))}
-              >
-                <option value={25}>25 minutes</option>
-                <option value={50}>50 minutes</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </label>
+            <div className="study-pill-field">
+              <span>Map</span>
+              <div className="study-wallpaper-settings">
+                {ROOM_SETTING_KEYS.map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    className={`study-wallpaper-setting ${setting === key ? "is-active" : ""}`}
+                    onClick={() => setSetting(key)}
+                  >
+                    {ROOM_SETTING_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="study-pill-field">
+              <span>Focus timer</span>
+              <div className="study-wallpaper-settings">
+                {FOCUS_MINUTE_PRESETS.map((minutes) => (
+                  <button
+                    key={minutes}
+                    type="button"
+                    className={`study-wallpaper-setting ${!isCustomFocus && focusMinutes === minutes ? "is-active" : ""}`}
+                    onClick={() => setFocusMinutes(minutes)}
+                  >
+                    {minutes} min
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className={`study-wallpaper-setting ${isCustomFocus ? "is-active" : ""}`}
+                  onClick={() => setFocusMinutes(60)}
+                >
+                  Custom
+                </button>
+              </div>
+              {isCustomFocus && (
+                <input
+                  type="number"
+                  min={MIN_FOCUS_MINUTES}
+                  max={MAX_FOCUS_MINUTES}
+                  value={focusMinutes}
+                  onChange={(event) => setFocusMinutes(Number(event.target.value))}
+                  aria-label="Custom focus timer minutes"
+                />
+              )}
+            </div>
           </div>
 
           <fieldset className="study-friend-picker">

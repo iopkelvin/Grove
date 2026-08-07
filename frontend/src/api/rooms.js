@@ -21,6 +21,13 @@ const ROOM_SETTINGS = {
 
 export const ROOM_SETTING_KEYS = Object.keys(ROOM_SETTINGS);
 
+export const ROOM_SETTING_LABELS = {
+  campsite: "Campsite",
+  mars: "Mars",
+  poker: "Poker Table",
+  library: "Library",
+};
+
 function settingAssets(setting) {
   return ROOM_SETTINGS[setting] || ROOM_SETTINGS.campsite;
 }

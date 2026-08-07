@@ -31,6 +31,7 @@ import {
   setRoomWallpaper,
   setRoomSetting,
   ROOM_SETTING_KEYS,
+  ROOM_SETTING_LABELS,
   inviteRoomMembers,
   removeRoomMember,
   getRoomMessages,
@@ -405,7 +406,7 @@ export default function Room() {
                           className={`study-wallpaper-setting ${room.setting === key ? "is-active" : ""}`}
                           onClick={() => handleChangeSetting(key)}
                         >
-                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                          {ROOM_SETTING_LABELS[key]}
                         </button>
                       ))}
                     </div>

@@ -1,13 +1,4 @@
 /* PAGE TEXT, SHELLS, HEADINGS */
-.study-wallpaper-settings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.study-wallpaper-setting {
-  flex: 1 1 calc(50% - 3px);
-}
 .study-lobby-page,
 .study-room-page {
   color: var(--color-text-primary);
@@ -396,13 +387,15 @@
 }
 
 .study-room-form label,
+.study-pill-field,
 .study-friend-picker legend {
   color: var(--color-text-primary);
   font-size: 14px;
   font-weight: 600;
 }
 
-.study-room-form label {
+.study-room-form label,
+.study-pill-field {
   display: flex;
   gap: 7px;
   flex-direction: column;
@@ -595,11 +588,12 @@
 
 .study-wallpaper-settings {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .study-wallpaper-setting {
-  flex: 1;
+  flex: 1 1 calc(50% - 3px);
   padding: 6px 4px;
   border: 1px solid var(--color-card-border);
   border-radius: 8px;
