@@ -550,13 +550,10 @@
   background-color: var(--color-button-background);
 }
 
-.study-room-delete-button {
-  border-color: var(--color-error-text);
-  color: var(--color-error-text);
-}
-
+.study-room-delete-button,
 .study-room-leave-button {
-  border-color: var(--color-scene-foreground);
+  border-color: var(--color-study-danger);
+  background-color: var(--color-study-danger);
   color: var(--color-scene-foreground);
 }
 

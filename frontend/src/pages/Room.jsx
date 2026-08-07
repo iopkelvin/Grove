@@ -85,7 +85,9 @@ export default function Room() {
   const [secondsRemaining, setSecondsRemaining] = useState((room?.focus_minutes || 50) * 60);
   const audioRef = useRef(null);
 
-  const [wallpaperPanelOpen, setWallpaperPanelOpen] = useState(false);
+  // Invite and Background are mutually exclusive — opening one closes the
+  // other, so their panels (both anchored top-right) never overlap.
+  const [openPanel, setOpenPanel] = useState(null); // "invite" | "background" | null
   const [uploadingWallpaper, setUploadingWallpaper] = useState(false);
   const [wallpaperError, setWallpaperError] = useState("");
 
@@ -95,7 +97,6 @@ export default function Room() {
   const [chatError, setChatError] = useState("");
   const lastMessageIdRef = useRef(null);
 
-  const [invitePanelOpen, setInvitePanelOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [inviteError, setInviteError] = useState("");
 
@@ -206,11 +207,11 @@ export default function Room() {
   }, [room?.id, room?.chat_enabled, chatOpen]);
 
   useEffect(() => {
-    if (!invitePanelOpen || !session?.user?.id) return;
+    if (openPanel !== "invite" || !session?.user?.id) return;
     getFriends(session.user.id, { status: "accepted" })
       .then(setFriends)
       .catch((error) => console.error("Failed to load friends:", error));
-  }, [invitePanelOpen, session?.user?.id]);
+  }, [openPanel, session?.user?.id]);
 
   async function handleSendMessage(event) {
     event.preventDefault();
@@ -284,7 +285,7 @@ export default function Room() {
     try {
       const url = await uploadRoomWallpaper(file, room.id);
       setRoom(await setRoomWallpaper(room.id, url));
-      setWallpaperPanelOpen(false);
+      setOpenPanel(null);
     } catch {
       setWallpaperError("Could not upload the image. Please try again.");
     } finally {
@@ -336,13 +337,13 @@ export default function Room() {
             {isHost && (
               <div className="study-invite-control">
                 <button
-                  className={`study-room-status ${invitePanelOpen ? "is-on" : ""}`}
-                  onClick={() => setInvitePanelOpen((value) => !value)}
+                  className={`study-room-status ${openPanel === "invite" ? "is-on" : ""}`}
+                  onClick={() => setOpenPanel((current) => (current === "invite" ? null : "invite"))}
                   aria-label="Invite friends"
                 >
                   <UserPlus size={18} /> Invite
                 </button>
-                {invitePanelOpen && (
+                {openPanel === "invite" && (
                   <div className="study-invite-panel">
                     {removableMembers.length > 0 && (
                       <>
@@ -387,16 +388,16 @@ export default function Room() {
                 )}
               </div>
             )}
-            {isHost && (
+            {!room.is_global && (
               <div className="study-wallpaper-control">
                 <button
-                  className={`study-room-status ${wallpaperPanelOpen ? "is-on" : ""}`}
-                  onClick={() => setWallpaperPanelOpen((value) => !value)}
+                  className={`study-room-status ${openPanel === "background" ? "is-on" : ""}`}
+                  onClick={() => setOpenPanel((current) => (current === "background" ? null : "background"))}
                   aria-label="Customize room background"
                 >
                   <ImageIcon size={18} /> Background
                 </button>
-                {wallpaperPanelOpen && (
+                {openPanel === "background" && (
                   <div className="study-wallpaper-panel">
                     <div className="study-wallpaper-settings">
                       {ROOM_SETTING_KEYS.map((key) => (
@@ -425,16 +426,6 @@ export default function Room() {
                 )}
               </div>
             )}
-            {isHost && (
-              <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
-                <Trash2 size={18} /> Delete
-              </button>
-            )}
-            {!isHost && !room.is_global && (
-              <button className="study-room-status study-room-leave-button" onClick={handleLeaveRoom} aria-label="Leave room">
-                <LogOut size={18} /> Leave
-              </button>
-            )}
             <button
               className={`study-music-toggle ${musicEnabled ? "is-on" : ""}`}
               onClick={() => setMusicEnabled((value) => !value)}
@@ -454,6 +445,16 @@ export default function Room() {
                 onChange={(event) => setVolume(Number(event.target.value))}
                 aria-label="Room music volume"
               />
+            )}
+            {isHost && (
+              <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
+                <Trash2 size={18} /> Delete
+              </button>
+            )}
+            {!isHost && !room.is_global && (
+              <button className="study-room-status study-room-leave-button" onClick={handleLeaveRoom} aria-label="Leave room">
+                <LogOut size={18} /> Leave
+              </button>
             )}
           </div>
         </header>
