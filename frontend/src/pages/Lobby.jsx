@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, LogOut, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
@@ -14,6 +14,34 @@ const MAX_FOCUS_MINUTES = 180;
 
 function friendLabel(friend) {
   return friend.display_name || friend.username || "";
+}
+
+function ToggleField({ icon: Icon, label, checked, onChange }) {
+  return (
+    <label className="study-toggle-row">
+      <span><Icon size={18} /> {label}</span>
+      <input type="checkbox" checked={checked} onChange={onChange} />
+    </label>
+  );
+}
+
+function SelectField({ label, value, onChange, options, children }) {
+  return (
+    <label>
+      {label}
+      <div className="study-select-wrap">
+        <select value={value} onChange={onChange}>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="study-select-icon" size={16} aria-hidden="true" />
+      </div>
+      {children}
+    </label>
+  );
 }
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
@@ -75,42 +103,24 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
           </label>
 
           <div className="study-form-row">
-            <div className="study-pill-field">
-              <span>Map</span>
-              <div className="study-wallpaper-settings">
-                {ROOM_SETTING_KEYS.map((key) => (
-                  <button
-                    key={key}
-                    type="button"
-                    className={`study-wallpaper-setting ${setting === key ? "is-active" : ""}`}
-                    onClick={() => setSetting(key)}
-                  >
-                    {ROOM_SETTING_LABELS[key]}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="study-pill-field">
-              <span>Focus timer</span>
-              <div className="study-wallpaper-settings">
-                {FOCUS_MINUTE_PRESETS.map((minutes) => (
-                  <button
-                    key={minutes}
-                    type="button"
-                    className={`study-wallpaper-setting ${!isCustomFocus && focusMinutes === minutes ? "is-active" : ""}`}
-                    onClick={() => setFocusMinutes(minutes)}
-                  >
-                    {minutes} min
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  className={`study-wallpaper-setting ${isCustomFocus ? "is-active" : ""}`}
-                  onClick={() => setFocusMinutes(60)}
-                >
-                  Custom
-                </button>
-              </div>
+            <SelectField
+              label="Map"
+              value={setting}
+              onChange={(event) => setSetting(event.target.value)}
+              options={ROOM_SETTING_KEYS.map((key) => ({ value: key, label: ROOM_SETTING_LABELS[key] }))}
+            />
+            <SelectField
+              label="Focus timer"
+              value={isCustomFocus ? "custom" : focusMinutes}
+              onChange={(event) => {
+                const value = event.target.value;
+                setFocusMinutes(value === "custom" ? 60 : Number(value));
+              }}
+              options={[
+                ...FOCUS_MINUTE_PRESETS.map((minutes) => ({ value: minutes, label: `${minutes} minutes` })),
+                { value: "custom", label: "Custom" },
+              ]}
+            >
               {isCustomFocus && (
                 <input
                   type="number"
@@ -121,7 +131,7 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
                   aria-label="Custom focus timer minutes"
                 />
               )}
-            </div>
+            </SelectField>
           </div>
 
           <fieldset className="study-friend-picker">
@@ -152,22 +162,18 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
           </fieldset>
 
           <div className="study-toggle-grid">
-            <label className="study-toggle-row">
-              <span><Music size={18} /> Music</span>
-              <input
-                type="checkbox"
-                checked={musicEnabled}
-                onChange={(event) => setMusicEnabled(event.target.checked)}
-              />
-            </label>
-            <label className="study-toggle-row">
-              <span><MessageCircle size={18} /> Chat</span>
-              <input
-                type="checkbox"
-                checked={chatEnabled}
-                onChange={(event) => setChatEnabled(event.target.checked)}
-              />
-            </label>
+            <ToggleField
+              icon={Music}
+              label="Music"
+              checked={musicEnabled}
+              onChange={(event) => setMusicEnabled(event.target.checked)}
+            />
+            <ToggleField
+              icon={MessageCircle}
+              label="Chat"
+              checked={chatEnabled}
+              onChange={(event) => setChatEnabled(event.target.checked)}
+            />
           </div>
 
           {error && <p className="study-form-error">{error}</p>}
