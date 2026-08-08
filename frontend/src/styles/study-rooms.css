@@ -1023,5 +1023,25 @@
   .study-room-music-note {
     display: none;
   }
+
+  /* Anchor to the full-width row, not the half-width button, so the
+     panel can't overflow either edge. */
+  .study-room-controls {
+    position: relative;
+  }
+
+  .study-invite-control,
+  .study-wallpaper-control {
+    position: static;
+  }
+
+  .study-wallpaper-panel,
+  .study-invite-panel {
+    top: 100%;
+    right: 0;
+    left: 0;
+    width: auto;
+    margin-top: 8px;
+  }
 }
 
