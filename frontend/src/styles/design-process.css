@@ -1,0 +1,29 @@
+.design-process {
+  background-color: var(--color-page-background);
+  color: var(--color-text-primary);
+}
+
+.design-process-section {
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.design-process-number {
+  margin-bottom: 12px;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+}
+
+.design-process-title {
+  margin: 0;
+  color: var(--color-title-text);
+  font-family: var(--font-family-base);
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 400;
+}
