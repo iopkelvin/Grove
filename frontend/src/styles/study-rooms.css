@@ -6,8 +6,8 @@
 
 .study-lobby-shell,
 .study-room-shell {
-  
-  width: min(1000px, calc(100vw - 32px));
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
