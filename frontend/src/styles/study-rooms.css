@@ -982,14 +982,24 @@
   }
 
   .study-room-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
-    align-items: stretch;
-    flex-direction: column;
   }
 
   .study-room-status,
   .study-music-toggle {
     justify-content: center;
+  }
+
+  /* Invite/Background sit inside their own wrapper div (needed to anchor
+     their dropdown panel) — that wrapper stretches full-width via the
+     column's align-items:stretch above, but the button inside it doesn't
+     inherit that and stays sized to its own text, leaving it short next
+     to the other, unwrapped buttons. */
+  .study-invite-control .study-room-status,
+  .study-wallpaper-control .study-room-status {
+    width: 100%;
   }
 
   .study-volume-slider {

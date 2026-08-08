@@ -68,7 +68,7 @@ body {
   /* ── Study room scene (the night-scene overlay/background pixel-art
      look — shared with the tree page, not a parallel design system) ── */
   --color-study-online: #2E6D50;
-  --color-study-danger: #B00020;
+  --color-study-danger: #A6403A;
   --color-study-scene: #21142B;
   --color-study-overlay: rgba(15, 20, 17, 0.56);
   --color-study-overlay-soft: rgba(255, 253, 247, 0.84);
