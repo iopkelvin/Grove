@@ -38,6 +38,11 @@ export function roomImageFor(room) {
   return room.wallpaper_url || settingAssets(room.setting).image;
 }
 
+// The global room has host_id=null, so no signed-in user is ever its host.
+export function isRoomHost(room, profile) {
+  return Boolean(room.host_id) && profile?.id === room.host_id;
+}
+
 export function roomSoundFor(room) {
   return settingAssets(room.setting).sound;
 }

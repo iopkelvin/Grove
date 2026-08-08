@@ -5,16 +5,12 @@ import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, deleteRoom, getRooms, leaveRoom, roomImageFor, ROOM_SETTING_KEYS, ROOM_SETTING_LABELS } from "../api/rooms";
-import { firstNameOf } from "../lib/format";
+import { createRoom, deleteRoom, getRooms, isRoomHost, leaveRoom, roomImageFor, ROOM_SETTING_KEYS, ROOM_SETTING_LABELS } from "../api/rooms";
+import { displayNameOf, firstNameOf } from "../lib/format";
 
 const FOCUS_MINUTE_PRESETS = [25, 50, 90];
 const MIN_FOCUS_MINUTES = 5;
 const MAX_FOCUS_MINUTES = 180;
-
-function friendLabel(friend) {
-  return friend.display_name || friend.username || "";
-}
 
 function ToggleField({ icon: Icon, label, checked, onChange }) {
   return (
@@ -57,8 +53,8 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const filteredFriends = useMemo(() => {
     const query = friendSearch.trim().toLowerCase();
     return friends
-      .filter((friend) => !query || friendLabel(friend).toLowerCase().includes(query))
-      .sort((a, b) => friendLabel(a).localeCompare(friendLabel(b)));
+      .filter((friend) => !query || displayNameOf(friend).toLowerCase().includes(query))
+      .sort((a, b) => displayNameOf(a).localeCompare(displayNameOf(b)));
   }, [friendSearch, friends]);
 
   function toggleFriend(friendId) {
@@ -155,7 +151,7 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
                     onChange={() => toggleFriend(friend.id)}
                   />
                   <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                  <span>{friend.display_name || friend.username}</span>
+                  <span>{displayNameOf(friend)}</span>
                 </label>
               ))}
             </div>
@@ -315,7 +311,7 @@ export default function Lobby() {
                       </span>
                       <ChevronRight className="study-room-arrow" size={22} />
                     </button>
-                    {profile?.id === room.host_id && (
+                    {isRoomHost(room, profile) && (
                       <button
                         type="button"
                         className="study-room-delete"
@@ -325,7 +321,7 @@ export default function Lobby() {
                         <Trash2 size={16} />
                       </button>
                     )}
-                    {profile?.id !== room.host_id && !room.is_global && (
+                    {!isRoomHost(room, profile) && !room.is_global && (
                       <button
                         type="button"
                         className="study-room-leave"
@@ -380,7 +376,7 @@ export default function Lobby() {
                   <div className="study-friend-preview-row" key={friend.id}>
                     <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
                     <div>
-                      <strong>{friend.display_name || friend.username}</strong>
+                      <strong>{displayNameOf(friend)}</strong>
                       <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
                     </div>
                   </div>

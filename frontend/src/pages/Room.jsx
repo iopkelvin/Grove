@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Image as ImageIcon,
@@ -32,6 +32,7 @@ import {
   setRoomSetting,
   ROOM_SETTING_KEYS,
   ROOM_SETTING_LABELS,
+  isRoomHost,
   inviteRoomMembers,
   removeRoomMember,
   getRoomMessages,
@@ -309,15 +310,17 @@ export default function Room() {
   }
 
   const members = room.members || [];
-  const memberIds = new Set(members.map((member) => member.id));
-  const invitableFriends = friends.filter(({ user }) => !memberIds.has(user.id));
-  const removableMembers = members.filter((member) => member.id !== room.host_id);
+  const { invitableFriends, removableMembers } = useMemo(() => {
+    const memberIds = new Set(members.map((member) => member.id));
+    return {
+      invitableFriends: friends.filter(({ user }) => !memberIds.has(user.id)),
+      removableMembers: members.filter((member) => member.id !== room.host_id),
+    };
+  }, [members, room.host_id, friends]);
 
-  const settingLabel = room.setting
-    ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
-    : "Campsite";
+  const settingLabel = ROOM_SETTING_LABELS[room.setting] || ROOM_SETTING_LABELS.campsite;
 
-  const isHost = Boolean(room.host_id) && profile?.id === room.host_id;
+  const isHost = isRoomHost(room, profile);
 
   return (
     <div className="page study-room-page">

@@ -182,19 +182,7 @@
   color: var(--color-text-primary);
 }
 
-.study-room-delete {
-  position: absolute;
-  top: 16px;
-  left: 16px;
-  z-index: 1;
-  padding: 5px;
-  border: none;
-  border-radius: 50%;
-  background-color: var(--color-study-overlay-soft);
-  color: var(--color-error-text);
-  cursor: pointer;
-}
-
+.study-room-delete,
 .study-room-leave {
   position: absolute;
   top: 16px;
@@ -204,8 +192,15 @@
   border: none;
   border-radius: 50%;
   background-color: var(--color-study-overlay-soft);
-  color: var(--color-text-primary);
   cursor: pointer;
+}
+
+.study-room-delete {
+  color: var(--color-error-text);
+}
+
+.study-room-leave {
+  color: var(--color-text-primary);
 }
 /* VERTICAL TASK LIST FORMATTING */
 .study-task-scroll {
