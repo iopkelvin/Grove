@@ -1,7 +1,8 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   Image as ImageIcon,
+  LogOut,
   MessageCircle,
   Music,
   Pause,
@@ -24,11 +25,14 @@ import {
   getRoom,
   visitRoom,
   deleteRoom,
+  leaveRoom,
   roomImageFor,
   roomSoundFor,
   setRoomWallpaper,
   setRoomSetting,
   ROOM_SETTING_KEYS,
+  ROOM_SETTING_LABELS,
+  isRoomHost,
   inviteRoomMembers,
   removeRoomMember,
   getRoomMessages,
@@ -68,6 +72,10 @@ function formatMessageDate(date) {
   return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+function formatMessageTime(date) {
+  return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+}
+
 
 export default function Room() {
   const { roomId } = useParams();
@@ -82,7 +90,9 @@ export default function Room() {
   const [secondsRemaining, setSecondsRemaining] = useState((room?.focus_minutes || 50) * 60);
   const audioRef = useRef(null);
 
-  const [wallpaperPanelOpen, setWallpaperPanelOpen] = useState(false);
+  // Invite and Background are mutually exclusive — opening one closes the
+  // other, so their panels (both anchored top-right) never overlap.
+  const [openPanel, setOpenPanel] = useState(null); // "invite" | "background" | null
   const [uploadingWallpaper, setUploadingWallpaper] = useState(false);
   const [wallpaperError, setWallpaperError] = useState("");
 
@@ -92,7 +102,6 @@ export default function Room() {
   const [chatError, setChatError] = useState("");
   const lastMessageIdRef = useRef(null);
 
-  const [invitePanelOpen, setInvitePanelOpen] = useState(false);
   const [friends, setFriends] = useState([]);
   const [inviteError, setInviteError] = useState("");
 
@@ -203,11 +212,11 @@ export default function Room() {
   }, [room?.id, room?.chat_enabled, chatOpen]);
 
   useEffect(() => {
-    if (!invitePanelOpen || !session?.user?.id) return;
+    if (openPanel !== "invite" || !session?.user?.id) return;
     getFriends(session.user.id, { status: "accepted" })
       .then(setFriends)
       .catch((error) => console.error("Failed to load friends:", error));
-  }, [invitePanelOpen, session?.user?.id]);
+  }, [openPanel, session?.user?.id]);
 
   async function handleSendMessage(event) {
     event.preventDefault();
@@ -252,6 +261,15 @@ export default function Room() {
     }
   }
 
+  async function handleLeaveRoom() {
+    try {
+      await leaveRoom(room.id);
+      navigate("/rooms");
+    } catch (error) {
+      window.alert(error.message);
+    }
+  }
+
   async function handleChangeSetting(setting) {
     if (setting === room.setting) return;
     setWallpaperError("");
@@ -272,7 +290,7 @@ export default function Room() {
     try {
       const url = await uploadRoomWallpaper(file, room.id);
       setRoom(await setRoomWallpaper(room.id, url));
-      setWallpaperPanelOpen(false);
+      setOpenPanel(null);
     } catch {
       setWallpaperError("Could not upload the image. Please try again.");
     } finally {
@@ -292,15 +310,17 @@ export default function Room() {
   }
 
   const members = room.members || [];
-  const memberIds = new Set(members.map((member) => member.id));
-  const invitableFriends = friends.filter(({ user }) => !memberIds.has(user.id));
-  const removableMembers = members.filter((member) => member.id !== room.host_id);
+  const { invitableFriends, removableMembers } = useMemo(() => {
+    const memberIds = new Set(members.map((member) => member.id));
+    return {
+      invitableFriends: friends.filter(({ user }) => !memberIds.has(user.id)),
+      removableMembers: members.filter((member) => member.id !== room.host_id),
+    };
+  }, [members, room.host_id, friends]);
 
-  const settingLabel = room.setting
-    ? room.setting.charAt(0).toUpperCase() + room.setting.slice(1)
-    : "Campsite";
+  const settingLabel = ROOM_SETTING_LABELS[room.setting] || ROOM_SETTING_LABELS.campsite;
 
-  const isHost = Boolean(room.host_id) && profile?.id === room.host_id;
+  const isHost = isRoomHost(room, profile);
 
   return (
     <div className="page study-room-page">
@@ -324,13 +344,13 @@ export default function Room() {
             {isHost && (
               <div className="study-invite-control">
                 <button
-                  className={`study-room-status ${invitePanelOpen ? "is-on" : ""}`}
-                  onClick={() => setInvitePanelOpen((value) => !value)}
+                  className={`study-room-status ${openPanel === "invite" ? "is-on" : ""}`}
+                  onClick={() => setOpenPanel((current) => (current === "invite" ? null : "invite"))}
                   aria-label="Invite friends"
                 >
                   <UserPlus size={18} /> Invite
                 </button>
-                {invitePanelOpen && (
+                {openPanel === "invite" && (
                   <div className="study-invite-panel">
                     {removableMembers.length > 0 && (
                       <>
@@ -375,16 +395,16 @@ export default function Room() {
                 )}
               </div>
             )}
-            {isHost && (
+            {!room.is_global && (
               <div className="study-wallpaper-control">
                 <button
-                  className={`study-room-status ${wallpaperPanelOpen ? "is-on" : ""}`}
-                  onClick={() => setWallpaperPanelOpen((value) => !value)}
+                  className={`study-room-status ${openPanel === "background" ? "is-on" : ""}`}
+                  onClick={() => setOpenPanel((current) => (current === "background" ? null : "background"))}
                   aria-label="Customize room background"
                 >
                   <ImageIcon size={18} /> Background
                 </button>
-                {wallpaperPanelOpen && (
+                {openPanel === "background" && (
                   <div className="study-wallpaper-panel">
                     <div className="study-wallpaper-settings">
                       {ROOM_SETTING_KEYS.map((key) => (
@@ -394,7 +414,7 @@ export default function Room() {
                           className={`study-wallpaper-setting ${room.setting === key ? "is-active" : ""}`}
                           onClick={() => handleChangeSetting(key)}
                         >
-                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                          {ROOM_SETTING_LABELS[key]}
                         </button>
                       ))}
                     </div>
@@ -412,11 +432,6 @@ export default function Room() {
                   </div>
                 )}
               </div>
-            )}
-            {isHost && (
-              <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
-                <Trash2 size={18} /> Delete
-              </button>
             )}
             <button
               className={`study-music-toggle ${musicEnabled ? "is-on" : ""}`}
@@ -437,6 +452,16 @@ export default function Room() {
                 onChange={(event) => setVolume(Number(event.target.value))}
                 aria-label="Room music volume"
               />
+            )}
+            {isHost && (
+              <button className="study-room-status study-room-delete-button" onClick={handleDeleteRoom} aria-label="Delete room">
+                <Trash2 size={18} /> Delete
+              </button>
+            )}
+            {!isHost && !room.is_global && (
+              <button className="study-room-status study-room-leave-button" onClick={handleLeaveRoom} aria-label="Leave room">
+                <LogOut size={18} /> Leave
+              </button>
             )}
           </div>
         </header>
@@ -506,7 +531,10 @@ export default function Room() {
                     <Fragment key={message.id}>
                       {showDate && <div className="study-chat-date">{formatMessageDate(sentAt)}</div>}
                       <div className="study-chat-message">
-                        <strong>{message.user.display_name || message.user.username}</strong>
+                        <div className="study-chat-message-meta">
+                          <strong>{message.user.display_name || message.user.username}</strong>
+                          <span className="study-chat-time">{formatMessageTime(sentAt)}</span>
+                        </div>
                         <span>{message.body}</span>
                       </div>
                     </Fragment>

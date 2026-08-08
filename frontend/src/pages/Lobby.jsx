@@ -1,12 +1,44 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ChevronRight, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
+import { ChevronDown, ChevronRight, LogOut, Music, MessageCircle, Plus, Trash2, X } from "lucide-react";
 import MenuIcon from "../components/MenuIcon";
 import { useUser } from "../context/UserContext";
 import { getFriends } from "../api/friends";
 import { getTasks } from "../api/tasks";
-import { createRoom, deleteRoom, getRooms, roomImageFor } from "../api/rooms";
-import { firstNameOf } from "../lib/format";
+import { createRoom, deleteRoom, getRooms, isRoomHost, leaveRoom, roomImageFor, ROOM_SETTING_KEYS, ROOM_SETTING_LABELS } from "../api/rooms";
+import { displayNameOf, firstNameOf } from "../lib/format";
+
+const FOCUS_MINUTE_PRESETS = [25, 50, 90];
+const MIN_FOCUS_MINUTES = 5;
+const MAX_FOCUS_MINUTES = 180;
+
+function ToggleField({ icon: Icon, label, checked, onChange }) {
+  return (
+    <label className="study-toggle-row">
+      <span><Icon size={18} /> {label}</span>
+      <input type="checkbox" checked={checked} onChange={onChange} />
+    </label>
+  );
+}
+
+function SelectField({ label, value, onChange, options, children }) {
+  return (
+    <label>
+      {label}
+      <div className="study-select-wrap">
+        <select value={value} onChange={onChange}>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+        <ChevronDown className="study-select-icon" size={16} aria-hidden="true" />
+      </div>
+      {children}
+    </label>
+  );
+}
 
 function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [name, setName] = useState("My Study Room");
@@ -16,13 +48,13 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
   const [musicEnabled, setMusicEnabled] = useState(true);
   const [chatEnabled, setChatEnabled] = useState(true);
   const [focusMinutes, setFocusMinutes] = useState(50);
+  const isCustomFocus = !FOCUS_MINUTE_PRESETS.includes(focusMinutes);
 
   const filteredFriends = useMemo(() => {
     const query = friendSearch.trim().toLowerCase();
-    if (!query) return friends;
-    return friends.filter((friend) =>
-      `${friend.display_name || ""} ${friend.username || ""}`.toLowerCase().includes(query)
-    );
+    return friends
+      .filter((friend) => !query || displayNameOf(friend).toLowerCase().includes(query))
+      .sort((a, b) => displayNameOf(a).localeCompare(displayNameOf(b)));
   }, [friendSearch, friends]);
 
   function toggleFriend(friendId) {
@@ -67,26 +99,35 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
           </label>
 
           <div className="study-form-row">
-            <label>
-              Map
-              <select value={setting} onChange={(event) => setSetting(event.target.value)}>
-                <option value="campsite">Campsite</option>
-                <option value="mars">Mars</option>
-                <option value="poker">Poker Table</option>
-                <option value="library">Library</option>
-              </select>
-            </label>
-            <label>
-              Focus timer
-              <select
-                value={focusMinutes}
-                onChange={(event) => setFocusMinutes(Number(event.target.value))}
-              >
-                <option value={25}>25 minutes</option>
-                <option value={50}>50 minutes</option>
-                <option value={90}>90 minutes</option>
-              </select>
-            </label>
+            <SelectField
+              label="Map"
+              value={setting}
+              onChange={(event) => setSetting(event.target.value)}
+              options={ROOM_SETTING_KEYS.map((key) => ({ value: key, label: ROOM_SETTING_LABELS[key] }))}
+            />
+            <SelectField
+              label="Focus timer"
+              value={isCustomFocus ? "custom" : focusMinutes}
+              onChange={(event) => {
+                const value = event.target.value;
+                setFocusMinutes(value === "custom" ? 60 : Number(value));
+              }}
+              options={[
+                ...FOCUS_MINUTE_PRESETS.map((minutes) => ({ value: minutes, label: `${minutes} minutes` })),
+                { value: "custom", label: "Custom" },
+              ]}
+            >
+              {isCustomFocus && (
+                <input
+                  type="number"
+                  min={MIN_FOCUS_MINUTES}
+                  max={MAX_FOCUS_MINUTES}
+                  value={focusMinutes}
+                  onChange={(event) => setFocusMinutes(Number(event.target.value))}
+                  aria-label="Custom focus timer minutes"
+                />
+              )}
+            </SelectField>
           </div>
 
           <fieldset className="study-friend-picker">
@@ -110,29 +151,25 @@ function CreateRoomModal({ friends, onClose, onCreate, creating, error }) {
                     onChange={() => toggleFriend(friend.id)}
                   />
                   <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                  <span>{friend.display_name || friend.username}</span>
+                  <span>{displayNameOf(friend)}</span>
                 </label>
               ))}
             </div>
           </fieldset>
 
           <div className="study-toggle-grid">
-            <label className="study-toggle-row">
-              <span><Music size={18} /> Music</span>
-              <input
-                type="checkbox"
-                checked={musicEnabled}
-                onChange={(event) => setMusicEnabled(event.target.checked)}
-              />
-            </label>
-            <label className="study-toggle-row">
-              <span><MessageCircle size={18} /> Chat</span>
-              <input
-                type="checkbox"
-                checked={chatEnabled}
-                onChange={(event) => setChatEnabled(event.target.checked)}
-              />
-            </label>
+            <ToggleField
+              icon={Music}
+              label="Music"
+              checked={musicEnabled}
+              onChange={(event) => setMusicEnabled(event.target.checked)}
+            />
+            <ToggleField
+              icon={MessageCircle}
+              label="Chat"
+              checked={chatEnabled}
+              onChange={(event) => setChatEnabled(event.target.checked)}
+            />
           </div>
 
           {error && <p className="study-form-error">{error}</p>}
@@ -195,6 +232,15 @@ export default function Lobby() {
     }
   }
 
+  async function handleLeaveRoom(roomId) {
+    try {
+      await leaveRoom(roomId);
+      setRooms((current) => current.filter((room) => room.id !== roomId));
+    } catch (error) {
+      setLoadError(error.message);
+    }
+  }
+
   async function handleCreateRoom(formValues) {
     setCreating(true);
     setCreateError("");
@@ -248,7 +294,7 @@ export default function Lobby() {
                 <p className="study-eyebrow">Now studying</p>
                 <h2>Current study rooms</h2>
               </div>
-              <span>Scroll to explore</span>
+              <span>Scroll for more rooms</span>
             </div>
 
             {rooms.length === 0 ? (
@@ -265,7 +311,7 @@ export default function Lobby() {
                       </span>
                       <ChevronRight className="study-room-arrow" size={22} />
                     </button>
-                    {profile?.id === room.host_id && (
+                    {isRoomHost(room, profile) && (
                       <button
                         type="button"
                         className="study-room-delete"
@@ -273,6 +319,16 @@ export default function Lobby() {
                         aria-label="Delete room"
                       >
                         <Trash2 size={16} />
+                      </button>
+                    )}
+                    {!isRoomHost(room, profile) && !room.is_global && (
+                      <button
+                        type="button"
+                        className="study-room-leave"
+                        onClick={() => handleLeaveRoom(room.id)}
+                        aria-label="Leave room"
+                      >
+                        <LogOut size={16} />
                       </button>
                     )}
                   </div>
@@ -311,25 +367,29 @@ export default function Lobby() {
                 <h2>Create your own study room</h2>
               </div>
             </div>
-            <p className="study-create-copy">Invite friends and choose a map, focus timer, music, and chat.</p>
-            {friends.length === 0 ? (
-              <p>No friends yet — add some from the Friends page to invite them here.</p>
-            ) : (
-              <div className="study-friend-preview" aria-label="Friends available to invite">
-                {friends.map((friend) => (
-                  <div className="study-friend-preview-row" key={friend.id}>
-                    <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                    <div>
-                      <strong>{friend.display_name || friend.username}</strong>
-                      <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+            <div className="study-create-main">
+              <p className="study-create-copy">Set the vibe: pick a map, a timer, and who's joining you.</p>
+              <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
+                <Plus size={20} /> Create a room
+              </button>
+            </div>
+            <div className="study-create-friends">
+              {friends.length === 0 ? (
+                <p>No friends yet — add some from the Friends page to invite them here.</p>
+              ) : (
+                <div className="study-friend-preview" aria-label="Friends available to invite">
+                  {friends.map((friend) => (
+                    <div className="study-friend-preview-row" key={friend.id}>
+                      <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
+                      <div>
+                        <strong>{displayNameOf(friend)}</strong>
+                        <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
-              <Plus size={20} /> Create a room
-            </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         </section>
       </main>

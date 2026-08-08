@@ -5,7 +5,7 @@ Streak bumping and the tree-growth/points computation shown on the Streaks
 page.
 """
 
-from datetime import date, timedelta
+from datetime import date
 
 from api.config.database import db
 from api.models.streak import Streak
@@ -18,8 +18,9 @@ TREE_CYCLE_LENGTH = 100
 def bump_for_completion(user):
     """Completing a task bumps the streak at most once per calendar day
     (see api/models/streak.py). Same day as last activity -> no change,
-    yesterday -> streak continues (+1), anything older -> streak restarts
-    at 1. Creates the Streak row on first use rather than at signup, so
+    any other day -> +1. current_count only ever moves forward — a gap
+    doesn't reset it, it just doesn't add for the days that were missed.
+    Creates the Streak row on first use rather than at signup, so
     existing users don't need a backfill."""
     streak = user.streak
     if streak is None:
@@ -29,10 +30,7 @@ def bump_for_completion(user):
     today = date.today()
     if streak.last_activity_date == today:
         return
-    if streak.last_activity_date == today - timedelta(days=1):
-        streak.current_count += 1
-    else:
-        streak.current_count = 1
+    streak.current_count += 1
     streak.last_activity_date = today
 
 

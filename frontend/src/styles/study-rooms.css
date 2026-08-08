@@ -1,13 +1,4 @@
 /* PAGE TEXT, SHELLS, HEADINGS */
-.study-wallpaper-settings {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.study-wallpaper-setting {
-  flex: 1 1 calc(50% - 3px);
-}
 .study-lobby-page,
 .study-room-page {
   color: var(--color-text-primary);
@@ -15,8 +6,8 @@
 
 .study-lobby-shell,
 .study-room-shell {
-  
-  width: min(1000px, calc(100vw - 32px));
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
 }
 
@@ -74,10 +65,10 @@
 }
 
 .study-task-section {
-  grid-row: span 2;
   display: flex;
-  min-height: 600px;
+  max-height: 600px;
   flex-direction: column;
+  align-self: start;
 }
 
 .study-create-section {
@@ -88,6 +79,22 @@
 
 .study-create-section > .study-section-heading {
   grid-column: 1 / -1;
+}
+
+/* Description + button live in their own flex column instead of being
+   separate grid rows shared with the friends-list column. A shared grid
+   row's height is set by its tallest cell (the friends list), which left
+   the short description sitting at the top of a much taller row with dead
+   space below it before the button, in the next row, finally appeared.
+   Stacking them in one flex item sidesteps that: the column stretches to
+   match the friends list's height (default grid stretch), and
+   space-between pins the description to the top and the button to the
+   bottom, so the button's baseline lines up with the friends list's. */
+.study-create-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
 }
 
 .study-section-heading {
@@ -191,7 +198,8 @@
   color: var(--color-text-primary);
 }
 
-.study-room-delete {
+.study-room-delete,
+.study-room-leave {
   position: absolute;
   top: 16px;
   left: 16px;
@@ -200,8 +208,15 @@
   border: none;
   border-radius: 50%;
   background-color: var(--color-study-overlay-soft);
-  color: var(--color-error-text);
   cursor: pointer;
+}
+
+.study-room-delete {
+  color: var(--color-error-text);
+}
+
+.study-room-leave {
+  color: var(--color-text-primary);
 }
 /* VERTICAL TASK LIST FORMATTING */
 .study-task-scroll {
@@ -235,10 +250,10 @@
 }
 
 .study-task-dot {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--color-button-background);
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  background-color: var(--color-button-background);
 }
 
 .study-task-row strong {
@@ -293,12 +308,11 @@
 }
 
 .study-presence {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--color-scene-foreground);
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--color-card-border);
   border-radius: 50%;
   background-color: var(--color-picture-placeholder);
-  box-shadow: 0 0 0 1px var(--color-card-border);
   flex: 0 0 auto;
 }
 
@@ -333,8 +347,7 @@
 }
 
 .study-create-button {
-  grid-column: 1 / -1;
-  justify-self: start;
+  align-self: flex-start;
 }
 /* MODAL OVERLAY AND CONTAINER CLOSE BUTTON */
 /* uses fixed positioning, augments centering, and positions ciruclar close control */
@@ -407,6 +420,27 @@
   font: inherit;
 }
 
+.study-room-form select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  min-height: 46px;
+  padding: 10px 40px 10px 14px;
+}
+
+.study-select-wrap {
+  position: relative;
+}
+
+.study-select-icon {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  transform: translateY(-50%);
+  color: var(--color-text-secondary);
+  pointer-events: none;
+}
+
 .study-form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -457,7 +491,8 @@
 
 .study-toggle-row {
   display: flex !important;
-  padding: 13px 14px;
+  min-height: 46px;
+  padding: 10px 14px;
   border: 1px solid var(--color-card-border);
   border-radius: 8px;
   flex-direction: row !important;
@@ -544,9 +579,11 @@
   background-color: var(--color-button-background);
 }
 
-.study-room-delete-button {
-  border-color: var(--color-error-text);
-  color: var(--color-error-text);
+.study-room-delete-button,
+.study-room-leave-button {
+  border-color: var(--color-study-danger);
+  background-color: var(--color-study-danger);
+  color: var(--color-scene-foreground);
 }
 
 .study-volume-slider {
@@ -577,11 +614,12 @@
 
 .study-wallpaper-settings {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
 .study-wallpaper-setting {
-  flex: 1;
+  flex: 1 1 calc(50% - 3px);
   padding: 6px 4px;
   border: 1px solid var(--color-card-border);
   border-radius: 8px;
@@ -867,6 +905,20 @@
   opacity: 0.75;
 }
 
+.study-chat-message-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.study-chat-time {
+  flex: 0 0 auto;
+  opacity: 0.6;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 .study-chat-form {
   display: flex;
   gap: 6px;
@@ -901,11 +953,6 @@
     grid-template-columns: 1fr;
   }
 
-  .study-task-section {
-    grid-row: auto;
-    min-height: 420px;
-  }
-
   .study-room-header {
     align-items: flex-start;
     flex-direction: column;
@@ -933,15 +980,11 @@
     min-height: 245px;
   }
 
-  .study-create-section,
   .study-form-row,
   .study-friend-options,
-  .study-toggle-grid {
+  .study-toggle-grid,
+  .study-create-section {
     grid-template-columns: 1fr;
-  }
-
-  .study-create-section > * {
-    grid-column: 1;
   }
 
   .study-room-page {
@@ -949,14 +992,24 @@
   }
 
   .study-room-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     width: 100%;
-    align-items: stretch;
-    flex-direction: column;
   }
 
   .study-room-status,
   .study-music-toggle {
     justify-content: center;
+  }
+
+  /* Invite/Background sit inside their own wrapper div (needed to anchor
+     their dropdown panel) — that wrapper stretches full-width via the
+     column's align-items:stretch above, but the button inside it doesn't
+     inherit that and stays sized to its own text, leaving it short next
+     to the other, unwrapped buttons. */
+  .study-invite-control .study-room-status,
+  .study-wallpaper-control .study-room-status {
+    width: 100%;
   }
 
   .study-volume-slider {
@@ -969,6 +1022,26 @@
 
   .study-room-music-note {
     display: none;
+  }
+
+  /* Anchor to the full-width row, not the half-width button, so the
+     panel can't overflow either edge. */
+  .study-room-controls {
+    position: relative;
+  }
+
+  .study-invite-control,
+  .study-wallpaper-control {
+    position: static;
+  }
+
+  .study-wallpaper-panel,
+  .study-invite-panel {
+    top: 100%;
+    right: 0;
+    left: 0;
+    width: auto;
+    margin-top: 8px;
   }
 }
 

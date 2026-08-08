@@ -332,6 +332,23 @@ def remove_room_member(room_id, user_id):
     return jsonify(room.to_dict()), 200
 
 
+@app.route("/api/rooms/<int:room_id>/leave", methods=["POST"])
+@require_auth
+def leave_room(room_id):
+    room = db.session.get(Room, room_id)
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+
+    user = user_service.find_by_supabase_id(g.supabase_id)
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    if user.id == room.host_id:
+        return jsonify({"error": "The host can't leave — delete the room instead"}), 400
+
+    room_service.remove_member(room, user.id)
+    return "", 204
+
+
 @app.route("/api/rooms/<int:room_id>/visit", methods=["POST"])
 @require_auth
 def visit_room(room_id):
