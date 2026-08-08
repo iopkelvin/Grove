@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 
 const SCENES = {
-  intro: { file: "/assets/design-process/intro.png" },
-  morning: { file: "/assets/design-process/morning.png" },
-  afternoon: { file: "/assets/design-process/afternoon.png" },
-  evening: { file: "/assets/design-process/evening.png" },
-  night: { file: "/assets/design-process/night.png" },
-  ending: { file: "/assets/design-process/ending.png" },
+  intro: { file: "/assets/design-process/intro.png", mode: "day" },
+  morning: { file: "/assets/design-process/morning.png", mode: "day" },
+  afternoon: { file: "/assets/design-process/afternoon.png", mode: "day" },
+  evening: { file: "/assets/design-process/evening.png", mode: "night" },
+  night: { file: "/assets/design-process/night.png", mode: "night" },
+  ending: { file: "/assets/design-process/ending.png", mode: "night" },
 };
 
 const SECTIONS = [
@@ -60,6 +60,7 @@ function DesignProcess() {
           key={section.id}
           id={section.id}
           data-scene={section.scene}
+          data-mode={SCENES[section.scene].mode}
           ref={(el) => (sectionRefs.current[section.id] = el)}
           className="design-process-section"
         >

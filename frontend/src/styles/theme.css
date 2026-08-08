@@ -19,6 +19,7 @@ body {
   /* ── Page ── */
   --color-page-background: #F4F3EE;
   --color-scene-foreground: #FFFDF7;   /* light text/borders on the night scenes */
+  --color-fixed-dark-text: #1a1a1a;    /* dark text on the day scenes, never toggles */
 
   /* ── Cards ── */
   --color-card-background: #D6DDD7;         /* standard cards: friends, calendar, tasks, up next */
@@ -131,5 +132,6 @@ body {
      --color-study-scene, --color-tree-night   night backgrounds
      --color-study-overlay                      dark dim
      --color-tree-water                         glow accent
-     --color-scene-foreground                   light-on-scene text */
+     --color-scene-foreground                   light-on-scene text
+     --color-fixed-dark-text                    dark-on-scene text */
 }

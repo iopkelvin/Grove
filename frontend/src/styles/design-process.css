@@ -26,26 +26,25 @@
   justify-content: center;
   padding: 40px;
   text-align: center;
+  --scene-text: var(--color-fixed-dark-text);
+}
+
+.design-process-section[data-mode="night"] {
+  --scene-text: var(--color-scene-foreground);
 }
 
 .design-process-number {
   margin-bottom: 12px;
-  color: var(--color-text-secondary);
+  color: var(--scene-text);
   font-size: 18px;
   letter-spacing: 0.1em;
 }
 
 .design-process-title {
   margin: 0;
-  color: var(--color-title-text);
+  color: var(--scene-text);
   font-family: var(--font-family-base);
   font-size: clamp(32px, 6vw, 56px);
   font-weight: 400;
   transition: color 1s ease;
-}
-
-.design-process-section[data-scene="evening"] .design-process-title,
-.design-process-section[data-scene="night"] .design-process-title,
-.design-process-section[data-scene="ending"] .design-process-title {
-  color: var(--color-scene-foreground);
 }
