@@ -1,0 +1,51 @@
+.design-process {
+  position: relative;
+}
+
+.design-process-backgrounds {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+}
+
+.design-process-bg {
+  position: absolute;
+  inset: 0;
+  background-position: center;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity 1s ease;
+}
+
+.design-process-section {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+.design-process-number {
+  margin-bottom: 12px;
+  color: var(--color-text-secondary);
+  font-size: 18px;
+  letter-spacing: 0.1em;
+}
+
+.design-process-title {
+  margin: 0;
+  color: var(--color-title-text);
+  font-family: var(--font-family-base);
+  font-size: clamp(32px, 6vw, 56px);
+  font-weight: 400;
+  transition: color 1s ease;
+}
+
+.design-process-section[data-scene="evening"] .design-process-title,
+.design-process-section[data-scene="night"] .design-process-title,
+.design-process-section[data-scene="ending"] .design-process-title {
+  color: var(--color-scene-foreground);
+}

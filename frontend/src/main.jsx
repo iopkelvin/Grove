@@ -19,6 +19,7 @@ import './styles/home-tutorial.css'
 import './styles/settings.css'
 import './styles/study-rooms.css'
 import './styles/tree.css'
+import './styles/design-process.css'
 import { ThemeProvider } from './context/ThemeContext'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
