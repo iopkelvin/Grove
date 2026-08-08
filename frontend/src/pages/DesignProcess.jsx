@@ -1,24 +1,26 @@
 import { useEffect, useRef, useState } from "react";
 
 const SCENES = {
-  dawn: { file: "/assets/design-process/scene-dawn.png", dark: false },
-  morning: { file: "/assets/design-process/scene-morning.png", dark: false },
-  night: { file: "/assets/design-process/scene-night.png", dark: true },
-  dusk: { file: "/assets/design-process/scene-dusk.png", dark: false },
+  intro: { file: "/assets/design-process/intro.png" },
+  morning: { file: "/assets/design-process/morning.png" },
+  afternoon: { file: "/assets/design-process/afternoon.png" },
+  evening: { file: "/assets/design-process/evening.png" },
+  night: { file: "/assets/design-process/night.png" },
+  ending: { file: "/assets/design-process/ending.png" },
 };
 
 const SECTIONS = [
-  { id: "hero", title: "Grow together, one task at a time.", scene: "dawn" },
-  { id: "problem", number: "01", title: "Problem & Target Users", scene: "dawn" },
-  { id: "needfinding", number: "02", title: "Needfinding", scene: "dawn" },
-  { id: "lofi", number: "03", title: "Lo-Fi Prototyping", scene: "morning" },
-  { id: "hifi", number: "04", title: "Hi-Fi Prototyping", scene: "morning" },
-  { id: "implementation", number: "05", title: "Implementation", scene: "morning" },
-  { id: "evaluation", number: "06", title: "User Evaluation", scene: "night" },
-  { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "night" },
-  { id: "demo", number: "08", title: "Demo Video", scene: "dusk" },
-  { id: "team", number: "09", title: "Team", scene: "dusk" },
-  { id: "closing", title: "Grow together.", scene: "dusk" },
+  { id: "hero", title: "Grow together, one task at a time.", scene: "intro" },
+  { id: "problem", number: "01", title: "Problem & Target Users", scene: "morning" },
+  { id: "needfinding", number: "02", title: "Needfinding", scene: "morning" },
+  { id: "lofi", number: "03", title: "Lo-Fi Prototyping", scene: "afternoon" },
+  { id: "hifi", number: "04", title: "Hi-Fi Prototyping", scene: "afternoon" },
+  { id: "implementation", number: "05", title: "Implementation", scene: "afternoon" },
+  { id: "evaluation", number: "06", title: "User Evaluation", scene: "evening" },
+  { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "evening" },
+  { id: "demo", number: "08", title: "Demo Video", scene: "night" },
+  { id: "team", number: "09", title: "Team", scene: "night" },
+  { id: "closing", title: "Grow together.", scene: "ending" },
 ];
 
 function DesignProcess() {
@@ -59,7 +61,7 @@ function DesignProcess() {
           id={section.id}
           data-scene={section.scene}
           ref={(el) => (sectionRefs.current[section.id] = el)}
-          className={`design-process-section${SCENES[section.scene].dark ? " is-dark" : ""}`}
+          className="design-process-section"
         >
           {section.number && <span className="design-process-number">{section.number}</span>}
           <h2 className="design-process-title">{section.title}</h2>

@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
@@ -14,10 +14,18 @@ import DesignProcess from "./pages/DesignProcess";
 import AuthGate from "./components/RequireAuth";
 import ThemeToggle from "./components/ThemeToggle";
 
+// DesignProcess has its own baked-in day/night narrative tied to scroll
+// position, so the site's global light/dark toggle doesn't apply there.
+function GlobalThemeToggle() {
+  const location = useLocation();
+  if (location.pathname === "/design-process") return null;
+  return <ThemeToggle />;
+}
+
 function App() {
   return (
     <BrowserRouter>
-          <ThemeToggle />
+          <GlobalThemeToggle />
       <Routes>
         <Route path="/" element={<AuthGate />} />
         <Route path="/home" element={<Home />} />

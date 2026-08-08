@@ -1,6 +1,5 @@
 .design-process {
   position: relative;
-  color: var(--color-text-primary);
 }
 
 .design-process-backgrounds {
@@ -27,12 +26,6 @@
   justify-content: center;
   padding: 40px;
   text-align: center;
-  color: var(--color-text-primary);
-  transition: color 1s ease;
-}
-
-.design-process-section.is-dark {
-  color: var(--color-scene-foreground);
 }
 
 .design-process-number {
@@ -44,8 +37,15 @@
 
 .design-process-title {
   margin: 0;
-  color: inherit;
+  color: var(--color-title-text);
   font-family: var(--font-family-base);
   font-size: clamp(32px, 6vw, 56px);
   font-weight: 400;
+  transition: color 1s ease;
+}
+
+.design-process-section[data-scene="evening"] .design-process-title,
+.design-process-section[data-scene="night"] .design-process-title,
+.design-process-section[data-scene="ending"] .design-process-title {
+  color: var(--color-scene-foreground);
 }
