@@ -10,7 +10,7 @@ const SCENES = {
 };
 
 const SECTIONS = [
-  { id: "hero", title: "Grow together, one task at a time.", scene: "intro" },
+  { id: "hero", heading: "Grove", title: "Grow together, one task at a time.", scene: "intro" },
   { id: "problem", number: "01", title: "Problem & Target Users", scene: "morning" },
   { id: "needfinding", number: "02", title: "Needfinding", scene: "morning" },
   { id: "lofi", number: "03", title: "Lo-Fi Prototyping", scene: "afternoon" },
@@ -62,10 +62,26 @@ function DesignProcess() {
           data-scene={section.scene}
           data-mode={SCENES[section.scene].mode}
           ref={(el) => (sectionRefs.current[section.id] = el)}
-          className="design-process-section"
+          className={
+            section.id === "hero"
+              ? "design-process-section design-process-hero"
+              : "design-process-section"
+          }
         >
-          {section.number && <span className="design-process-number">{section.number}</span>}
-          <h2 className="design-process-title">{section.title}</h2>
+          {section.id === "hero" ? (
+            <div className="design-process-hero-inner">
+              <div className="design-process-hero-text">
+                <h1 className="design-process-hero-heading">{section.heading}</h1>
+                <p className="design-process-hero-tagline">{section.title}</p>
+              </div>
+              <img className="design-process-hero-tree" src="/assets/design-process/hero-tree.png" alt="" />
+            </div>
+          ) : (
+            <>
+              {section.number && <span className="design-process-number">{section.number}</span>}
+              <h2 className="design-process-title">{section.title}</h2>
+            </>
+          )}
         </section>
       ))}
     </div>
