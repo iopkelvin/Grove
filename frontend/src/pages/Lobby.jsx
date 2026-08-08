@@ -367,25 +367,29 @@ export default function Lobby() {
                 <h2>Create your own study room</h2>
               </div>
             </div>
-            <p className="study-create-copy">Set the vibe: pick a map, a timer, and who's joining you.</p>
-            {friends.length === 0 ? (
-              <p>No friends yet — add some from the Friends page to invite them here.</p>
-            ) : (
-              <div className="study-friend-preview" aria-label="Friends available to invite">
-                {friends.map((friend) => (
-                  <div className="study-friend-preview-row" key={friend.id}>
-                    <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
-                    <div>
-                      <strong>{displayNameOf(friend)}</strong>
-                      <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+            <div className="study-create-main">
+              <p className="study-create-copy">Set the vibe: pick a map, a timer, and who's joining you.</p>
+              <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
+                <Plus size={20} /> Create a room
+              </button>
+            </div>
+            <div className="study-create-friends">
+              {friends.length === 0 ? (
+                <p>No friends yet — add some from the Friends page to invite them here.</p>
+              ) : (
+                <div className="study-friend-preview" aria-label="Friends available to invite">
+                  {friends.map((friend) => (
+                    <div className="study-friend-preview-row" key={friend.id}>
+                      <span className={`study-presence ${friend.is_online ? "is-online" : ""}`} />
+                      <div>
+                        <strong>{displayNameOf(friend)}</strong>
+                        <small>{friend.is_online ? "Online now" : "Ready for an invite"}</small>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <button className="study-primary-button study-create-button" onClick={() => setShowModal(true)}>
-              <Plus size={20} /> Create a room
-            </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </section>
         </section>
       </main>

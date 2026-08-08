@@ -81,6 +81,22 @@
   grid-column: 1 / -1;
 }
 
+/* Description + button live in their own flex column instead of being
+   separate grid rows shared with the friends-list column. A shared grid
+   row's height is set by its tallest cell (the friends list), which left
+   the short description sitting at the top of a much taller row with dead
+   space below it before the button, in the next row, finally appeared.
+   Stacking them in one flex item sidesteps that: the column stretches to
+   match the friends list's height (default grid stretch), and
+   space-between pins the description to the top and the button to the
+   bottom, so the button's baseline lines up with the friends list's. */
+.study-create-main {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+}
+
 .study-section-heading {
   display: flex;
   gap: 20px;
@@ -234,10 +250,10 @@
 }
 
 .study-task-dot {
-  width: 11px;
-  height: 11px;
-  border: 2px solid var(--color-button-background);
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  background-color: var(--color-button-background);
 }
 
 .study-task-row strong {
@@ -292,12 +308,11 @@
 }
 
 .study-presence {
-  width: 12px;
-  height: 12px;
-  border: 2px solid var(--color-scene-foreground);
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--color-card-border);
   border-radius: 50%;
   background-color: var(--color-picture-placeholder);
-  box-shadow: 0 0 0 1px var(--color-card-border);
   flex: 0 0 auto;
 }
 
@@ -332,8 +347,7 @@
 }
 
 .study-create-button {
-  grid-column: 1 / -1;
-  justify-self: start;
+  align-self: flex-start;
 }
 /* MODAL OVERLAY AND CONTAINER CLOSE BUTTON */
 /* uses fixed positioning, augments centering, and positions ciruclar close control */
@@ -966,15 +980,11 @@
     min-height: 245px;
   }
 
-  .study-create-section,
   .study-form-row,
   .study-friend-options,
-  .study-toggle-grid {
+  .study-toggle-grid,
+  .study-create-section {
     grid-template-columns: 1fr;
-  }
-
-  .study-create-section > * {
-    grid-column: 1;
   }
 
   .study-room-page {
