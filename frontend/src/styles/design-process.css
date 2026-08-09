@@ -83,6 +83,25 @@
   line-height: 1;
 }
 
+.design-process-hero-heading-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 28px);
+}
+
+.design-process-hero-heading-col {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.design-process-hero-icon {
+  flex-shrink: 0;
+  width: clamp(40px, 6.7vw, 80px);
+  height: clamp(40px, 6.7vw, 80px);
+  object-fit: contain;
+}
+
 .design-process-hero-tagline {
   margin: 0;
   color: var(--color-scene-accent);
@@ -93,10 +112,19 @@
 
 .design-process-hero-tree {
   justify-self: center;
+  margin-inline: auto;
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   height: auto;
   object-fit: contain;
+}
+
+.design-process-closing-tree {
+  width: 100%;
+  max-width: 280px;
+  height: auto;
+  object-fit: contain;
+  margin-bottom: 12px;
 }
 
 .design-process-content-section {
@@ -108,7 +136,7 @@
 .design-process-content {
   display: flex;
   flex-direction: column;
-  gap: 40px;
+  gap: 64px;
   width: min(900px, 100%);
 }
 
@@ -155,6 +183,7 @@
 }
 
 .design-process-content-tree {
+  align-self: center;
   width: clamp(90px, 17vw, 160px);
   height: auto;
 }
@@ -315,7 +344,7 @@
 
 .photo-modal {
   position: relative;
-  width: min(1000px, 92vw);
+  width: min(1100px, 94vw);
   max-height: calc(100vh - 48px);
   padding: 32px;
   overflow-y: auto;
@@ -352,13 +381,17 @@
   display: grid;
   grid-auto-flow: column;
   align-items: start;
-  grid-auto-columns: max-content;
+  grid-auto-columns: min(70vw, 480px);
   gap: 16px;
   padding: 2px 2px 11px;
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline mandatory;
   scrollbar-color: var(--color-card-accent-background) transparent;
+}
+
+.photo-modal-wheel-fit {
+  grid-auto-flow: row;
 }
 
 .photo-modal-wheel-single {
@@ -370,15 +403,13 @@
   flex-direction: column;
   gap: 10px;
   scroll-snap-align: start;
-  max-width: 80vw;
-}
-
-.photo-modal-wheel-single .photo-modal-slide {
-  max-width: none;
 }
 
 .photo-modal-image {
-  height: min(50vh, 420px);
+  height: min(58vh, 480px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   border-radius: 16px;
   background-color: var(--color-card-background);
@@ -390,13 +421,17 @@
 
 .photo-modal-slide img {
   display: block;
-  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
   width: auto;
+  height: auto;
+  object-fit: contain;
 }
 
 .photo-modal-wheel-single .photo-modal-slide img {
   width: 100%;
   height: auto;
+  max-height: none;
 }
 
 .photo-modal-caption {
@@ -433,6 +468,20 @@
     align-items: center;
   }
 
+  .design-process-hero-heading-row {
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .design-process-hero-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .design-process-hero-heading-col {
+    align-items: center;
+  }
+
   .design-process-hero-tree {
     max-width: 240px;
   }
@@ -459,7 +508,20 @@
     text-align: center;
   }
 
+  .photo-modal {
+    padding: 20px;
+  }
+
   .photo-modal-wheel {
     grid-auto-columns: 90%;
+  }
+
+  .photo-modal-wheel-fit {
+    /* !important overrides the inline gridTemplateColumns set in PhotoCluster.jsx */
+    grid-template-columns: 1fr !important;
+  }
+
+  .photo-modal-wheel-single {
+    grid-auto-columns: 100%;
   }
 }

@@ -10,9 +10,6 @@ const SCENES = {
   ending: { file: "/assets/design-process/ending.png", mode: "night" },
 };
 
-const LOFI_PROTOTYPE_CAPTION =
-  "These two lo-fi prototypes are very close to the final application. They show the process flow across the following pages and modals: 1. Home, 2. Calendar, 3. Task Creation modal, 4. Tasks, 5. Profile, 6. Streaks, 7. Main Hub, 8. Rooms, 9. Invitation modal, 10. Friends.";
-
 const SECTIONS = [
   { id: "hero", heading: "Grove", title: "Grow together, one task at a time.", scene: "intro" },
   {
@@ -94,10 +91,18 @@ const SECTIONS = [
       },
       {
         title: "Paper Prototype",
-        body: "Two hand-drawn prototypes built to run users through all three tasks end to end, plus a third, more minimalist version sketched after early testing.",
+        body: "A hand-drawn prototype built to run users through all tasks end to end. The lo-fi prototype is very close to the final application.",
         photos: [
-          { src: "/assets/design-process/lofi/lofi_1.png", alt: "Hand-drawn paper prototype", caption: LOFI_PROTOTYPE_CAPTION },
-          { src: "/assets/design-process/lofi/lofi_2.png", alt: "Hand-drawn paper prototype", caption: LOFI_PROTOTYPE_CAPTION },
+          {
+            src: "/assets/design-process/lofi/lofi_1.png",
+            alt: "Hand-drawn paper prototype",
+            caption: "Pages 1–6: Home, Calendar, Task Creation modal, Tasks, Profile, Streaks.",
+          },
+          {
+            src: "/assets/design-process/lofi/lofi_2.png",
+            alt: "Hand-drawn paper prototype",
+            caption: "Pages 7–10: Main Hub, Rooms, Invitation modal, Friends.",
+          },
         ],
       },
       {
@@ -278,8 +283,13 @@ function DesignProcess() {
           {section.id === "hero" ? (
             <div className="design-process-hero-inner">
               <div className="design-process-hero-text">
-                <h1 className="design-process-hero-heading">{section.heading}</h1>
-                <p className="design-process-hero-tagline">{section.title}</p>
+                <div className="design-process-hero-heading-row">
+                  <img className="design-process-hero-icon" src="/assets/icon-tree-1.png" alt="" />
+                  <div className="design-process-hero-heading-col">
+                    <h1 className="design-process-hero-heading">{section.heading}</h1>
+                    <p className="design-process-hero-tagline">{section.title}</p>
+                  </div>
+                </div>
               </div>
               <img className="design-process-hero-tree" src="/assets/design-process/hero-tree.png" alt="" />
             </div>

@@ -9,6 +9,14 @@ export default function PhotoCluster({ photos, label }) {
   const visible = photos.slice(0, STACK_PREVIEW_COUNT);
   const extra = photos.length - visible.length;
 
+  const wheelClass =
+    photos.length === 1
+      ? " photo-modal-wheel-single"
+      : photos.length <= 3
+        ? " photo-modal-wheel-fit"
+        : "";
+  const wheelStyle = photos.length > 1 && photos.length <= 3 ? { gridTemplateColumns: `repeat(${photos.length}, 1fr)` } : undefined;
+
   useEffect(() => {
     if (!isOpen) return;
     function handleEscape(e) {
@@ -49,7 +57,7 @@ export default function PhotoCluster({ photos, label }) {
               <X size={20} />
             </button>
             <h2 id={titleId} className="photo-modal-title">{label}</h2>
-            <div className={`photo-modal-wheel${photos.length === 1 ? " photo-modal-wheel-single" : ""}`}>
+            <div className={`photo-modal-wheel${wheelClass}`} style={wheelStyle}>
               {photos.map((photo, i) => (
                 <div className="photo-modal-slide" key={i}>
                   <div className="photo-modal-image">
