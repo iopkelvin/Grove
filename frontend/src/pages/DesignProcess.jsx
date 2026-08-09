@@ -385,6 +385,9 @@ function DesignProcess() {
             <>
               {section.number && <span className="design-process-number">{section.number}</span>}
               <h2 className="design-process-title">{section.title}</h2>
+              {section.id === "closing" && (
+                <img className="design-process-closing-tree" src="/assets/design-process/closing-tree.png" alt="" />
+              )}
             </>
           )}
         </section>

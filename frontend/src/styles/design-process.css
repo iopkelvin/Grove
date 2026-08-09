@@ -120,11 +120,10 @@
 }
 
 .design-process-closing-tree {
-  width: 100%;
-  max-width: 280px;
+  margin-top: 32px;
+  width: clamp(200px, 26vw, 320px);
   height: auto;
   object-fit: contain;
-  margin-bottom: 12px;
 }
 
 .design-process-content-section {
