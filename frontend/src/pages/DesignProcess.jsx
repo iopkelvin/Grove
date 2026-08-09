@@ -162,7 +162,44 @@ const SECTIONS = [
       },
     ],
   },
-  { id: "implementation", number: "05", title: "Implementation", scene: "afternoon" },
+  {
+    id: "implementation",
+    scene: "afternoon",
+    type: "content",
+    useTitle: true,
+    number: "05",
+    title: "Implementation",
+    blocks: [
+      {
+        body: "The implementation was based on the Hi-Fi prototype, but as we built it out, we added a lot of small details and features that weren't part of the original design — little things that made the final app feel more complete and easier to use.",
+      },
+      { divider: "THE TOOLS" },
+      {
+        label: "Frontend",
+        body: "A React + Vite app, with React Router handling navigation and Supabase's client library managing the logged-in session.",
+      },
+      {
+        label: "Backend",
+        body: "A Flask app exposing a plain JSON REST API, split into models and services so routes stay thin and the business logic lives in one place.",
+      },
+      {
+        label: "Authentication",
+        body: "Supabase handles sign-up and login and issues a JWT. Every protected Flask route verifies that token server-side with PyJWT before touching any data.",
+      },
+      {
+        label: "Data & Storage",
+        body: "Postgres via Supabase, accessed through Flask-SQLAlchemy models, with schema changes going through Alembic migrations. Local development falls back to SQLite for zero setup; production runs on Postgres, served with gunicorn.",
+      },
+      {
+        label: "Continuous Integration",
+        body: "GitHub Actions run on every PR into main or development — one job runs the pytest suite, another runs stylelint against the frontend CSS.",
+      },
+      {
+        label: "Uptime",
+        body: "A cron job pings the web service on an interval to prevent cold starts on the hosting tier.",
+      },
+    ],
+  },
   { id: "evaluation", number: "06", title: "User Evaluation", scene: "evening" },
   { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "evening" },
   { id: "demo", number: "08", title: "Demo Video", scene: "night" },
@@ -254,12 +291,16 @@ function DesignProcess() {
               ) : (
                 <p className="design-process-kicker">{section.kicker}</p>
               )}
-              {section.blocks.map((block) => (
-                <div className="design-process-block" key={block.label}>
-                  <p className="design-process-block-label">{block.label}</p>
-                  <p className="design-process-block-body">{block.body}</p>
-                </div>
-              ))}
+              {section.blocks.map((block, i) =>
+                block.divider ? (
+                  <p className="design-process-block-divider" key={`divider-${i}`}>{block.divider}</p>
+                ) : (
+                  <div className="design-process-block" key={block.label || `block-${i}`}>
+                    {block.label && <p className="design-process-block-label">{block.label}</p>}
+                    <p className="design-process-block-body">{block.body}</p>
+                  </div>
+                )
+              )}
               {section.quote && <p className="design-process-quote">{section.quote}</p>}
               {section.icon && <img className="design-process-content-tree" src={section.icon} alt="" />}
             </div>
