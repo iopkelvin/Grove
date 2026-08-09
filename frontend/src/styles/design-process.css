@@ -161,13 +161,20 @@
 .design-process-columns-inner {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
   gap: 64px;
   width: min(1200px, 100%);
 }
 
+.design-process-title-heading {
+  align-self: center;
+  text-align: center;
+}
+
 .design-process-columns {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: clamp(20px, 3vw, 40px);
 }
 
@@ -360,6 +367,11 @@
 
   .design-process-block {
     align-items: center;
+  }
+
+  .design-process-columns-inner {
+    align-items: center;
+    text-align: center;
   }
 
   .design-process-columns {

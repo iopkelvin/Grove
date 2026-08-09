@@ -19,7 +19,9 @@ const SECTIONS = [
     id: "problem",
     scene: "morning",
     type: "content",
-    kicker: "Problem & Target Users",
+    useTitle: true,
+    number: "01",
+    title: "Problem & Target Users",
     blocks: [
       {
         label: "THE PROBLEM",
@@ -36,7 +38,9 @@ const SECTIONS = [
     id: "needfinding",
     scene: "morning",
     type: "content",
-    kicker: "Needfinding",
+    useTitle: true,
+    number: "02",
+    title: "Needfinding",
     blocks: [
       {
         label: "WHO WE TALKED TO",
@@ -53,7 +57,9 @@ const SECTIONS = [
     id: "lofi",
     scene: "afternoon",
     type: "columns",
-    kicker: "Lo-Fi Prototyping",
+    useTitle: true,
+    number: "03",
+    title: "Lo-Fi Prototyping",
     parts: [
       {
         title: "Sketching & Brainstorming",
@@ -151,7 +157,7 @@ function DesignProcess() {
           className={
             section.id === "hero"
               ? "design-process-section design-process-hero"
-              : section.type === "content" || section.type === "columns"
+              : section.type === "content" || (section.type === "columns" && !section.useTitle)
                 ? "design-process-section design-process-content-section"
                 : "design-process-section"
           }
@@ -166,7 +172,14 @@ function DesignProcess() {
             </div>
           ) : section.type === "content" ? (
             <div className="design-process-content">
-              <p className="design-process-kicker">{section.kicker}</p>
+              {section.useTitle ? (
+                <div className="design-process-title-heading">
+                  {section.number && <span className="design-process-number">{section.number}</span>}
+                  <h2 className="design-process-title">{section.title}</h2>
+                </div>
+              ) : (
+                <p className="design-process-kicker">{section.kicker}</p>
+              )}
               {section.blocks.map((block) => (
                 <div className="design-process-block" key={block.label}>
                   <p className="design-process-block-label">{block.label}</p>
@@ -178,7 +191,14 @@ function DesignProcess() {
             </div>
           ) : section.type === "columns" ? (
             <div className="design-process-columns-inner">
-              <p className="design-process-kicker">{section.kicker}</p>
+              {section.useTitle ? (
+                <div className="design-process-title-heading">
+                  {section.number && <span className="design-process-number">{section.number}</span>}
+                  <h2 className="design-process-title">{section.title}</h2>
+                </div>
+              ) : (
+                <p className="design-process-kicker">{section.kicker}</p>
+              )}
               <div className="design-process-columns">
                 {section.parts.map((part) => (
                   <div className="design-process-column" key={part.title}>
