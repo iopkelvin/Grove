@@ -200,6 +200,55 @@
   line-height: 1.35;
 }
 
+.design-process-team-members {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  gap: 40px;
+}
+
+.design-process-team-member {
+  display: flex;
+  flex: 0 1 340px;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+
+.design-process-team-name {
+  margin: 0;
+  color: var(--scene-text);
+  font-family: var(--font-family-base);
+  font-size: clamp(16px, 1.8vw, 20px);
+  font-weight: 700;
+}
+
+.design-process-team-contact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.design-process-team-link {
+  color: var(--scene-text);
+  font-family: var(--font-family-base);
+  font-size: 15px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.design-process-team-placeholder {
+  margin: 0;
+  color: var(--scene-text);
+  opacity: 0.6;
+  font-family: var(--font-family-base);
+  font-style: italic;
+  font-size: 15px;
+}
+
 .photo-cluster-trigger {
   display: inline-flex;
   align-items: center;

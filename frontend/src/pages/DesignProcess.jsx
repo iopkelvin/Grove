@@ -166,7 +166,26 @@ const SECTIONS = [
   { id: "evaluation", number: "06", title: "User Evaluation", scene: "evening" },
   { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "evening" },
   { id: "demo", number: "08", title: "Demo Video", scene: "night" },
-  { id: "team", number: "09", title: "Team", scene: "night" },
+  {
+    id: "team",
+    number: "09",
+    title: "Team",
+    scene: "night",
+    type: "team",
+    useTitle: true,
+    members: [
+      {
+        name: "Kelvin Ortiz",
+        email: "iopkelvin@gmail.com",
+        link: "https://www.linkedin.com/in/kelvin-ortiz/",
+        linkLabel: "LinkedIn",
+      },
+      { name: "Kyle Gibson" },
+      { name: "Ameya Amit Borkar" },
+      { name: "Aatish Bagal" },
+      { name: "Turner Agustin Osswald" },
+    ],
+  },
   { id: "closing", title: "Grow together.", scene: "ending" },
 ];
 
@@ -260,6 +279,41 @@ function DesignProcess() {
                     <h3 className="design-process-column-title">{part.title}</h3>
                     <p className="design-process-column-body">{part.body}</p>
                     {part.photos && <PhotoCluster photos={part.photos} label={part.title} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : section.type === "team" ? (
+            <div className="design-process-columns-inner">
+              <div className="design-process-title-heading">
+                {section.number && <span className="design-process-number">{section.number}</span>}
+                <h2 className="design-process-title">{section.title}</h2>
+              </div>
+              <div className="design-process-team-members">
+                {section.members.map((member) => (
+                  <div className="design-process-team-member" key={member.name}>
+                    <h3 className="design-process-team-name">{member.name}</h3>
+                    {member.email || member.link ? (
+                      <div className="design-process-team-contact">
+                        {member.email && (
+                          <a className="design-process-team-link" href={`mailto:${member.email}`}>
+                            {member.email}
+                          </a>
+                        )}
+                        {member.link && (
+                          <a
+                            className="design-process-team-link"
+                            href={member.link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {member.linkLabel || "Profile"}
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="design-process-team-placeholder">Contact info coming soon</p>
+                    )}
                   </div>
                 ))}
               </div>
