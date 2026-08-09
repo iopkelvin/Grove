@@ -294,7 +294,7 @@
   display: grid;
   grid-auto-flow: column;
   align-items: start;
-  grid-auto-columns: minmax(380px, 80%);
+  grid-auto-columns: max-content;
   gap: 16px;
   padding: 2px 2px 11px;
   overflow-x: auto;
@@ -303,21 +303,40 @@
   scrollbar-color: var(--color-card-accent-background) transparent;
 }
 
+.photo-modal-wheel-single {
+  grid-auto-columns: 100%;
+}
+
 .photo-modal-slide {
   display: flex;
   flex-direction: column;
   gap: 10px;
   scroll-snap-align: start;
+  max-width: 80vw;
+}
+
+.photo-modal-wheel-single .photo-modal-slide {
+  max-width: none;
 }
 
 .photo-modal-image {
+  height: min(50vh, 420px);
   overflow: hidden;
   border-radius: 16px;
   background-color: var(--color-card-background);
 }
 
+.photo-modal-wheel-single .photo-modal-image {
+  height: auto;
+}
+
 .photo-modal-slide img {
   display: block;
+  height: 100%;
+  width: auto;
+}
+
+.photo-modal-wheel-single .photo-modal-slide img {
   width: 100%;
   height: auto;
 }

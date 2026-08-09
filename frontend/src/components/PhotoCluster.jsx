@@ -49,7 +49,7 @@ export default function PhotoCluster({ photos, label }) {
               <X size={20} />
             </button>
             <h2 id={titleId} className="photo-modal-title">{label}</h2>
-            <div className="photo-modal-wheel">
+            <div className={`photo-modal-wheel${photos.length === 1 ? " photo-modal-wheel-single" : ""}`}>
               {photos.map((photo, i) => (
                 <div className="photo-modal-slide" key={i}>
                   <div className="photo-modal-image">

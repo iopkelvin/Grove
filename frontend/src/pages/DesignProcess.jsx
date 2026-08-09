@@ -106,7 +106,62 @@ const SECTIONS = [
       },
     ],
   },
-  { id: "hifi", number: "04", title: "Hi-Fi Prototyping", scene: "afternoon" },
+  {
+    id: "hifi",
+    number: "04",
+    title: "Hi-Fi Prototyping",
+    scene: "afternoon",
+    type: "columns",
+    useTitle: true,
+    parts: [
+      {
+        title: "Five Different Designs",
+        body: "Before we picked one look, everyone on the team designed their own version of the same home screen. Same brief, five totally different styles.",
+        photos: [
+          {
+            src: "/assets/design-process/hifi/Kelvin_prototype.png",
+            alt: "Kelvin's home screen design",
+            caption: "Kelvin's Prototype",
+          },
+          {
+            src: "/assets/design-process/hifi/Kyle_prototype.png",
+            alt: "Kyle's home screen design",
+            caption: "Kyle's Prototype",
+          },
+          {
+            src: "/assets/design-process/hifi/Ameya_prototype.png",
+            alt: "Ameya's home screen design",
+            caption: "Ameya's Prototype",
+          },
+          {
+            src: "/assets/design-process/hifi/Turner_prototype.png",
+            alt: "Turner's home screen design",
+            caption: "Turner's Prototype",
+          },
+          {
+            src: "/assets/design-process/hifi/Aatish_prototype.png",
+            alt: "Aatish's home screen design",
+            caption: "Aatish's Prototype",
+          },
+        ],
+      },
+      {
+        title: "Converging on One Direction",
+        body: "After looking at everyone's designs, we decided to move forward with Kelvin's and Kyle's — those two felt the most finished and closest to what we wanted. Kyle's felt modern and clean, and Kelvin's stuck closer to our original lo-fi idea and was easy to read. But we didn't just pick one — we pulled in the best parts from everyone else too: Ameya's \"up next\" feature, Aatish's rounded buttons, Kyle's minimalistic look and dark mode, Turner's scrolling, and Kelvin's fonts, icons, and colors. So the final design is really a mix of everyone's work.",
+      },
+      {
+        title: "Building the Full Prototype",
+        body: "Once we had a direction, we built the whole thing out in Figma — every screen you'd actually use: home, tasks, profile, calendar, the study room lobby, a real study room, friends, and the streak tree. It's all clickable and connected, so you can go through it like a real app.",
+        photos: [
+          {
+            src: "/assets/design-process/hifi/Final_Prototype.png",
+            alt: "Final Hi-Fi prototype flow",
+            caption: "The final prototype — every screen connected end to end in Figma: home, tasks, profile, calendar, study room lobby, a real study room, friends, and the streak tree.",
+          },
+        ],
+      },
+    ],
+  },
   { id: "implementation", number: "05", title: "Implementation", scene: "afternoon" },
   { id: "evaluation", number: "06", title: "User Evaluation", scene: "evening" },
   { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "evening" },
