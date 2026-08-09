@@ -174,28 +174,30 @@ const SECTIONS = [
         body: "The implementation was based on the Hi-Fi prototype, but as we built it out, we added a lot of small details and features that weren't part of the original design — little things that made the final app feel more complete and easier to use.",
       },
       { divider: "THE TOOLS" },
+    ],
+    parts: [
       {
-        label: "Frontend",
+        title: "Frontend",
         body: "A React + Vite app, with React Router handling navigation and Supabase's client library managing the logged-in session.",
       },
       {
-        label: "Backend",
+        title: "Backend",
         body: "A Flask app exposing a plain JSON REST API, split into models and services so routes stay thin and the business logic lives in one place.",
       },
       {
-        label: "Authentication",
+        title: "Authentication",
         body: "Supabase handles sign-up and login and issues a JWT. Every protected Flask route verifies that token server-side with PyJWT before touching any data.",
       },
       {
-        label: "Data & Storage",
+        title: "Data & Storage",
         body: "Postgres via Supabase, accessed through Flask-SQLAlchemy models, with schema changes going through Alembic migrations. Local development falls back to SQLite for zero setup; production runs on Postgres, served with gunicorn.",
       },
       {
-        label: "Continuous Integration",
+        title: "Continuous Integration",
         body: "GitHub Actions run on every PR into main or development — one job runs the pytest suite, another runs stylelint against the frontend CSS.",
       },
       {
-        label: "Uptime",
+        title: "Uptime",
         body: "A cron job pings the web service on an interval to prevent cold starts on the hosting tier.",
       },
     ],
@@ -300,6 +302,16 @@ function DesignProcess() {
                     <p className="design-process-block-body">{block.body}</p>
                   </div>
                 )
+              )}
+              {section.parts && (
+                <div className="design-process-columns">
+                  {section.parts.map((part) => (
+                    <div className="design-process-column" key={part.title}>
+                      <h3 className="design-process-column-title">{part.title}</h3>
+                      <p className="design-process-column-body">{part.body}</p>
+                    </div>
+                  ))}
+                </div>
               )}
               {section.quote && <p className="design-process-quote">{section.quote}</p>}
               {section.icon && <img className="design-process-content-tree" src={section.icon} alt="" />}
