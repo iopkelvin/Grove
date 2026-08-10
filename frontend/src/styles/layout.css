@@ -60,6 +60,7 @@
 .grid-item-tree,
 .grid-item-calendar,
 .grid-item-rooms,
+.grid-item-create-task,
 .grid-item-upnext,
 .grid-item-continue {
   min-width: 0;
@@ -87,20 +88,25 @@
 /* middle and right stretch to match each other (the default for grid
    children of .grid-item-columns) and each push their last widget — New
    study room / Continue where you left off — to the bottom of that
-   shared height with justify-content: space-between, so the two land on
-   the same bottom edge no matter which column's other content is taller. */
+   shared height. margin-top: auto on just that last widget (rather than
+   justify-content: space-between on the container) means either column
+   can hold any number of widgets above it and still land on the same
+   bottom edge. */
 .grid-item-middle {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 24px;
 }
 
 .grid-item-right {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   gap: 24px;
+}
+
+.grid-item-rooms,
+.grid-item-create-task {
+  margin-top: auto;
 }
 
 /* ── Medium screens ── */
@@ -117,8 +123,9 @@
     grid-template-areas:
       "tree"
       "calendar"
-      "upnext"
       "continue"
+      "upnext"
+      "createtask"
       "rooms";
   }
 
@@ -134,6 +141,10 @@
 
   .grid-item-rooms {
     grid-area: rooms;
+  }
+
+  .grid-item-create-task {
+    grid-area: createtask;
   }
 
   .grid-item-upnext {

@@ -256,3 +256,24 @@
   cursor: default;
 }
 
+.create-task-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.create-task-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-button-background);
+  color: var(--color-button-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-body);
+  cursor: pointer;
+}
+

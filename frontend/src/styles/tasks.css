@@ -280,6 +280,14 @@
   overflow: hidden;
 }
 
+/* Home's "Up Next" widget only (scoped via its grid wrapper) — caps at
+   roughly 5 rows tall and scrolls past that instead of growing the whole
+   card; the full Tasks page list is unaffected and keeps growing freely. */
+.grid-item-upnext .task-list {
+  max-height: 420px;
+  overflow-y: auto;
+}
+
 .task-empty {
   margin: 0;
   color: var(--color-text-secondary);
@@ -290,6 +298,7 @@
    the card's own edges (same treatment as the mini calendar's header),
    styled like the primary button so it reads as equally prominent. */
 .task-list-title {
+  flex-shrink: 0;
   margin: -24px -24px 12px;
   padding: 14px 16px;
   border-radius: 16px 16px 0 0;
@@ -307,6 +316,7 @@
    multi-line card. */
 .task-item {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: 12px;
   padding: 12px 8px;

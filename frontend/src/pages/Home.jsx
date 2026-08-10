@@ -4,32 +4,35 @@ import { useUser } from "../context/UserContext";
 import { firstNameOf } from "../lib/format";
 import { getTreeCycleLevel } from "../lib/treeCycle";
 import { getRoom, createRoom } from "../api/rooms";
+import { getFriends } from "../api/friends";
 import { useTasks } from "../hooks/useTasks";
 import MenuIcon from "../components/MenuIcon";
 import StreakTree from "../components/StreakTree";
 import MiniCalendar from "../components/MiniCalendar";
 import ContinueRoomCard from "../components/ContinueRoomCard";
 import StudyRoomsCard from "../components/StudyRoomsCard";
+import CreateRoomModal from "../components/CreateRoomModal";
+import CreateTaskCard from "../components/CreateTaskCard";
 import TaskList from "../components/TaskList";
+import TaskFormModal from "../components/TaskFormModal";
 import UndoToast from "../components/UndoToast";
 import HomeTutorial from "../components/HomeTutorial";
 import useHomeTutorial from "../hooks/useHomeTutorial";
 import useStreakLevelUp from "../hooks/useStreakLevelUp";
 
-// Top few incomplete tasks, soonest due first (no due date sorts last);
-// same-day tasks are ordered by due time.
-function pickUpNext(tasks, count = 5) {
+// Incomplete tasks, soonest due first (no due date sorts last); same-day
+// tasks are ordered by due time. The widget itself scrolls past 5 rows
+// (see .grid-item-upnext .task-list in tasks.css) rather than truncating here.
+function pickUpNext(tasks) {
   const incomplete = tasks.filter((task) => !task.done);
-  return [...incomplete]
-    .sort((a, b) => {
-      const dateA = a.due_date || "9999-99-99";
-      const dateB = b.due_date || "9999-99-99";
-      if (dateA !== dateB) return dateA.localeCompare(dateB);
-      const timeA = a.due_time || "99:99";
-      const timeB = b.due_time || "99:99";
-      return timeA.localeCompare(timeB);
-    })
-    .slice(0, count);
+  return [...incomplete].sort((a, b) => {
+    const dateA = a.due_date || "9999-99-99";
+    const dateB = b.due_date || "9999-99-99";
+    if (dateA !== dateB) return dateA.localeCompare(dateB);
+    const timeA = a.due_time || "99:99";
+    const timeB = b.due_time || "99:99";
+    return timeA.localeCompare(timeB);
+  });
 }
 
 function Home() {
@@ -47,8 +50,13 @@ function Home() {
   const streakLeveledUp = useStreakLevelUp(supabaseId, streak);
 
   const [lastRoom, setLastRoom] = useState(null);
+  const [friends, setFriends] = useState([]);
+  const [showRoomModal, setShowRoomModal] = useState(false);
   const [creatingRoom, setCreatingRoom] = useState(false);
-  const { tasks, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
+  const [createRoomError, setCreateRoomError] = useState("");
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [submittingTask, setSubmittingTask] = useState(false);
+  const { tasks, addTask, toggleTask, removeTask, pendingDelete, undoDelete } = useTasks(supabaseId);
 
   useEffect(() => {
     if (!profile?.last_room_id) {
@@ -60,24 +68,47 @@ function Home() {
       .catch(() => setLastRoom(null));
   }, [profile?.last_room_id]);
 
-  async function handleCreateRoom() {
+  useEffect(() => {
+    if (!supabaseId) return;
+    getFriends(supabaseId)
+      .then((result) => setFriends(result.map((entry) => entry.user)))
+      .catch(() => setFriends([]));
+  }, [supabaseId]);
+
+  async function handleCreateRoom(formValues) {
     setCreatingRoom(true);
+    setCreateRoomError("");
     try {
       const room = await createRoom({
-        name: `${firstName}'s Room`,
-        setting: "campsite",
-        music_enabled: true,
-        chat_enabled: true,
-        focus_minutes: 50,
-        invite_user_ids: [],
+        host_supabase_id: supabaseId,
+        name: formValues.name,
+        setting: formValues.setting,
+        music_enabled: formValues.music_enabled,
+        chat_enabled: formValues.chat_enabled,
+        focus_minutes: formValues.focus_minutes,
+        invite_user_ids: formValues.invite_user_ids,
       });
+      setShowRoomModal(false);
       sessionStorage.setItem(`grove-room-${room.id}`, JSON.stringify(room));
       navigate(`/rooms/${room.id}`, { state: { room } });
     } catch (error) {
-      console.error("Failed to create room:", error);
+      setCreateRoomError(error.message);
     } finally {
       setCreatingRoom(false);
     }
+  }
+
+  async function handleCreateTask(fields) {
+    setSubmittingTask(true);
+    const ok = await addTask(fields.title, {
+      description: fields.description,
+      tags: fields.tags,
+      dueDate: fields.dueDate,
+      dueTime: fields.dueTime,
+      recurring: fields.recurring,
+    });
+    setSubmittingTask(false);
+    if (ok) setShowTaskModal(false);
   }
 
   if (loading) {
@@ -104,9 +135,11 @@ function Home() {
               <MiniCalendar tasks={tasks} />
             </div>
 
+            <ContinueRoomCard className="grid-item-continue" room={lastRoom} />
+
             <StudyRoomsCard
               className="grid-item-rooms"
-              onCreate={handleCreateRoom}
+              onCreate={() => setShowRoomModal(true)}
               creating={creatingRoom}
             />
           </div>
@@ -123,7 +156,7 @@ function Home() {
               <UndoToast task={pendingDelete} onUndo={undoDelete} />
             </div>
 
-            <ContinueRoomCard className="grid-item-continue" room={lastRoom} />
+            <CreateTaskCard className="grid-item-create-task" onCreate={() => setShowTaskModal(true)} />
           </div>
         </div>
       </div>
@@ -132,6 +165,25 @@ function Home() {
         <HomeTutorial
           onComplete={completeTutorial}
           onClose={closeTutorial}
+        />
+      )}
+
+      {showTaskModal && (
+        <TaskFormModal
+          supabaseId={supabaseId}
+          onClose={() => setShowTaskModal(false)}
+          onSubmit={handleCreateTask}
+          creating={submittingTask}
+        />
+      )}
+
+      {showRoomModal && (
+        <CreateRoomModal
+          friends={friends}
+          onClose={() => setShowRoomModal(false)}
+          onCreate={handleCreateRoom}
+          creating={creatingRoom}
+          error={createRoomError}
         />
       )}
     </div>
