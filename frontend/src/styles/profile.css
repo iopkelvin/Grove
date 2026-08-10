@@ -564,6 +564,12 @@
 
 /* ── Small screens ── */
 @media (max-width: 640px) {
+  /* pushes the banner below the fixed menu/theme icons (top: 20px), which
+     otherwise sit directly on top of its corners at this width */
+  .banner-wrap {
+    margin-top: 28px;
+  }
+
   /* Picture, then info, then the tree last — practical info before the
      decorative tree. */
   .profile-content {
