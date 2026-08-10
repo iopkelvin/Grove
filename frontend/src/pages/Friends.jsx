@@ -161,6 +161,12 @@ function Friends() {
               const state = getFriendshipState(user.friendship_status, sentRequestIds.has(user.id));
               return (
                 <div key={user.id} className="card friends-row">
+                  <div
+                    className="friends-avatar"
+                    style={user.avatar_url ? { backgroundImage: `url(${user.avatar_url})` } : undefined}
+                  >
+                    {!user.avatar_url && <UserRound className="friends-avatar-placeholder-icon" />}
+                  </div>
                   <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
                   <button
                     type="button"
@@ -272,6 +278,12 @@ function Friends() {
             {pendingRequests.length === 0 && <p>No pending requests.</p>}
             {pendingRequests.map(({ friendship_id, user }) => (
               <div key={friendship_id} className="card friends-row">
+                <div
+                  className="friends-avatar"
+                  style={user.avatar_url ? { backgroundImage: `url(${user.avatar_url})` } : undefined}
+                >
+                  {!user.avatar_url && <UserRound className="friends-avatar-placeholder-icon" />}
+                </div>
                 <Link to={`/user/${user.username}`}>{displayNameFor(user)}</Link>
                 <div className="friends-row-actions">
                   <button
