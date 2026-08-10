@@ -234,7 +234,16 @@ const SECTIONS = [
       },
     ],
   },
-  { id: "demo", number: "07", title: "Demo Video", scene: "night" },
+  {
+    id: "demo",
+    scene: "night",
+    type: "content",
+    useTitle: true,
+    number: "07",
+    title: "Demo Video",
+    blocks: [],
+    video: { embedUrl: "https://drive.google.com/file/d/17csEJY2GAnDOuAVsLJraIWJhivAWhgg3/preview" },
+  },
   {
     id: "team",
     number: "08",
@@ -342,6 +351,16 @@ function DesignProcess() {
                     <p className="design-process-block-body">{block.body}</p>
                   </div>
                 )
+              )}
+              {section.video && (
+                <div className="design-process-video">
+                  <iframe
+                    src={section.video.embedUrl}
+                    title="Demo video"
+                    allow="autoplay; encrypted-media"
+                    allowFullScreen
+                  />
+                </div>
               )}
               {section.parts && (
                 <div className="design-process-columns">

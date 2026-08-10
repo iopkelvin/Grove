@@ -181,6 +181,23 @@
   line-height: 1.15;
 }
 
+.design-process-video {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+}
+
+.design-process-video iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
 .design-process-content-tree {
   align-self: center;
   width: clamp(90px, 17vw, 160px);
