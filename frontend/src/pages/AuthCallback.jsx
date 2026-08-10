@@ -12,6 +12,7 @@ function namesFromMetadata(user) {
     return [meta.given_name || "", meta.family_name || ""];
   }
   const fullName = meta.full_name || meta.name || "";
+  // split on whitespace, drop empty tokens, first word is first name, rest rejoin as last name
   const [first, ...rest] = fullName.trim().split(/\s+/).filter(Boolean);
   return [first || user.email.split("@")[0], rest.join(" ")];
 }
@@ -21,10 +22,11 @@ function AuthCallback() {
   const ranRef = useRef(false);
 
   useEffect(() => {
-    if (ranRef.current) return;
+    if (ranRef.current) return; // guards against React StrictMode's double-invoke
     ranRef.current = true;
 
     async function syncAndRedirect() {
+      // supabase-js already parsed the redirect URL's tokens into a session by this point
       const { data } = await supabase.auth.getSession();
       const user = data.session?.user;
       if (!user) {
