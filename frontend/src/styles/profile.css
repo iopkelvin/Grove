@@ -60,6 +60,7 @@
 
 .banner-edit-icon {
   position: absolute;
+  z-index: 1;
   top: 12px;
   right: 12px;
   display: flex;
@@ -75,13 +76,15 @@
 }
 
 /* ── Banner reposition control ── */
-/* bottom-left, diagonally opposite the top-right upload icon — on a very
-   short (thin mobile) banner, two icons in the same corner can end up
-   close enough to overlap; opposite corners never do, regardless of
-   banner height. */
+/* top-left, not bottom-left: the profile picture is pulled up to overlap
+   the banner's bottom edge (see .profile-picture-wrap's negative margin
+   below), and being later in the DOM it renders on top of anything sitting
+   at the bottom of the banner. The top edge is never covered, so the
+   toggle/slider live there instead — right inset on the slider clears the
+   top-right upload icon. */
 .banner-reposition-toggle {
   position: absolute;
-  bottom: 12px;
+  top: 12px;
   left: 12px;
   display: flex;
   align-items: center;
@@ -98,8 +101,8 @@
 .banner-reposition-slider {
   position: absolute;
   left: 52px;
-  right: 12px;
-  bottom: 12px;
+  right: 52px;
+  top: 12px;
   width: auto;
   accent-color: var(--color-button-background);
 }
@@ -456,11 +459,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   background-color: var(--color-page-background);
   border: 2px solid var(--color-button-background);
   border-radius: 50%;
+  font-size: var(--font-size-small);
   color: var(--color-button-background);
   cursor: pointer;
 }
@@ -591,11 +595,6 @@
     width: 160px;
     height: 160px;
     border-width: 3px;
-  }
-
-  .banner-reposition-slider {
-    left: 8px;
-    right: 44px;
   }
 
   .profile-info-card {
