@@ -115,8 +115,9 @@
    column same as mobile, just at a higher threshold. "columns",
    "middle", and "right" all turn into display:contents (no box of their
    own), promoting each widget all the way up to a direct item of .grid
-   so it can be independently reordered — that's how "New study room"
-   moves below Up Next here without duplicating any markup. */
+   so it can be independently reordered here without duplicating any
+   markup — this stack order doesn't have to match either column's
+   desktop order. */
 @media (max-width: 1100px) {
   .grid {
     grid-template-columns: 1fr;
@@ -124,9 +125,9 @@
       "tree"
       "calendar"
       "continue"
+      "rooms"
       "upnext"
-      "createtask"
-      "rooms";
+      "createtask";
   }
 
   .grid-item-columns,

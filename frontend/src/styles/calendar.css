@@ -137,7 +137,7 @@
 .calendar-mini {
   background-color: var(--color-card-background);
   border-radius: 24px;
-  padding: 0 22px 24px;
+  padding: 0 22px 18px;
   overflow: hidden;
 }
 
@@ -145,8 +145,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 -22px 18px;
-  padding: 18px 22px;
+  margin: 0 -22px 14px;
+  padding: 14px 22px;
   background-color: var(--color-button-background);
 }
 
@@ -178,7 +178,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 34px;
+  height: 28px;
   font-size: var(--font-size-small);
   color: var(--color-text-primary);
   background: none;
