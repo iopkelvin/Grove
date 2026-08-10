@@ -85,10 +85,8 @@ def username_seed(requested, email):
 @app.route("/api/users/sync", methods=["POST"])
 def sync_user():
     data = request.json or {}
-    first_name = data.get("first_name", "").strip().lower()
-    last_name = data.get("last_name", "").strip().lower()
-    if not first_name or not last_name:
-        return jsonify({"error": "first_name and last_name are required"}), 400
+    first_name = (data.get("first_name") or "").strip().lower()
+    last_name = (data.get("last_name") or "").strip().lower()
 
     # A session (and therefore a verifiable token) may not exist yet if the
     # Supabase project requires email confirmation before login — fall back
