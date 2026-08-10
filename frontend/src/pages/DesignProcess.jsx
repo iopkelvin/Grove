@@ -242,7 +242,7 @@ const SECTIONS = [
     number: "07",
     title: "Demo Video",
     blocks: [],
-    video: { embedUrl: "https://drive.google.com/file/d/17csEJY2GAnDOuAVsLJraIWJhivAWhgg3/preview" },
+    video: { embedUrl: "https://www.youtube.com/embed/24W2M_YqYC4" },
   },
   {
     id: "team",
