@@ -11,6 +11,7 @@ import Room from "./pages/Room";
 // import Streaks from "./pages/Streaks";
 import Settings from "./pages/Settings";
 import DesignProcess from "./pages/DesignProcess";
+import AuthCallback from "./pages/AuthCallback";
 import AuthGate from "./components/RequireAuth";
 import ThemeToggle from "./components/ThemeToggle";
 
@@ -41,6 +42,7 @@ function App() {
         {/* <Route path="/streaks" element={<Streaks />} /> */}
         <Route path="/settings" element={<Settings />} />
         <Route path="/design-process" element={<DesignProcess />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
