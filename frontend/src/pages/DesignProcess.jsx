@@ -207,12 +207,37 @@ const SECTIONS = [
       },
     ],
   },
-  { id: "evaluation", number: "06", title: "User Evaluation", scene: "evening" },
-  { id: "reflection", number: "07", title: "Reflection & Next Steps", scene: "evening" },
-  { id: "demo", number: "08", title: "Demo Video", scene: "night" },
+  {
+    id: "reflection",
+    scene: "evening",
+    type: "content",
+    useTitle: true,
+    number: "06",
+    title: "Reflection & Next Steps",
+    blocks: [
+      {
+        body: "Grove's next chapter is three directions: a more natural experience, connecting outward to tools people already use, and building for the widest range of people we can.",
+      },
+    ],
+    parts: [
+      {
+        title: "Intuitiveness & Flexibility",
+        body: "Core actions like creating a task should be easy to find, with clear confirmation when they succeed. The app should adapt to how people actually work, not the other way around.",
+      },
+      {
+        title: "Connectivity",
+        body: "Syncing tasks with calendars, sharing progress on other platforms, and signing in with existing accounts — making Grove part of a user's routine, not another app competing for attention.",
+      },
+      {
+        title: "Accessibility & Inclusion",
+        body: "A commitment from day one: usable for people with different physical and cognitive needs, and room for users to express themselves in ways that feel true to them.",
+      },
+    ],
+  },
+  { id: "demo", number: "07", title: "Demo Video", scene: "night" },
   {
     id: "team",
-    number: "09",
+    number: "08",
     title: "Team",
     scene: "night",
     type: "team",
@@ -221,13 +246,18 @@ const SECTIONS = [
       {
         name: "Kelvin Ortiz",
         email: "iopkelvin@gmail.com",
-        link: "https://www.linkedin.com/in/kelvin-ortiz/",
-        linkLabel: "LinkedIn",
+        links: [{ href: "https://www.linkedin.com/in/kelvin-ortiz/", label: "LinkedIn" }],
       },
-      { name: "Kyle Gibson" },
-      { name: "Ameya Amit Borkar" },
-      { name: "Aatish Bagal" },
-      { name: "Turner Agustin Osswald" },
+      { name: "Kyle Gibson", email: "kyle_gibson@berkeley.edu" },
+      { name: "Ameya Amit Borkar", email: "ameyaborkar@berkeley.edu" },
+      {
+        name: "Aatish Bagal",
+        links: [
+          { href: "https://aatish.io", label: "Website" },
+          { href: "https://www.linkedin.com/in/aatishbagal", label: "LinkedIn" },
+        ],
+      },
+      { name: "Turner Agustin Osswald", email: "turnosswald@gmail.com" },
     ],
   },
   { id: "closing", title: "Grow together.", scene: "ending" },
@@ -356,23 +386,24 @@ function DesignProcess() {
                 {section.members.map((member) => (
                   <div className="design-process-team-member" key={member.name}>
                     <h3 className="design-process-team-name">{member.name}</h3>
-                    {member.email || member.link ? (
+                    {member.email || member.links ? (
                       <div className="design-process-team-contact">
                         {member.email && (
                           <a className="design-process-team-link" href={`mailto:${member.email}`}>
                             {member.email}
                           </a>
                         )}
-                        {member.link && (
+                        {member.links?.map((link) => (
                           <a
                             className="design-process-team-link"
-                            href={member.link}
+                            href={link.href}
                             target="_blank"
                             rel="noreferrer"
+                            key={link.href}
                           >
-                            {member.linkLabel || "Profile"}
+                            {link.label || "Profile"}
                           </a>
-                        )}
+                        ))}
                       </div>
                     ) : (
                       <p className="design-process-team-placeholder">Contact info coming soon</p>
