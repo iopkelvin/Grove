@@ -63,6 +63,15 @@ function Signup() {
     navigate("/");
   }
 
+  async function handleGoogleSignup() {
+    setError("");
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+    if (oauthError) setError(oauthError.message);
+  }
+
   return (
     <div className="page auth-page">
       <img className="auth-icon" src="/assets/icon-tree-1.png" alt="" />
@@ -100,6 +109,10 @@ function Signup() {
           {error && <p className="auth-error">{error}</p>}
           <button type="submit">Sign Up</button>
         </form>
+        <div className="auth-divider">or</div>
+        <button type="button" className="auth-google-button" onClick={handleGoogleSignup}>
+          Continue with Google
+        </button>
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>
         </p>
