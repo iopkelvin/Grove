@@ -30,6 +30,7 @@ function Login() {
 
   return (
     <div className="page auth-page">
+      <img className="auth-icon" src="/assets/icon-tree-1.png" alt="" />
       <div className="auth-card card">
         <h1 className="page-title">Log In</h1>
         <form onSubmit={handleLogin} className="auth-form">
@@ -53,6 +54,9 @@ function Login() {
         <p className="auth-switch">
           Don't have an account? <Link to="/signup">Sign up</Link>
         </p>
+        <Link to="/design-process" className="auth-design-link">
+          See how we designed Grove
+        </Link>
       </div>
     </div>
   );

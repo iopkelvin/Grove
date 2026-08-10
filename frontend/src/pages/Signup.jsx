@@ -65,6 +65,7 @@ function Signup() {
 
   return (
     <div className="page auth-page">
+      <img className="auth-icon" src="/assets/icon-tree-1.png" alt="" />
       <div className="auth-card card">
         <h1 className="page-title">Sign Up</h1>
         <form onSubmit={handleSignup} className="auth-form">
@@ -102,6 +103,9 @@ function Signup() {
         <p className="auth-switch">
           Already have an account? <Link to="/login">Log in</Link>
         </p>
+        <Link to="/design-process" className="auth-design-link">
+          See how we designed Grove
+        </Link>
       </div>
     </div>
   );
