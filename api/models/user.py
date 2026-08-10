@@ -59,6 +59,16 @@ class User(db.Model):
     # user.tags (their tag set) comes from a backref on Tag.
     # Friendships and room memberships are reached via their own models.
 
+    def _formatted_display_name(self):
+        """display_name is stored lowercase like first/last_name. Show it
+        capitalized only while it's still the untouched default set at
+        signup — once a user customizes it, show exactly what they typed."""
+        raw = (self.display_name or "").strip()
+        default = f"{self.first_name} {self.last_name}".strip()
+        if raw and raw.lower() == default.lower():
+            return " ".join(word.capitalize() for word in raw.split())
+        return self.display_name
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -67,7 +77,7 @@ class User(db.Model):
             "email": self.email,
             "first_name": self.first_name,
             "last_name": self.last_name,
-            "display_name": self.display_name,
+            "display_name": self._formatted_display_name(),
             "pronouns": self.pronouns,
             "avatar_url": self.avatar_url,
             "banner_url": self.banner_url,
@@ -86,7 +96,7 @@ class User(db.Model):
         return {
             "id": self.id,
             "username": self.username,
-            "display_name": self.display_name,
+            "display_name": self._formatted_display_name(),
             "avatar_url": self.avatar_url,
             "is_online": self.is_online,
         }
