@@ -298,6 +298,15 @@ export default function Room() {
     }
   }
 
+  const members = room?.members || [];
+  const { invitableFriends, removableMembers } = useMemo(() => {
+    const memberIds = new Set(members.map((member) => member.id));
+    return {
+      invitableFriends: friends.filter(({ user }) => !memberIds.has(user.id)),
+      removableMembers: members.filter((member) => member.id !== room?.host_id),
+    };
+  }, [members, room?.host_id, friends]);
+
   if (loadError || !room) {
     return (
       <div className="page study-room-page">
@@ -308,15 +317,6 @@ export default function Room() {
       </div>
     );
   }
-
-  const members = room.members || [];
-  const { invitableFriends, removableMembers } = useMemo(() => {
-    const memberIds = new Set(members.map((member) => member.id));
-    return {
-      invitableFriends: friends.filter(({ user }) => !memberIds.has(user.id)),
-      removableMembers: members.filter((member) => member.id !== room.host_id),
-    };
-  }, [members, room.host_id, friends]);
 
   const settingLabel = ROOM_SETTING_LABELS[room.setting] || ROOM_SETTING_LABELS.campsite;
 
